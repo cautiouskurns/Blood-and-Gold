@@ -1,0 +1,36 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# Build exports
+exports/
+builds/
+
+# Godot export presets (contains local paths)
+export_presets.cfg
+
+# Logs
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE/Editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Sensitive data
+*.secret
+credentials.json
+.env
+.env.local
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
