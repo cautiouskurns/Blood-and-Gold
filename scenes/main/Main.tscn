@@ -1,3 +1,16 @@
-[gd_scene format=3 uid="uid://1bd0feo7xjmi"]
+[gd_scene load_steps=2 format=3 uid="uid://1bd0feo7xjmi"]
+
+[ext_resource type="PackedScene" uid="uid://c1combatgrid" path="res://scenes/combat/CombatGrid.tscn" id="1_combat_grid"]
 
 [node name="Main" type="Node2D"]
+
+[node name="Background" type="ColorRect" parent="."]
+z_index = -100
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 1920.0
+offset_bottom = 1080.0
+color = Color(0.0509804, 0.0666667, 0.0901961, 1)
+
+[node name="CombatGrid" parent="." instance=ExtResource("1_combat_grid")]
