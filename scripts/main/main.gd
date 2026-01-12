@@ -4,6 +4,7 @@ extends Node2D
 
 # ===== NODE REFERENCES =====
 @onready var combat_grid: CombatGrid = $CombatGrid
+@onready var turn_order_panel = $UILayer/TurnOrderPanel
 
 # Preload Unit scene
 const UnitScene = preload("res://scenes/combat/Unit.tscn")
@@ -20,26 +21,33 @@ var _last_hovered_tile: Vector2i = Vector2i(-1, -1)
 func _ready() -> void:
 	_spawn_test_units()
 	_connect_combat_signals()
-	print("[Main] Debug controls enabled: D = damage, H = heal (hover over unit)")
+	_connect_turn_signals()
+	_start_battle()
+	print("[Main] Controls: Right-click adjacent enemy to attack. Debug: D = damage, H = heal, E = end turn")
 
 func _process(_delta: float) -> void:
 	## Handle hover updates for path preview (Task 1.5)
 	_update_path_preview_on_hover()
 
 func _unhandled_input(event: InputEvent) -> void:
-	## Handle debug input for HP bar testing (Task 1.3)
+	## Handle debug input for HP bar testing (Task 1.3) and turn testing (Task 1.8)
 	if event is InputEventKey and event.pressed:
 		match event.keycode:
 			KEY_D:
 				_debug_damage_hovered_unit()
 			KEY_H:
 				_debug_heal_hovered_unit()
+			KEY_E:
+				_debug_end_turn()
 
 	## Handle grid clicks for movement and deselection (Task 1.4 & 1.5)
 	## This only triggers if Unit's Area2D didn't consume the click
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 			_handle_grid_click()
+		## Handle right-click for attack (Task 1.7)
+		elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+			_handle_attack_click()
 
 func _spawn_test_units() -> void:
 	## Spawn test units to verify Task 1.2 implementation
@@ -100,6 +108,38 @@ func _spawn_unit(type: Unit.UnitType, grid_pos: Vector2i, unit_name: String) -> 
 
 	return unit
 
+# ===== TURN SYSTEM (Task 1.8) =====
+func _start_battle() -> void:
+	## Start the combat battle
+	if not turn_order_panel:
+		push_error("[Main] TurnOrderPanel not found!")
+		return
+
+	# Start battle through CombatManager (creates TurnManager internally)
+	CombatManager.start_battle(_units)
+	print("[Main] Battle started")
+
+func _connect_turn_signals() -> void:
+	## Connect turn manager signals to UI
+	CombatManager.battle_started.connect(_on_battle_started)
+	CombatManager.turn_ended.connect(_on_turn_ended)
+
+func _on_battle_started(units: Array[Unit]) -> void:
+	## Handle battle start - initialize turn order panel
+	turn_order_panel.initialize_turn_order(units)
+
+func _on_turn_ended(_unit: Unit) -> void:
+	## Handle turn end - advance turn order panel
+	turn_order_panel.advance_turn()
+
+	# Check if we need to re-initialize for new round
+	# This happens when the panel is empty (all units acted)
+	if turn_order_panel.get_turn_order().is_empty():
+		# Get fresh turn order from TurnManager for the new round
+		var turn_order = CombatManager.get_turn_order()
+		if not turn_order.is_empty():
+			turn_order_panel.initialize_turn_order(turn_order)
+
 # ===== COMBAT SIGNAL HANDLING (Task 1.5) =====
 func _connect_combat_signals() -> void:
 	## Connect to CombatManager signals for movement handling
@@ -109,7 +149,7 @@ func _connect_combat_signals() -> void:
 
 func _on_unit_selected(unit: Unit) -> void:
 	## Show movement range when a unit is selected
-	if unit and not unit.is_moving():
+	if unit and not unit.is_moving() and CombatManager.is_waiting_for_input():
 		combat_grid.update_occupied_tiles(_units)
 		combat_grid.show_movement_range(unit.grid_position, unit.movement_range, unit)
 
@@ -121,11 +161,13 @@ func _on_unit_deselected(_unit: Unit) -> void:
 func _on_unit_movement_finished(unit: Unit) -> void:
 	## Update occupied tiles after movement completes
 	combat_grid.update_occupied_tiles(_units)
+	# Movement range is not re-shown (can only move once per turn)
+	# Unit remains selected for potential attack action
 
 func _update_path_preview_on_hover() -> void:
 	## Update path preview based on mouse position
 	var selected = CombatManager.get_selected_unit()
-	if selected == null or selected.is_moving():
+	if selected == null or selected.is_moving() or not CombatManager.is_waiting_for_input():
 		return
 
 	var mouse_pos = get_global_mouse_position()
@@ -197,6 +239,32 @@ func _handle_grid_click() -> void:
 	# Note: If unit exists, their Area2D should have handled the click
 	# This is a fallback in case the click missed the Area2D
 
+# ===== ATTACK HANDLING (Task 1.7) =====
+func _handle_attack_click() -> void:
+	## Handle right-click to attack adjacent enemy
+	var selected = CombatManager.get_selected_unit()
+	if selected == null:
+		return
+
+	# Don't attack during movement or if not waiting for input
+	if selected.is_moving() or not CombatManager.is_waiting_for_input():
+		return
+
+	var mouse_pos = get_global_mouse_position()
+	var grid_pos = combat_grid.world_to_grid(mouse_pos)
+
+	# Find unit at clicked position
+	var target = get_unit_at_grid_pos(grid_pos)
+	if target == null:
+		return
+
+	# Attempt attack (CombatManager validates adjacency, turn, etc.)
+	if CombatManager.attempt_attack(selected, target):
+		# Attack succeeded - update occupied tiles in case of death
+		combat_grid.update_occupied_tiles(_units.filter(func(u): return u.is_alive()))
+		# Clear movement overlay since turn ended
+		combat_grid.clear_movement_overlay()
+
 # ===== DEBUG FUNCTIONS (Task 1.3) =====
 func _get_unit_under_mouse() -> Unit:
 	## Get the unit currently under the mouse cursor
@@ -243,3 +311,13 @@ func _debug_heal_hovered_unit() -> void:
 		])
 	else:
 		print("[Debug] No unit under cursor to heal")
+
+func _debug_end_turn() -> void:
+	## End the current turn (debug shortcut)
+	if CombatManager.is_battle_active():
+		var current_unit = CombatManager.get_current_turn_unit()
+		if current_unit and current_unit.is_friendly():
+			print("[Debug] Manually ending turn for %s" % current_unit.unit_name)
+			CombatManager.end_current_turn()
+		else:
+			print("[Debug] Cannot end turn - not a friendly unit's turn")

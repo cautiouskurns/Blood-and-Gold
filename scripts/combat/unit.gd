@@ -11,6 +11,8 @@ signal unit_damaged(unit: Unit, amount: int)
 signal unit_died(unit: Unit)
 signal movement_started(unit: Unit)
 signal movement_finished(unit: Unit)
+signal attack_initiated(attacker: Unit, target: Unit)
+signal attack_received(attacker: Unit, damage: int)
 
 # ===== ENUMS =====
 enum UnitType { PLAYER, THORNE, LYRA, MATTHIAS, ENEMY, INFANTRY, ARCHER }
@@ -18,6 +20,10 @@ enum UnitType { PLAYER, THORNE, LYRA, MATTHIAS, ENEMY, INFANTRY, ARCHER }
 # ===== CONSTANTS =====
 const SPRITE_SIZE: int = 56
 const MOVE_DURATION_PER_TILE: float = 0.15  # Seconds per tile (Task 1.5)
+const DEATH_FADE_DURATION: float = 0.5  # Death animation duration (Task 1.7)
+
+# ===== PRELOADS =====
+const DamageNumberScene = preload("res://scenes/UI/DamageNumber.tscn")
 
 # HP Bar colors from spec (Task 1.3)
 const COLOR_HP_HEALTHY: Color = Color("#27ae60")    # Green - HP > 25%
@@ -296,9 +302,17 @@ func heal(amount: int) -> void:
 	_update_hp_bar()
 
 func _die() -> void:
-	## Handle unit death
+	## Handle unit death with fade animation
 	unit_died.emit(self)
-	# Don't queue_free yet - let combat manager handle removal
+
+	# Disable click detection
+	if click_area:
+		click_area.input_pickable = false
+
+	# Fade out animation
+	var tween = create_tween()
+	tween.tween_property(self, "modulate:a", 0.0, DEATH_FADE_DURATION)
+	tween.tween_callback(queue_free)
 
 func get_hp_percentage() -> float:
 	## Get HP as percentage (0.0 to 1.0)
@@ -352,6 +366,66 @@ func _on_movement_complete(final_coords: Vector2i) -> void:
 	_is_moving = false
 	movement_finished.emit(self)
 	unit_moved.emit(self, old_pos, final_coords)
+
+# ===== ATTACK HANDLING (Task 1.7) =====
+func can_attack(target: Unit) -> bool:
+	## Check if this unit can attack the target
+	if target == null or target == self:
+		return false
+	if not is_alive() or not target.is_alive():
+		return false
+	if not AttackResolver.is_adjacent(self, target):
+		return false
+	if target.is_friendly() == is_friendly():
+		return false  # No friendly fire
+	return true
+
+func perform_attack(target: Unit) -> void:
+	## Execute an attack against the target
+	if not can_attack(target):
+		return
+
+	attack_initiated.emit(self, target)
+
+	# Resolve the attack
+	var result = AttackResolver.resolve_attack(self, target)
+
+	# Spawn damage number
+	_spawn_damage_number(target, result)
+
+	# Apply damage if hit
+	if result.hit:
+		target.take_damage(result.damage)
+		target.attack_received.emit(self, result.damage)
+
+	# Log the attack
+	print("[Unit] %s attacks %s: Roll %d + %d = %d vs DEF %d -> %s for %d damage%s" % [
+		unit_name,
+		target.unit_name,
+		result.roll,
+		result.total_attack - result.roll,
+		result.total_attack,
+		result.target_defense,
+		"HIT" if result.hit else "MISS",
+		result.damage,
+		" (CRITICAL!)" if result.is_critical else ""
+	])
+
+func _spawn_damage_number(target: Unit, result: AttackResolver.AttackResult) -> void:
+	## Create floating damage number at target
+	var damage_number = DamageNumberScene.instantiate() as DamageNumber
+
+	# Position above target
+	damage_number.global_position = target.global_position + Vector2(0, -30)
+
+	# Add to scene tree (use parent of target so it's in world space)
+	target.get_parent().add_child(damage_number)
+
+	# Display appropriate text
+	if result.hit:
+		damage_number.show_damage(result.damage, result.is_critical)
+	else:
+		damage_number.show_miss()
 
 # ===== STATIC HELPERS =====
 static func get_unit_display_name(type: UnitType) -> String:

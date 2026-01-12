@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://1bd0feo7xjmi"]
+[gd_scene load_steps=4 format=3 uid="uid://1bd0feo7xjmi"]
 
 [ext_resource type="PackedScene" uid="uid://c1combatgrid" path="res://scenes/combat/CombatGrid.tscn" id="1_combat_grid"]
 [ext_resource type="Script" path="res://scripts/main/main.gd" id="2_main"]
+[ext_resource type="PackedScene" uid="uid://turn_order_panel" path="res://scenes/UI/TurnOrderPanel.tscn" id="3_turn_order"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("2_main")
@@ -17,3 +18,11 @@ mouse_filter = 2
 color = Color(0.0509804, 0.0666667, 0.0901961, 1)
 
 [node name="CombatGrid" parent="." instance=ExtResource("1_combat_grid")]
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="TurnOrderPanel" parent="UILayer" instance=ExtResource("3_turn_order")]
+layout_mode = 1
+offset_top = 10.0
+offset_bottom = 70.0
