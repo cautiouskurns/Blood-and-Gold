@@ -15,6 +15,10 @@ signal canvas_changed()  # Emitted when any change is made (for dirty tracking)
 signal zoom_changed(new_zoom: float)  # Emitted when zoom level changes
 signal dialogue_node_selected(node: GraphNode)  # Renamed to avoid conflict with GraphEdit
 signal dialogue_node_deselected()  # Renamed to avoid conflict with GraphEdit
+signal undo_redo_changed()  # Emitted when undo/redo state changes
+
+# Undo/Redo system
+var _undo_redo: UndoRedo
 
 # Zoom configuration
 const ZOOM_MIN := 0.25
@@ -34,12 +38,26 @@ var _context_menu_position: Vector2
 # Zoom tracking
 var _last_zoom: float = 1.0
 
+# Movement tracking for undo/redo
+var _node_drag_start_positions: Dictionary = {}  # node_name -> Vector2
+var _is_dragging: bool = false
+
 
 func _ready() -> void:
+	# Initialize undo/redo system
+	_ensure_undo_redo()
+
 	# Configure GraphEdit properties
 	_setup_graph_edit()
 	_setup_context_menu()
 	_connect_signals()
+
+
+## Ensure undo/redo system is initialized.
+func _ensure_undo_redo() -> void:
+	if not _undo_redo:
+		_undo_redo = UndoRedo.new()
+		_undo_redo.max_steps = 100
 
 
 func _process(_delta: float) -> void:
@@ -110,6 +128,10 @@ func _connect_signals() -> void:
 	# Delete nodes
 	delete_nodes_request.connect(_on_delete_nodes_request)
 
+	# Node movement tracking for undo/redo
+	begin_node_move.connect(_on_begin_node_move)
+	end_node_move.connect(_on_end_node_move)
+
 
 # =============================================================================
 # CONNECTION TYPES SETUP
@@ -161,21 +183,23 @@ func _on_connection_request(from_node: StringName, from_port: int, to_node: Stri
 		if conn.from_node == from_node and conn.from_port == from_port and conn.to_node == to_node and conn.to_port == to_port:
 			return
 
-	# Create the connection
-	var error = connect_node(from_node, from_port, to_node, to_port)
-	if error == OK:
-		# Update node connection tracking
-		_track_connection_added(from_node, from_port, to_node, to_port)
-		canvas_changed.emit()
-		print("DialogueCanvas: Connected %s:%d -> %s:%d" % [from_node, from_port, to_node, to_port])
+	# Create the connection with undo/redo support
+	_ensure_undo_redo()
+	_undo_redo.create_action("Connect Nodes")
+	_undo_redo.add_do_method(self._do_connect_nodes.bind(String(from_node), from_port, String(to_node), to_port))
+	_undo_redo.add_undo_method(self._undo_connect_nodes.bind(String(from_node), from_port, String(to_node), to_port))
+	_undo_redo.commit_action()
+	undo_redo_changed.emit()
 
 
 func _on_disconnection_request(from_node: StringName, from_port: int, to_node: StringName, to_port: int) -> void:
-	disconnect_node(from_node, from_port, to_node, to_port)
-	# Update node connection tracking
-	_track_connection_removed(from_node, from_port, to_node, to_port)
-	canvas_changed.emit()
-	print("DialogueCanvas: Disconnected %s:%d -> %s:%d" % [from_node, from_port, to_node, to_port])
+	# Disconnect with undo/redo support
+	_ensure_undo_redo()
+	_undo_redo.create_action("Disconnect Nodes")
+	_undo_redo.add_do_method(self._do_disconnect_nodes.bind(String(from_node), from_port, String(to_node), to_port))
+	_undo_redo.add_undo_method(self._do_connect_nodes.bind(String(from_node), from_port, String(to_node), to_port))
+	_undo_redo.commit_action()
+	undo_redo_changed.emit()
 
 
 ## Check if a target node already has an incoming connection on the specified port.
@@ -210,6 +234,28 @@ func _track_connection_removed(from_node: StringName, from_port: int, to_node: S
 		target.remove_incoming_connection(String(from_node), from_port, to_port)
 
 
+## Do method for connecting nodes (used by undo/redo).
+func _do_connect_nodes(from_node: String, from_port: int, to_node: String, to_port: int) -> void:
+	var error = connect_node(from_node, from_port, to_node, to_port)
+	if error == OK:
+		_track_connection_added(from_node, from_port, to_node, to_port)
+		canvas_changed.emit()
+		print("DialogueCanvas: Connected %s:%d -> %s:%d" % [from_node, from_port, to_node, to_port])
+
+
+## Undo method for connecting nodes (disconnects them).
+func _undo_connect_nodes(from_node: String, from_port: int, to_node: String, to_port: int) -> void:
+	_do_disconnect_nodes(from_node, from_port, to_node, to_port)
+
+
+## Do method for disconnecting nodes (used by undo/redo).
+func _do_disconnect_nodes(from_node: String, from_port: int, to_node: String, to_port: int) -> void:
+	disconnect_node(from_node, from_port, to_node, to_port)
+	_track_connection_removed(from_node, from_port, to_node, to_port)
+	canvas_changed.emit()
+	print("DialogueCanvas: Disconnected %s:%d -> %s:%d" % [from_node, from_port, to_node, to_port])
+
+
 # =============================================================================
 # NODE SELECTION
 # =============================================================================
@@ -222,6 +268,68 @@ func _on_node_selected(node: Node) -> void:
 
 func _on_node_deselected(node: Node) -> void:
 	dialogue_node_deselected.emit()
+
+
+# =============================================================================
+# NODE MOVEMENT (UNDO/REDO)
+# =============================================================================
+
+func _on_begin_node_move() -> void:
+	_is_dragging = true
+	_node_drag_start_positions.clear()
+
+	# Store starting positions of all selected nodes
+	for child in get_children():
+		if child is DialogueNodeScript and child.selected:
+			_node_drag_start_positions[child.name] = child.position_offset
+
+
+func _on_end_node_move() -> void:
+	if not _is_dragging:
+		return
+	_is_dragging = false
+
+	# Check if any nodes actually moved
+	var moved_nodes: Array[Dictionary] = []
+	for node_name in _node_drag_start_positions:
+		var node = get_node_or_null(NodePath(node_name))
+		if node and node is DialogueNodeScript:
+			var start_pos = _node_drag_start_positions[node_name]
+			var end_pos = node.position_offset
+			if start_pos != end_pos:
+				moved_nodes.append({
+					"name": node_name,
+					"start_pos": start_pos,
+					"end_pos": end_pos
+				})
+
+	_node_drag_start_positions.clear()
+
+	if moved_nodes.is_empty():
+		return
+
+	# Create undo action for the movement
+	_ensure_undo_redo()
+	var action_name = "Move %d Node(s)" % moved_nodes.size() if moved_nodes.size() > 1 else "Move Node"
+	_undo_redo.create_action(action_name)
+
+	for move_data in moved_nodes:
+		_undo_redo.add_do_method(self._do_move_node.bind(move_data.name, move_data.end_pos))
+		_undo_redo.add_undo_method(self._do_move_node.bind(move_data.name, move_data.start_pos))
+
+	# Nodes are already at end positions, so we don't call do for the first time
+	# Instead, we just commit without executing
+	_undo_redo.commit_action(false)
+	undo_redo_changed.emit()
+	canvas_changed.emit()
+
+
+## Do method for moving a node (used by undo/redo).
+func _do_move_node(node_name: String, position: Vector2) -> void:
+	var node = get_node_or_null(NodePath(node_name))
+	if node and node is DialogueNodeScript:
+		node.position_offset = position
+		canvas_changed.emit()
 
 
 # =============================================================================
@@ -252,7 +360,25 @@ func _on_context_menu_id_pressed(id: int) -> void:
 			print("DialogueCanvas: Paste (not implemented)")
 
 
-func _create_dialogue_node(type: String, position: Vector2) -> GraphNode:
+func _create_dialogue_node(type: String, position: Vector2, use_undo_redo: bool = true) -> GraphNode:
+	var node_name = "%s_%d" % [type, _next_node_id]
+
+	if use_undo_redo:
+		# Create with undo/redo support
+		_ensure_undo_redo()
+		_undo_redo.create_action("Add %s Node" % type)
+		_undo_redo.add_do_method(self._do_create_node.bind(type, node_name, position))
+		_undo_redo.add_undo_method(self._undo_create_node.bind(node_name))
+		_undo_redo.commit_action()
+		undo_redo_changed.emit()
+		return get_node_or_null(NodePath(node_name))
+	else:
+		# Create directly without undo/redo (used for deserialization)
+		return _do_create_node_internal(type, node_name, position)
+
+
+## Internal method to actually create a node.
+func _do_create_node_internal(type: String, node_name: String, position: Vector2) -> GraphNode:
 	var node: GraphNode
 
 	# Create the appropriate node type using preloaded scripts
@@ -272,8 +398,8 @@ func _create_dialogue_node(type: String, position: Vector2) -> GraphNode:
 			return null
 
 	# Configure the node
-	node.name = "%s_%d" % [type, _next_node_id]
-	node.node_id = node.name
+	node.name = node_name
+	node.node_id = node_name
 	node.position_offset = position
 
 	# Connect to data changed signal
@@ -284,6 +410,31 @@ func _create_dialogue_node(type: String, position: Vector2) -> GraphNode:
 	canvas_changed.emit()
 	print("DialogueCanvas: Added %s node at %s" % [type, position])
 	return node
+
+
+## Do method for creating a node (used by undo/redo).
+func _do_create_node(type: String, node_name: String, position: Vector2) -> void:
+	_do_create_node_internal(type, node_name, position)
+
+
+## Undo method for creating a node (deletes it).
+func _undo_create_node(node_name: String) -> void:
+	var node = get_node_or_null(NodePath(node_name))
+	if node and node is DialogueNodeScript:
+		# Remove all connections to/from this node
+		var connections_to_remove: Array[Dictionary] = []
+		for conn in get_connection_list():
+			if String(conn.from_node) == node_name or String(conn.to_node) == node_name:
+				connections_to_remove.append(conn)
+
+		for conn in connections_to_remove:
+			disconnect_node(conn.from_node, conn.from_port, conn.to_node, conn.to_port)
+			_track_connection_removed(conn.from_node, conn.from_port, conn.to_node, conn.to_port)
+
+		node.clear_connections()
+		node.queue_free()
+		canvas_changed.emit()
+		print("DialogueCanvas: Undid creation of node %s" % node_name)
 
 
 func _on_node_data_changed(node: GraphNode) -> void:
@@ -326,32 +477,90 @@ func add_dialogue_node_at_center(node_type: String) -> GraphNode:
 # =============================================================================
 
 func _on_delete_nodes_request(nodes: Array[StringName]) -> void:
+	if nodes.is_empty():
+		return
+
+	# Ensure undo/redo is initialized
+	_ensure_undo_redo()
+
+	# Create a single undo action for all deletions
+	var action_name = "Delete %d Node(s)" % nodes.size() if nodes.size() > 1 else "Delete Node"
+	_undo_redo.create_action(action_name)
+
 	for node_name in nodes:
 		var node = get_node_or_null(NodePath(node_name))
 		if node and node is DialogueNodeScript:
-			# Remove all connections to/from this node and update tracking
-			var connections_to_remove: Array[Dictionary] = []
+			# Serialize node data for undo
+			var node_data = node.serialize()
+			var node_type = node.node_type
+
+			# Gather connections to/from this node
+			var node_connections: Array[Dictionary] = []
 			for conn in get_connection_list():
-				if conn.from_node == node_name or conn.to_node == node_name:
-					connections_to_remove.append(conn)
+				if String(conn.from_node) == String(node_name) or String(conn.to_node) == String(node_name):
+					node_connections.append({
+						"from_node": String(conn.from_node),
+						"from_port": conn.from_port,
+						"to_node": String(conn.to_node),
+						"to_port": conn.to_port
+					})
 
-			for conn in connections_to_remove:
-				disconnect_node(conn.from_node, conn.from_port, conn.to_node, conn.to_port)
-				_track_connection_removed(conn.from_node, conn.from_port, conn.to_node, conn.to_port)
+			# Add do/undo methods
+			_undo_redo.add_do_method(self._do_delete_node.bind(String(node_name)))
+			_undo_redo.add_undo_method(self._undo_delete_node.bind(node_type, node_data, node_connections))
 
-			# Clear the node's own tracking
-			node.clear_connections()
-			node.queue_free()
-			print("DialogueCanvas: Deleted node %s" % node_name)
+	_undo_redo.commit_action()
+	undo_redo_changed.emit()
 
-	canvas_changed.emit()
+
+## Do method for deleting a node (used by undo/redo).
+func _do_delete_node(node_name: String) -> void:
+	var node = get_node_or_null(NodePath(node_name))
+	if node and node is DialogueNodeScript:
+		# Remove all connections to/from this node
+		var connections_to_remove: Array[Dictionary] = []
+		for conn in get_connection_list():
+			if String(conn.from_node) == node_name or String(conn.to_node) == node_name:
+				connections_to_remove.append(conn)
+
+		for conn in connections_to_remove:
+			disconnect_node(conn.from_node, conn.from_port, conn.to_node, conn.to_port)
+			_track_connection_removed(conn.from_node, conn.from_port, conn.to_node, conn.to_port)
+
+		node.clear_connections()
+		node.queue_free()
+		canvas_changed.emit()
+		print("DialogueCanvas: Deleted node %s" % node_name)
+
+
+## Undo method for deleting a node (recreates it).
+func _undo_delete_node(node_type: String, node_data: Dictionary, connections: Array[Dictionary]) -> void:
+	# Recreate the node
+	var position = Vector2(
+		node_data.get("position_x", 0),
+		node_data.get("position_y", 0)
+	)
+	var node_name = node_data.get("id", "")
+
+	# We need to create the node without using undo/redo (since we're already in an undo action)
+	var node = _do_create_node_internal(node_type, node_name, position)
+	if node:
+		node.deserialize(node_data)
+
+		# Restore connections
+		for conn in connections:
+			connect_node(conn.from_node, conn.from_port, conn.to_node, conn.to_port)
+			_track_connection_added(conn.from_node, conn.from_port, conn.to_node, conn.to_port)
+
+		canvas_changed.emit()
+		print("DialogueCanvas: Restored node %s" % node_name)
 
 
 # =============================================================================
 # PUBLIC API
 # =============================================================================
 
-func clear_canvas() -> void:
+func clear_canvas(clear_undo_history: bool = true) -> void:
 	"""Remove all nodes and connections."""
 	# Clear connections first
 	clear_connections()
@@ -363,6 +572,12 @@ func clear_canvas() -> void:
 			child.queue_free()
 
 	_next_node_id = 1
+
+	# Clear undo history when starting fresh
+	if clear_undo_history and _undo_redo:
+		_undo_redo.clear_history()
+		undo_redo_changed.emit()
+
 	canvas_changed.emit()
 
 
@@ -412,8 +627,8 @@ func serialize() -> Dictionary:
 
 func deserialize(data: Dictionary) -> void:
 	"""Load a dialogue tree from a Dictionary."""
-	# Clear existing content
-	clear_canvas()
+	# Clear existing content (without undo tracking)
+	clear_canvas(false)
 
 	# Restore view settings
 	if data.has("scroll_offset"):
@@ -421,7 +636,7 @@ func deserialize(data: Dictionary) -> void:
 	if data.has("zoom"):
 		zoom = data.zoom
 
-	# Create nodes
+	# Create nodes (without undo/redo - we're loading, not user action)
 	var node_map := {}  # Maps old node IDs to new node names
 	if data.has("nodes"):
 		for node_data in data.nodes:
@@ -431,18 +646,22 @@ func deserialize(data: Dictionary) -> void:
 				node_data.get("position_y", 0)
 			)
 
-			var node = _create_dialogue_node(node_type, position)
+			var node = _create_dialogue_node(node_type, position, false)  # false = no undo/redo
 			if node:
 				node.deserialize(node_data)
 				node_map[node_data.get("id", "")] = node.name
 
-	# Restore connections
+	# Restore connections (without undo tracking)
 	if data.has("connections"):
 		for conn in data.connections:
 			var from_name = node_map.get(conn.from_node, conn.from_node)
 			var to_name = node_map.get(conn.to_node, conn.to_node)
 			connect_node(from_name, conn.from_port, to_name, conn.to_port)
+			_track_connection_added(from_name, conn.from_port, to_name, conn.to_port)
 
+	# Clear undo history after loading a file
+	_undo_redo.clear_history()
+	undo_redo_changed.emit()
 	canvas_changed.emit()
 
 
@@ -528,3 +747,97 @@ func get_dead_end_nodes() -> Array[GraphNode]:
 			if not has_outgoing:
 				dead_ends.append(child)
 	return dead_ends
+
+
+# =============================================================================
+# UNDO/REDO PUBLIC API
+# =============================================================================
+
+## Perform an undo operation.
+func undo() -> void:
+	if _undo_redo and _undo_redo.has_undo():
+		_undo_redo.undo()
+		undo_redo_changed.emit()
+		canvas_changed.emit()
+
+
+## Perform a redo operation.
+func redo() -> void:
+	if _undo_redo and _undo_redo.has_redo():
+		_undo_redo.redo()
+		undo_redo_changed.emit()
+		canvas_changed.emit()
+
+
+## Check if undo is available.
+func has_undo() -> bool:
+	return _undo_redo and _undo_redo.has_undo()
+
+
+## Check if redo is available.
+func has_redo() -> bool:
+	return _undo_redo and _undo_redo.has_redo()
+
+
+## Get the name of the current undo action.
+func get_current_action_name() -> String:
+	if _undo_redo and _undo_redo.has_undo():
+		return _undo_redo.get_current_action_name()
+	return ""
+
+
+## Get the name of the next redo action.
+func get_redo_action_name() -> String:
+	# UndoRedo doesn't directly expose this, but we can check if redo is available
+	if _undo_redo and _undo_redo.has_redo():
+		return "Redo"
+	return ""
+
+
+## Record a property change for undo/redo.
+## Call this before making a property change to a node.
+func begin_property_change(node: GraphNode, property_name: String, old_value: Variant) -> void:
+	if not node or not _undo_redo:
+		return
+
+	# Store the pending change info
+	_pending_property_change = {
+		"node_name": node.name,
+		"property": property_name,
+		"old_value": old_value
+	}
+
+
+## Complete the property change for undo/redo.
+## Call this after making a property change to a node.
+func end_property_change(node: GraphNode, property_name: String, new_value: Variant) -> void:
+	if not node or not _undo_redo:
+		return
+
+	if not _pending_property_change or _pending_property_change.node_name != node.name:
+		return
+
+	var old_value = _pending_property_change.old_value
+	_pending_property_change = {}
+
+	if old_value == new_value:
+		return
+
+	_ensure_undo_redo()
+	_undo_redo.create_action("Change %s" % property_name.capitalize())
+	_undo_redo.add_do_method(self._do_set_property.bind(node.name, property_name, new_value))
+	_undo_redo.add_undo_method(self._do_set_property.bind(node.name, property_name, old_value))
+	_undo_redo.commit_action(false)  # Don't execute, property is already changed
+	undo_redo_changed.emit()
+
+
+## Do method for setting a property (used by undo/redo).
+func _do_set_property(node_name: String, property_name: String, value: Variant) -> void:
+	var node = get_node_or_null(NodePath(node_name))
+	if node:
+		node.set(property_name, value)
+		canvas_changed.emit()
+
+
+# Pending property change for undo/redo
+var _pending_property_change: Dictionary = {}

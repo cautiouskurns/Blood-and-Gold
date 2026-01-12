@@ -5,9 +5,10 @@ class_name AbilityTooltip
 extends PanelContainer
 
 # ===== CONSTANTS =====
-const TOOLTIP_WIDTH: float = 250.0
-const FADE_DURATION: float = 0.15
-const HOVER_DELAY: float = 0.3
+const TOOLTIP_WIDTH: float = 180.0  # Compact width
+const FADE_DURATION: float = 0.1  # Faster fade
+const HOVER_DELAY: float = 0.2  # Shorter delay before showing
+const HIDE_GRACE_PERIOD: float = 0.15  # Grace period before hiding
 
 # Colors
 const COLOR_BG: Color = Color("#0d0d1a")
@@ -28,7 +29,9 @@ const COLOR_UNAVAILABLE: Color = Color("#e74c3c")
 
 # ===== STATE =====
 var _hover_timer: float = 0.0
+var _hide_timer: float = 0.0  # Grace period timer for hiding
 var _is_hovering: bool = false
+var _wants_to_hide: bool = false  # Flag for delayed hide
 var _pending_ability: Dictionary = {}
 var _pending_unit: Unit = null
 var _fade_tween: Tween = null
@@ -41,27 +44,37 @@ func _ready() -> void:
 	_setup_style()
 
 func _process(delta: float) -> void:
+	# Handle showing after hover delay
 	if _is_hovering and not visible:
 		_hover_timer += delta
 		if _hover_timer >= HOVER_DELAY:
 			_show_tooltip()
 
+	# Handle hiding with grace period (prevents flickering)
+	if _wants_to_hide:
+		_hide_timer += delta
+		if _hide_timer >= HIDE_GRACE_PERIOD:
+			_wants_to_hide = false
+			_hide_timer = 0.0
+			_do_hide()
+
 func _setup_style() -> void:
-	## Configure tooltip visual style
+	## Configure tooltip visual style - subtle and unobtrusive
 	var style = StyleBoxFlat.new()
 	style.bg_color = COLOR_BG
-	style.bg_color.a = 0.95
+	style.bg_color.a = 0.92
 	style.border_color = COLOR_BORDER
+	style.border_color.a = 0.6  # More subtle border
 	style.border_width_left = 1
 	style.border_width_top = 1
 	style.border_width_right = 1
 	style.border_width_bottom = 1
-	style.corner_radius_top_left = 4
-	style.corner_radius_top_right = 4
-	style.corner_radius_bottom_left = 4
-	style.corner_radius_bottom_right = 4
-	style.shadow_color = Color(0, 0, 0, 0.5)
-	style.shadow_size = 4
+	style.corner_radius_top_left = 3
+	style.corner_radius_top_right = 3
+	style.corner_radius_bottom_left = 3
+	style.corner_radius_bottom_right = 3
+	style.shadow_color = Color(0, 0, 0, 0.3)
+	style.shadow_size = 2
 	add_theme_stylebox_override("panel", style)
 
 # ===== PUBLIC API =====
@@ -71,11 +84,38 @@ func prepare_tooltip(ability_data: Dictionary, unit: Unit) -> void:
 	_pending_unit = unit
 	_is_hovering = true
 	_hover_timer = 0.0
+	# Cancel any pending hide
+	_wants_to_hide = false
+	_hide_timer = 0.0
 
 func cancel_hover() -> void:
 	## Cancel hover (called on hover end)
 	_is_hovering = false
 	_hover_timer = 0.0
+
+	# Start grace period timer instead of hiding immediately
+	if visible:
+		_wants_to_hide = true
+		_hide_timer = 0.0
+	else:
+		# Not visible yet, just clear pending data
+		_pending_ability = {}
+		_pending_unit = null
+
+
+func force_hide() -> void:
+	## Force immediate hide (e.g., when clicking ability)
+	_is_hovering = false
+	_hover_timer = 0.0
+	_wants_to_hide = false
+	_hide_timer = 0.0
+	_pending_ability = {}
+	_pending_unit = null
+	_do_hide()
+
+
+func _do_hide() -> void:
+	## Actually perform the hide
 	_pending_ability = {}
 	_pending_unit = null
 	_hide_tooltip()
@@ -99,6 +139,10 @@ func _show_tooltip() -> void:
 		return
 
 	_populate_content()
+
+	# Reset size to fit content
+	reset_size()
+
 	visible = true
 
 	if _fade_tween and _fade_tween.is_running():
@@ -216,7 +260,7 @@ func _add_stat(stat_name: String, stat_value: String) -> void:
 	var name_lbl = Label.new()
 	name_lbl.text = stat_name + ":"
 	name_lbl.add_theme_color_override("font_color", COLOR_STAT)
-	name_lbl.add_theme_font_size_override("font_size", 11)
+	name_lbl.add_theme_font_size_override("font_size", 9)
 	row.add_child(name_lbl)
 
 	var spacer = Control.new()
@@ -226,7 +270,7 @@ func _add_stat(stat_name: String, stat_value: String) -> void:
 	var value_lbl = Label.new()
 	value_lbl.text = stat_value
 	value_lbl.add_theme_color_override("font_color", COLOR_DESCRIPTION)
-	value_lbl.add_theme_font_size_override("font_size", 11)
+	value_lbl.add_theme_font_size_override("font_size", 9)
 	row.add_child(value_lbl)
 
 	stats_container.add_child(row)
@@ -272,15 +316,15 @@ func _add_warning(warning_text: String) -> void:
 	var warning = Label.new()
 	warning.text = "! " + warning_text
 	warning.add_theme_color_override("font_color", COLOR_WARNING)
-	warning.add_theme_font_size_override("font_size", 10)
+	warning.add_theme_font_size_override("font_size", 9)
 	warnings_container.add_child(warning)
 
 func _clamp_to_screen(pos: Vector2) -> Vector2:
 	## Ensure tooltip stays within screen bounds
 	var viewport_size = get_viewport_rect().size
 
-	# Use current size or estimate (250x180 is typical tooltip size)
-	var tooltip_size = size if size.x > 0 else Vector2(TOOLTIP_WIDTH, 180)
+	# Use current size or estimate - compact tooltip
+	var tooltip_size = size if size.x > 0 else Vector2(TOOLTIP_WIDTH, 100)
 
 	# Clamp position
 	var clamped = pos
@@ -304,5 +348,5 @@ func _clamp_to_screen(pos: Vector2) -> Vector2:
 # ===== STATIC POSITIONING =====
 func position_above(global_pos: Vector2, offset_amount: float = 10.0) -> void:
 	## Position tooltip above a point
-	var tooltip_size = size if size.x > 0 else Vector2(TOOLTIP_WIDTH, 180)
+	var tooltip_size = size if size.x > 0 else Vector2(TOOLTIP_WIDTH, 100)
 	position = _clamp_to_screen(Vector2(global_pos.x - tooltip_size.x / 2, global_pos.y - tooltip_size.y - offset_amount))

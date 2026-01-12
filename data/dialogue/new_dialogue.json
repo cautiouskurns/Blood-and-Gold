@@ -1,0 +1,32 @@
+{
+	"dialogue_id": "new_dialogue",
+	"nodes": {
+		"Branch_3": {
+			"condition_key": "",
+			"condition_type": "flag_check",
+			"condition_value": "",
+			"next": [],
+			"type": "branch"
+		},
+		"End_2": {
+			"end_type": "normal",
+			"next": [],
+			"type": "end"
+		},
+		"Speaker_1": {
+			"next": [
+				{
+					"target": "End_2"
+				},
+				{
+					"target": "Branch_3"
+				}
+			],
+			"speaker": "NPC",
+			"text": "",
+			"type": "speaker"
+		}
+	},
+	"start_node": "",
+	"version": 1
+}

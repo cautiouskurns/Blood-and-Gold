@@ -545,20 +545,9 @@ func _update_visual() -> void:
 	_update_letter_label()
 
 func _generate_sprite_texture() -> void:
-	## Generate a colored square texture for the unit
-	var image = Image.create(SPRITE_SIZE, SPRITE_SIZE, false, Image.FORMAT_RGBA8)
-
-	var fill_color = UNIT_COLORS.get(unit_type, Color.WHITE)
-	var border_color = UNIT_BORDER_COLORS.get(unit_type, Color.GRAY)
-
-	# Draw filled rectangle with 2px border
-	for x in range(SPRITE_SIZE):
-		for y in range(SPRITE_SIZE):
-			var is_border = (x < 2 or x >= SPRITE_SIZE - 2 or y < 2 or y >= SPRITE_SIZE - 2)
-			var color = border_color if is_border else fill_color
-			image.set_pixel(x, y, color)
-
-	var texture = ImageTexture.create_from_image(image)
+	## Generate a distinctive sprite for the unit using UnitSpriteGenerator
+	## Task 5.1: Programmatic Visual Assets
+	var texture = UnitSpriteGenerator.generate_sprite(unit_type)
 	sprite.texture = texture
 	sprite.centered = true
 

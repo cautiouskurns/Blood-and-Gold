@@ -90,20 +90,33 @@ func deserialize(data: Dictionary) -> void:
 
 ## Apply a color theme to this node.
 func apply_color_theme(base_color: Color) -> void:
+	# Normal panel style
 	var style = StyleBoxFlat.new()
 	style.bg_color = base_color.darkened(0.7)
 	style.border_color = base_color
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(4)
 	add_theme_stylebox_override("panel", style)
-	add_theme_stylebox_override("panel_selected", style)
+
+	# Selected panel style - brighter border and glow effect
+	var selected_style = StyleBoxFlat.new()
+	selected_style.bg_color = base_color.darkened(0.6)
+	selected_style.border_color = Color.WHITE
+	selected_style.set_border_width_all(3)
+	selected_style.set_corner_radius_all(4)
+	add_theme_stylebox_override("panel_selected", selected_style)
 
 	# Title bar color
 	var titlebar_style = StyleBoxFlat.new()
 	titlebar_style.bg_color = base_color.darkened(0.4)
 	titlebar_style.set_corner_radius_all(4)
 	add_theme_stylebox_override("titlebar", titlebar_style)
-	add_theme_stylebox_override("titlebar_selected", titlebar_style)
+
+	# Selected title bar - brighter
+	var titlebar_selected_style = StyleBoxFlat.new()
+	titlebar_selected_style.bg_color = base_color.darkened(0.2)
+	titlebar_selected_style.set_corner_radius_all(4)
+	add_theme_stylebox_override("titlebar_selected", titlebar_selected_style)
 
 
 ## Helper to emit data_changed signal

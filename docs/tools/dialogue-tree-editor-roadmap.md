@@ -264,29 +264,29 @@ graph LR
 **Dependencies:** Feature 1.6
 
 **Implementation Tasks:**
-- [ ] Define export JSON structure (per spec - runtime format)
-- [ ] Create `dialogue_exporter.gd` utility
-- [ ] Transform internal format to game format:
-  - [ ] Flatten node structure
-  - [ ] Convert connections to "next" arrays
-  - [ ] Strip editor-only data (positions)
-  - [ ] Identify start node
-- [ ] Add Export menu item (Ctrl+E)
-- [ ] Add Export button to toolbar
-- [ ] Default export location: `res://data/dialogue/`
-- [ ] Auto-name export file from dialogue_id
+- [x] Define export JSON structure (per spec - runtime format)
+- [x] Create `dialogue_exporter.gd` utility
+- [x] Transform internal format to game format:
+  - [x] Flatten node structure
+  - [x] Convert connections to "next" arrays
+  - [x] Strip editor-only data (positions)
+  - [x] Identify start node
+- [x] Add Export menu item (Ctrl+E)
+- [x] Add Export button to toolbar
+- [x] Default export location: `res://data/dialogue/`
+- [x] Auto-name export file from dialogue_id
 
 **Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/dialogue_exporter.gd`
-- `addons/dialogue_editor/scripts/main_panel.gd`
+- `addons/dialogue_editor/scripts/dialogue_exporter.gd` ✓
+- `addons/dialogue_editor/scripts/main_panel.gd` ✓
 
 **Success Criteria:**
-- [ ] Export produces valid JSON
-- [ ] Exported format matches spec exactly
-- [ ] Start node correctly identified
-- [ ] All connections converted to "next" references
-- [ ] No editor data in export (positions, etc.)
-- [ ] Game can load and parse exported JSON
+- [x] Export produces valid JSON
+- [x] Exported format matches spec exactly
+- [x] Start node correctly identified
+- [x] All connections converted to "next" references
+- [x] No editor data in export (positions, etc.)
+- [x] Game can load and parse exported JSON
 
 ---
 
@@ -297,39 +297,39 @@ graph LR
 **Dependencies:** Feature 1.5
 
 **Implementation Tasks:**
-- [ ] Integrate Godot's UndoRedo class
-- [ ] Wrap node creation in undo action
-- [ ] Wrap node deletion in undo action
-- [ ] Wrap connection creation in undo action
-- [ ] Wrap connection deletion in undo action
-- [ ] Wrap node property changes in undo action
-- [ ] Wrap node movement in undo action
-- [ ] Add Edit menu with Undo/Redo
-- [ ] Implement Ctrl+Z (undo) and Ctrl+Shift+Z (redo)
-- [ ] Show action name in Edit menu
+- [x] Integrate Godot's UndoRedo class
+- [x] Wrap node creation in undo action
+- [x] Wrap node deletion in undo action
+- [x] Wrap connection creation in undo action
+- [x] Wrap connection deletion in undo action
+- [x] Wrap node property changes in undo action
+- [x] Wrap node movement in undo action
+- [x] Add Edit menu with Undo/Redo (keyboard shortcuts implemented)
+- [x] Implement Ctrl+Z (undo) and Ctrl+Shift+Z (redo)
+- [x] Show action name in Edit menu (via get_current_action_name API)
 
 **Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/dialogue_canvas.gd`
-- `addons/dialogue_editor/scripts/main_panel.gd`
+- `addons/dialogue_editor/scripts/dialogue_canvas.gd` ✓
+- `addons/dialogue_editor/scripts/main_panel.gd` ✓
 
 **Success Criteria:**
-- [ ] Can undo node creation
-- [ ] Can undo node deletion
-- [ ] Can undo connection changes
-- [ ] Can undo property edits
-- [ ] Can redo all above
-- [ ] Undo history survives node selection changes
-- [ ] Keyboard shortcuts work
+- [x] Can undo node creation
+- [x] Can undo node deletion
+- [x] Can undo connection changes
+- [x] Can undo property edits
+- [x] Can redo all above
+- [x] Undo history survives node selection changes
+- [x] Keyboard shortcuts work
 
 ---
 
-### Phase 1 Technical Setup
+### Phase 1 Technical Setup ✅
 
-- [ ] Create `addons/dialogue_editor/` directory structure
-- [ ] Create `plugin.cfg` with metadata
-- [ ] Create `plugin.gd` EditorPlugin base
-- [ ] Enable plugin in Project Settings
-- [ ] Create `res://data/dialogue/` directory for exports
+- [x] Create `addons/dialogue_editor/` directory structure
+- [x] Create `plugin.cfg` with metadata
+- [x] Create `plugin.gd` EditorPlugin base
+- [x] Enable plugin in Project Settings
+- [x] Create `res://data/dialogue/` directory for exports
 
 ---
 
@@ -744,15 +744,15 @@ Ideas that might be valuable but aren't committed:
 
 ## Progress Tracking
 
-### Phase 1 Progress
+### Phase 1 Progress ✅ COMPLETE
 - [x] Feature 1.1: Plugin Setup
 - [x] Feature 1.2: Visual Node Canvas
 - [x] Feature 1.3: Node Palette
 - [x] Feature 1.4: Core Node Types
 - [x] Feature 1.5: Node Connections
 - [x] Feature 1.6: Save/Load System
-- [ ] Feature 1.7: JSON Export
-- [ ] Feature 1.8: Undo/Redo System
+- [x] Feature 1.7: JSON Export
+- [x] Feature 1.8: Undo/Redo System
 
 ### Phase 2 Progress
 - [ ] Feature 2.1: Advanced Node Types

@@ -4,6 +4,7 @@ extends Control
 ## Manages the toolbar, node palette, canvas, file operations, and status bar.
 
 const DialogueTreeDataScript = preload("res://addons/dialogue_editor/scripts/dialogue_tree_data.gd")
+const DialogueExporterScript = preload("res://addons/dialogue_editor/scripts/dialogue_exporter.gd")
 
 # Default save directory
 const DEFAULT_DIALOGUE_DIR := "res://data/dialogue/"
@@ -26,6 +27,7 @@ const DEFAULT_DIALOGUE_DIR := "res://data/dialogue/"
 # File dialogs
 var _open_dialog: FileDialog
 var _save_dialog: FileDialog
+var _export_dialog: FileDialog
 var _confirm_dialog: ConfirmationDialog
 var _pending_action: String = ""  # Tracks what to do after confirmation
 
@@ -74,6 +76,18 @@ func _input(event: InputEvent) -> void:
 					else:
 						_on_save_pressed()
 					handled = true
+				KEY_E:  # Ctrl+E - Export
+					_on_export_pressed()
+					handled = true
+				KEY_Z:  # Ctrl+Z - Undo / Ctrl+Shift+Z - Redo
+					if event.shift_pressed:
+						_on_redo_pressed()
+					else:
+						_on_undo_pressed()
+					handled = true
+				KEY_Y:  # Ctrl+Y - Redo (alternative)
+					_on_redo_pressed()
+					handled = true
 
 		if handled:
 			get_viewport().set_input_as_handled()
@@ -102,6 +116,17 @@ func _setup_dialogs() -> void:
 	_save_dialog.file_selected.connect(_on_save_file_selected)
 	add_child(_save_dialog)
 
+	# Export file dialog
+	_export_dialog = FileDialog.new()
+	_export_dialog.name = "ExportDialog"
+	_export_dialog.title = "Export Dialogue to JSON"
+	_export_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	_export_dialog.access = FileDialog.ACCESS_RESOURCES
+	_export_dialog.filters = PackedStringArray([DialogueExporterScript.get_file_filter()])
+	_export_dialog.current_dir = DialogueExporterScript.DEFAULT_EXPORT_DIR
+	_export_dialog.file_selected.connect(_on_export_file_selected)
+	add_child(_export_dialog)
+
 	# Confirmation dialog for unsaved changes
 	_confirm_dialog = ConfirmationDialog.new()
 	_confirm_dialog.name = "ConfirmDialog"
@@ -122,6 +147,16 @@ func _ensure_dialogue_directory() -> void:
 			print("DialogueEditor: Created dialogue directory: %s" % DEFAULT_DIALOGUE_DIR)
 		else:
 			push_warning("DialogueEditor: Could not create dialogue directory: %s" % DEFAULT_DIALOGUE_DIR)
+
+
+func _ensure_export_directory() -> void:
+	var export_dir = DialogueExporterScript.DEFAULT_EXPORT_DIR
+	if not DirAccess.dir_exists_absolute(export_dir):
+		var err = DirAccess.make_dir_recursive_absolute(export_dir)
+		if err == OK:
+			print("DialogueEditor: Created export directory: %s" % export_dir)
+		else:
+			push_warning("DialogueEditor: Could not create export directory: %s" % export_dir)
 
 
 func _connect_palette_signals() -> void:
@@ -218,13 +253,38 @@ func _on_save_as_pressed() -> void:
 
 
 func _on_export_pressed() -> void:
-	# TODO: Export to JSON (Feature 1.7)
-	print("DialogueEditor: Export JSON (Feature 1.7)")
+	if not dialogue_canvas or not dialogue_canvas.is_inside_tree():
+		push_warning("DialogueEditor: No canvas available for export")
+		return
+
+	# Ensure export directory exists
+	_ensure_export_directory()
+
+	# Set default filename based on dialogue_id
+	var export_id = dialogue_id if not dialogue_id.is_empty() else "unnamed_dialogue"
+	_export_dialog.current_file = export_id + ".json"
+	_export_dialog.popup_centered_ratio(0.7)
 
 
 func _on_validate_pressed() -> void:
 	# TODO: Validate tree (Feature 2.4)
 	print("DialogueEditor: Validate (Feature 2.4)")
+
+
+func _on_undo_pressed() -> void:
+	if dialogue_canvas and dialogue_canvas.is_inside_tree():
+		if dialogue_canvas.has_method("undo") and dialogue_canvas.has_method("has_undo"):
+			if dialogue_canvas.has_undo():
+				dialogue_canvas.undo()
+				print("DialogueEditor: Undo")
+
+
+func _on_redo_pressed() -> void:
+	if dialogue_canvas and dialogue_canvas.is_inside_tree():
+		if dialogue_canvas.has_method("redo") and dialogue_canvas.has_method("has_redo"):
+			if dialogue_canvas.has_redo():
+				dialogue_canvas.redo()
+				print("DialogueEditor: Redo")
 
 
 func _on_reset_view_pressed() -> void:
@@ -256,6 +316,44 @@ func _on_save_file_selected(path: String) -> void:
 	elif _pending_action == "save_then_open":
 		_pending_action = ""
 		_do_open()
+
+
+func _on_export_file_selected(path: String) -> void:
+	# Ensure .json extension
+	if not path.ends_with(".json"):
+		path += ".json"
+	_export_to_file(path)
+
+
+func _export_to_file(path: String) -> void:
+	if not dialogue_canvas or not dialogue_canvas.is_inside_tree():
+		push_error("DialogueEditor: Canvas not available for export")
+		return
+
+	# Determine dialogue_id for export
+	var export_id = dialogue_id
+	if export_id.is_empty():
+		export_id = path.get_file().get_basename()
+
+	# Validate before export
+	var export_data = DialogueExporterScript.export_from_canvas(dialogue_canvas, export_id)
+	if export_data.is_empty():
+		push_error("DialogueEditor: Failed to generate export data")
+		return
+
+	# Validate the export
+	var validation_errors = DialogueExporterScript.validate_export(export_data)
+	if not validation_errors.is_empty():
+		push_warning("DialogueEditor: Export validation warnings:")
+		for error in validation_errors:
+			push_warning("  - %s" % error)
+
+	# Export to file
+	var err = DialogueExporterScript.export_to_file(dialogue_canvas, export_id, path)
+	if err == OK:
+		print("DialogueEditor: Exported to %s" % path)
+	else:
+		push_error("DialogueEditor: Export failed (error: %d)" % err)
 
 
 func _save_to_file(path: String) -> void:
@@ -323,23 +421,28 @@ func _load_from_file(path: String) -> void:
 
 func _on_confirm_save() -> void:
 	# User chose "Save"
+	_confirm_dialog.hide()
 	if current_file_path.is_empty():
 		# Need to do Save As first, then continue pending action
 		if _pending_action == "new":
 			_pending_action = "save_then_new"
 		elif _pending_action == "open":
 			_pending_action = "save_then_open"
-		_on_save_as_pressed()
+		# Use call_deferred to ensure dialog is fully closed
+		call_deferred("_on_save_as_pressed")
 	else:
 		_save_to_file(current_file_path)
-		_continue_pending_action()
+		# Use call_deferred to ensure dialog is fully closed
+		call_deferred("_continue_pending_action")
 
 
 func _on_confirm_custom_action(action: StringName) -> void:
 	if action == "dont_save":
 		# User chose "Don't Save" - continue without saving
 		is_dirty = false
-		_continue_pending_action()
+		_confirm_dialog.hide()
+		# Use call_deferred to ensure dialog is fully closed before opening another
+		call_deferred("_continue_pending_action")
 
 
 func _on_confirm_canceled() -> void:
@@ -348,15 +451,13 @@ func _on_confirm_canceled() -> void:
 
 
 func _continue_pending_action() -> void:
-	match _pending_action:
+	var action = _pending_action
+	_pending_action = ""
+	match action:
 		"new":
-			_pending_action = ""
 			_do_new()
 		"open":
-			_pending_action = ""
 			_do_open()
-		_:
-			_pending_action = ""
 
 
 # =============================================================================

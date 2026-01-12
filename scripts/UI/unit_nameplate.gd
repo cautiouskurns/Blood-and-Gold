@@ -167,25 +167,15 @@ func _update_status_icons() -> void:
 			status_container.add_child(icon)
 
 func _create_status_icon(effect: Dictionary) -> TextureRect:
-	## Create a status icon for an effect
+	## Create a status icon for an effect using StatusIconGenerator
+	## Task 5.1: Programmatic Visual Assets
 	var icon = TextureRect.new()
 	icon.custom_minimum_size = Vector2(STATUS_ICON_SIZE, STATUS_ICON_SIZE)
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 
-	# Create colored placeholder icon based on effect type
-	var image = Image.create(STATUS_ICON_SIZE, STATUS_ICON_SIZE, false, Image.FORMAT_RGBA8)
-	var color = _get_status_color(effect.get("type", ""))
-
-	# Draw circle
-	var center = Vector2(STATUS_ICON_SIZE / 2, STATUS_ICON_SIZE / 2)
-	var radius = STATUS_ICON_SIZE / 2 - 1
-	for x in range(STATUS_ICON_SIZE):
-		for y in range(STATUS_ICON_SIZE):
-			var dist = Vector2(x, y).distance_to(center)
-			if dist <= radius:
-				image.set_pixel(x, y, color)
-
-	icon.texture = ImageTexture.create_from_image(image)
+	# Use StatusIconGenerator to create the icon texture
+	var effect_type = effect.get("type", "")
+	icon.texture = StatusIconGenerator.generate_icon(effect_type)
 
 	# Set tooltip
 	icon.tooltip_text = "%s (%d)" % [effect.get("type", "Unknown"), effect.get("duration", 0)]

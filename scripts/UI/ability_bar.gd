@@ -172,11 +172,12 @@ func _populate_buttons() -> void:
 			_set_button_availability(button_data, false)
 
 func _get_ability_icon(ability: Dictionary) -> Texture2D:
-	## Get icon texture for ability (placeholder for now)
-	var icon_path = ability.get("icon", "")
-	if icon_path and ResourceLoader.exists(icon_path):
-		return load(icon_path)
-	# Return placeholder icon
+	## Get icon texture for ability using AbilityIconGenerator
+	## Task 5.1: Programmatic Visual Assets
+	var ability_id = ability.get("id", "")
+	if ability_id and not ability_id.begins_with("none"):
+		return AbilityIconGenerator.generate_icon(ability_id)
+	# Return placeholder for empty slots
 	return _create_placeholder_icon()
 
 func _create_placeholder_icon() -> Texture2D:
@@ -230,7 +231,7 @@ func _on_ability_pressed(index: int) -> void:
 
 	# Hide tooltip immediately when clicking (Task 4.3)
 	if _tooltip:
-		_tooltip.cancel_hover()
+		_tooltip.force_hide()
 
 	var ability = _abilities[index]
 	var ability_id = ability.get("id", "")
@@ -369,11 +370,17 @@ func _hide_attack_range_overlay() -> void:
 		_current_unit.combat_grid.hide_attack_range()
 
 # ===== TOOLTIP METHODS (Task 4.3) =====
+var _tooltip_layer: CanvasLayer = null
+
 func _setup_tooltip() -> void:
 	## Create and configure the ability tooltip
 	_tooltip = AbilityTooltipScene.instantiate()
-	# Add to CanvasLayer or root to ensure it appears above everything
-	get_tree().root.add_child.call_deferred(_tooltip)
+
+	# Create a CanvasLayer with higher layer to ensure tooltip appears above UI
+	_tooltip_layer = CanvasLayer.new()
+	_tooltip_layer.layer = 100  # Higher than UILayer (10) to appear on top
+	get_tree().root.add_child.call_deferred(_tooltip_layer)
+	_tooltip_layer.add_child.call_deferred(_tooltip)
 
 func _on_button_hover_start(index: int) -> void:
 	## Handle mouse entering ability button
@@ -388,16 +395,23 @@ func _on_button_hover_start(index: int) -> void:
 	var icon_button: TextureButton = button_data["icon"]
 	var button_rect = icon_button.get_global_rect()
 
-	# Position tooltip above the button
+	# Position tooltip above and slightly to the right of the button
+	# with enough offset to not overlap the icon
+	var tooltip_width = 180  # Compact tooltip width
+	var vertical_offset = 20  # Gap above the button
 	var tooltip_pos = Vector2(
-		button_rect.position.x + button_rect.size.x / 2 - 125,  # Center the 250px tooltip
-		button_rect.position.y - 10  # Above button
+		button_rect.position.x + button_rect.size.x / 2 - tooltip_width / 2,  # Center on button
+		button_rect.position.y - vertical_offset  # Position will be adjusted by tooltip
 	)
 
-	# Prepare and show tooltip
+	# Prepare and show tooltip (tooltip will clamp to screen and position itself)
 	if _tooltip and _current_unit:
 		_tooltip.prepare_tooltip(ability, _current_unit)
-		_tooltip.position = tooltip_pos
+		# Use position_above for better positioning
+		_tooltip.position_above(Vector2(
+			button_rect.position.x + button_rect.size.x / 2,
+			button_rect.position.y
+		), 15)  # 15px gap above the button
 
 	# Emit signal
 	ability_hover_started.emit(index, ability)
