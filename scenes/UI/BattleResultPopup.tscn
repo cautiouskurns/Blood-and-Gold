@@ -1,0 +1,67 @@
+[gd_scene load_steps=2 format=3 uid="uid://battle_result_popup"]
+
+[ext_resource type="Script" path="res://scripts/UI/battle_result_popup.gd" id="1_popup"]
+
+[node name="BattleResultPopup" type="CanvasLayer"]
+layer = 100
+script = ExtResource("1_popup")
+
+[node name="Overlay" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0, 0, 0, 0.5)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(300, 200)
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "VICTORY!"
+horizontal_alignment = 1
+
+[node name="MessageLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Battle Won!"
+horizontal_alignment = 1
+
+[node name="GoldContainer" type="HBoxContainer" parent="CenterContainer/Panel/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="GoldIconLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/GoldContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.945098, 0.768627, 0.0588235, 1)
+theme_override_font_sizes/font_size = 20
+text = "Gold Earned: "
+
+[node name="GoldLabel" type="Label" parent="CenterContainer/Panel/VBoxContainer/GoldContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.945098, 0.768627, 0.0588235, 1)
+theme_override_font_sizes/font_size = 20
+text = "100g"
+
+[node name="ActionButton" type="Button" parent="CenterContainer/Panel/VBoxContainer"]
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Continue"

@@ -10,7 +10,8 @@ enum TurnState {
 	WAITING_FOR_INPUT, # Current unit can act
 	MOVING,            # Unit is moving
 	ACTING,            # Unit is performing action
-	TURN_END           # Turn is ending
+	TURN_END,          # Turn is ending
+	BATTLE_ENDED       # Battle has concluded (Task 1.9)
 }
 
 # ===== SIGNALS =====
@@ -22,6 +23,8 @@ signal movement_finished(unit: Unit)
 signal turn_state_changed(old_state: TurnState, new_state: TurnState)
 signal battle_started(units: Array[Unit])
 signal battle_ended()
+signal battle_won(gold_earned: int)  # Task 1.9
+signal battle_lost()                  # Task 1.9
 signal turn_started(unit: Unit)
 signal turn_ended(unit: Unit)
 signal attack_executed(attacker: Unit, target: Unit, hit: bool, damage: int)
@@ -86,6 +89,8 @@ func start_battle(units: Array[Unit]) -> void:
 	_turn_manager.turn_ended.connect(_on_turn_ended)
 	_turn_manager.round_started.connect(_on_round_started)
 	_turn_manager.round_ended.connect(_on_round_ended)
+	_turn_manager.battle_won.connect(_on_battle_won)    # Task 1.9
+	_turn_manager.battle_lost.connect(_on_battle_lost)  # Task 1.9
 
 	_turn_manager.start_battle(units)
 
@@ -121,13 +126,12 @@ func _on_battle_started(units: Array[Unit]) -> void:
 func _on_turn_started(unit: Unit) -> void:
 	_current_turn_unit = unit
 
+	# Set state to WAITING_FOR_INPUT first (before selection, so movement range shows)
+	set_turn_state(TurnState.WAITING_FOR_INPUT)
+
 	# Auto-select if friendly unit
 	if unit.is_friendly():
 		select_unit(unit)
-		set_turn_state(TurnState.WAITING_FOR_INPUT)
-	else:
-		# Enemy turn - state handled by TurnManager auto-skip
-		set_turn_state(TurnState.WAITING_FOR_INPUT)
 
 	# Emit turn started signal for UI updates
 	turn_started.emit(unit)
@@ -145,6 +149,23 @@ func _on_round_started(round_number: int) -> void:
 
 func _on_round_ended(round_number: int) -> void:
 	print("[CombatManager] Round %d ended" % round_number)
+
+# ===== BATTLE END HANDLERS (Task 1.9) =====
+func _on_battle_won(gold_earned: int) -> void:
+	## Handle victory from TurnManager
+	set_turn_state(TurnState.BATTLE_ENDED)
+	_current_turn_unit = null
+	deselect_unit()
+	battle_won.emit(gold_earned)
+	print("[CombatManager] Battle won! Gold: %d" % gold_earned)
+
+func _on_battle_lost() -> void:
+	## Handle defeat from TurnManager
+	set_turn_state(TurnState.BATTLE_ENDED)
+	_current_turn_unit = null
+	deselect_unit()
+	battle_lost.emit()
+	print("[CombatManager] Battle lost!")
 
 # ===== SELECTION API =====
 func select_unit(unit: Unit) -> void:

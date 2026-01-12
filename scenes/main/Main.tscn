@@ -9,11 +9,10 @@ script = ExtResource("2_main")
 
 [node name="Background" type="ColorRect" parent="."]
 z_index = -100
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+custom_minimum_size = Vector2(1920, 1080)
 offset_right = 1920.0
 offset_bottom = 1080.0
+size = Vector2(1920, 1080)
 mouse_filter = 2
 color = Color(0.0509804, 0.0666667, 0.0901961, 1)
 

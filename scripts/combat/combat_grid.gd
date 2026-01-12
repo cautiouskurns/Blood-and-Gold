@@ -45,11 +45,12 @@ var pathfinding: Pathfinding
 func _ready() -> void:
 	_initialize_grid_data()
 	_create_tileset()
-	_center_grid()
 	_generate_default_grid()
 	_setup_movement_overlay()
 	_setup_path_preview()
 	_setup_pathfinding()
+	# Defer centering to ensure viewport size is correct
+	call_deferred("_center_grid")
 
 func _initialize_grid_data() -> void:
 	## Initialize the grid data array
@@ -106,9 +107,14 @@ func _draw_tile_to_image(image: Image, x_offset: int, fill_color: Color, border_
 
 func _center_grid() -> void:
 	## Center the grid in the viewport
-	var viewport_size = get_viewport_rect().size
+	# Use design resolution (matches project.godot window/size settings)
+	var viewport_size = Vector2(1920, 1080)
+	var viewport_rect = get_viewport_rect()
+	if viewport_rect.size.x > 0 and viewport_rect.size.y > 0:
+		viewport_size = viewport_rect.size
 	var grid_pixel_size = Vector2(GRID_WIDTH * TILE_SIZE, GRID_HEIGHT * TILE_SIZE)
 	position = (viewport_size - grid_pixel_size) / 2
+	print("[CombatGrid] Centered at %s (viewport: %s, grid: %s)" % [position, viewport_size, grid_pixel_size])
 
 func _generate_default_grid() -> void:
 	## Fill grid with walkable tiles and add test obstacles
@@ -167,10 +173,16 @@ func world_to_grid(world_pos: Vector2) -> Vector2i:
 
 func grid_to_world(grid_coords: Vector2i) -> Vector2:
 	## Convert grid coordinates to world position (tile center)
-	return position + Vector2(
+	## Returns position relative to grid (for children of CombatGrid)
+	return Vector2(
 		grid_coords.x * TILE_SIZE + TILE_SIZE / 2.0,
 		grid_coords.y * TILE_SIZE + TILE_SIZE / 2.0
 	)
+
+func grid_to_world_global(grid_coords: Vector2i) -> Vector2:
+	## Convert grid coordinates to global world position
+	## Use this for nodes that are NOT children of CombatGrid
+	return position + grid_to_world(grid_coords)
 
 func get_grid_size() -> Vector2i:
 	## Get the grid dimensions
@@ -256,7 +268,7 @@ func show_path_preview(from: Vector2i, to: Vector2i, exclude_unit: Unit = null) 
 
 	var path = pathfinding.get_path(from, to, exclude_unit)
 	for coords in path:
-		var world_pos = grid_to_world(coords) - position  # Local coords
+		var world_pos = grid_to_world(coords)  # Local coords (relative to grid)
 		_path_preview.add_point(world_pos)
 
 func hide_path_preview() -> void:

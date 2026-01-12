@@ -10,11 +10,14 @@ signal turn_started(unit: Unit)
 signal turn_ended(unit: Unit)
 signal round_started(round_number: int)
 signal round_ended(round_number: int)
+signal battle_won(gold_earned: int)
+signal battle_lost()
 
 # ===== CONSTANTS =====
 const D20_MIN: int = 1
 const D20_MAX: int = 20
 const ENEMY_TURN_DELAY: float = 0.3
+const VICTORY_GOLD_REWARD: int = 100  # Placeholder reward (Task 1.9)
 
 # ===== INTERNAL STATE =====
 # DEX modifiers (from GDD) - initialized in _ready to use Unit.UnitType enum
@@ -84,6 +87,10 @@ func remove_unit(unit: Unit) -> void:
 
 	_turn_order.remove_at(index)
 	print("[TurnManager] Removed from turn order: %s" % unit.unit_name)
+
+	# Check for battle end before adjusting turn index (Task 1.9)
+	if _check_battle_end():
+		return  # Battle ended, don't continue turn processing
 
 	# Adjust current index if needed
 	if index < _current_turn_index:
@@ -201,3 +208,55 @@ func _print_initiative_order() -> void:
 			order_str += ", "
 		order_str += _turn_order[i].unit_name
 	print("[TurnManager] %s" % order_str)
+
+# ===== BATTLE END CHECK (Task 1.9) =====
+func _check_battle_end() -> bool:
+	## Check if victory or defeat conditions are met
+	## Returns true if battle ended
+	if not _is_battle_active:
+		return false
+
+	var party_alive = _count_living_party()
+	var enemies_alive = _count_living_enemies()
+
+	print("[TurnManager] Battle check - Party: %d, Enemies: %d" % [party_alive, enemies_alive])
+
+	# Check defeat first (if party is wiped, defeat even if enemies also died)
+	if party_alive == 0:
+		_trigger_defeat()
+		return true
+
+	# Check victory
+	if enemies_alive == 0:
+		_trigger_victory()
+		return true
+
+	return false
+
+func _count_living_party() -> int:
+	## Count living party members (not soldiers - soldiers dying doesn't cause defeat)
+	var count = 0
+	for unit in _turn_order:
+		if is_instance_valid(unit) and unit.is_friendly() and not unit.is_soldier:
+			count += 1
+	return count
+
+func _count_living_enemies() -> int:
+	## Count living enemy units
+	var count = 0
+	for unit in _turn_order:
+		if is_instance_valid(unit) and unit.is_enemy:
+			count += 1
+	return count
+
+func _trigger_victory() -> void:
+	## Handle victory condition
+	print("[TurnManager] === VICTORY! ===")
+	_is_battle_active = false
+	battle_won.emit(VICTORY_GOLD_REWARD)
+
+func _trigger_defeat() -> void:
+	## Handle defeat condition
+	print("[TurnManager] === DEFEAT ===")
+	_is_battle_active = false
+	battle_lost.emit()

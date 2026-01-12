@@ -76,6 +76,7 @@ const UNIT_LETTERS: Dictionary = {
 @export var unit_type: UnitType = UnitType.PLAYER
 @export var unit_name: String = "Unit"
 @export var is_enemy: bool = false
+@export var is_soldier: bool = false  # Soldiers dying doesn't trigger defeat (Task 1.9)
 @export var max_hp: int = 30
 @export var movement_range: int = 5  # Tiles per turn (Task 1.5)
 
@@ -106,6 +107,9 @@ func _ready() -> void:
 
 	# Set enemy flag based on unit type
 	is_enemy = (unit_type == UnitType.ENEMY)
+
+	# Set soldier flag based on unit type (Task 1.9)
+	is_soldier = (unit_type == UnitType.INFANTRY or unit_type == UnitType.ARCHER)
 
 func _update_visual() -> void:
 	## Update sprite and label based on unit type

@@ -6,8 +6,9 @@ extends Node2D
 @onready var combat_grid: CombatGrid = $CombatGrid
 @onready var turn_order_panel = $UILayer/TurnOrderPanel
 
-# Preload Unit scene
+# Preload scenes
 const UnitScene = preload("res://scenes/combat/Unit.tscn")
+const BattleResultPopupScene = preload("res://scenes/UI/BattleResultPopup.tscn")
 
 # ===== DEBUG CONSTANTS =====
 const DEBUG_DAMAGE_AMOUNT: int = 10
@@ -16,9 +17,14 @@ const DEBUG_HEAL_AMOUNT: int = 10
 # ===== INTERNAL STATE =====
 var _units: Array[Unit] = []
 var _last_hovered_tile: Vector2i = Vector2i(-1, -1)
+var _battle_result_popup: BattleResultPopup = null
+
+# Initial spawn data for retry (Task 1.9)
+var _initial_spawn_data: Array[Dictionary] = []
 
 # ===== LIFECYCLE =====
 func _ready() -> void:
+	_setup_battle_result_popup()
 	_spawn_test_units()
 	_connect_combat_signals()
 	_connect_turn_signals()
@@ -53,16 +59,20 @@ func _spawn_test_units() -> void:
 	## Spawn test units to verify Task 1.2 implementation
 	print("[Main] Spawning test units...")
 
-	# Spawn party members (left side of grid)
-	_spawn_unit(Unit.UnitType.PLAYER, Vector2i(1, 5), "Player")
-	_spawn_unit(Unit.UnitType.THORNE, Vector2i(1, 3), "Thorne")
-	_spawn_unit(Unit.UnitType.LYRA, Vector2i(1, 7), "Lyra")
-	_spawn_unit(Unit.UnitType.MATTHIAS, Vector2i(2, 5), "Matthias")
+	# Save spawn data for retry (Task 1.9)
+	_initial_spawn_data = [
+		{"type": Unit.UnitType.PLAYER, "pos": Vector2i(1, 5), "name": "Player"},
+		{"type": Unit.UnitType.THORNE, "pos": Vector2i(1, 3), "name": "Thorne"},
+		{"type": Unit.UnitType.LYRA, "pos": Vector2i(1, 7), "name": "Lyra"},
+		{"type": Unit.UnitType.MATTHIAS, "pos": Vector2i(2, 5), "name": "Matthias"},
+		{"type": Unit.UnitType.ENEMY, "pos": Vector2i(10, 4), "name": "Bandit 1"},
+		{"type": Unit.UnitType.ENEMY, "pos": Vector2i(10, 6), "name": "Bandit 2"},
+		{"type": Unit.UnitType.ENEMY, "pos": Vector2i(9, 5), "name": "Bandit 3"},
+	]
 
-	# Spawn enemies (right side of grid)
-	_spawn_unit(Unit.UnitType.ENEMY, Vector2i(10, 4), "Bandit 1")
-	_spawn_unit(Unit.UnitType.ENEMY, Vector2i(10, 6), "Bandit 2")
-	_spawn_unit(Unit.UnitType.ENEMY, Vector2i(9, 5), "Bandit 3")
+	# Spawn all units from data
+	for data in _initial_spawn_data:
+		_spawn_unit(data["type"], data["pos"], data["name"])
 
 	print("[Main] Test units spawned: %d total" % _units.size())
 
@@ -91,12 +101,17 @@ func _spawn_unit(type: Unit.UnitType, grid_pos: Vector2i, unit_name: String) -> 
 		Unit.UnitType.ENEMY:
 			unit.max_hp = 15
 
-	# Add to scene tree first (so _ready runs)
-	add_child(unit)
-
-	# Then set grid reference and position
+	# Set grid reference first
 	unit.set_combat_grid(combat_grid)
+
+	# Add as child of CombatGrid so units move when grid is centered
+	combat_grid.add_child(unit)
+
+	# Then place on grid (uses local coordinates relative to grid)
 	unit.place_on_grid(grid_pos)
+
+	# Connect death signal for turn order removal (Task 1.9)
+	unit.unit_died.connect(_on_unit_died)
 
 	_units.append(unit)
 
@@ -123,6 +138,8 @@ func _connect_turn_signals() -> void:
 	## Connect turn manager signals to UI
 	CombatManager.battle_started.connect(_on_battle_started)
 	CombatManager.turn_ended.connect(_on_turn_ended)
+	CombatManager.battle_won.connect(_on_battle_won)    # Task 1.9
+	CombatManager.battle_lost.connect(_on_battle_lost)  # Task 1.9
 
 func _on_battle_started(units: Array[Unit]) -> void:
 	## Handle battle start - initialize turn order panel
@@ -264,6 +281,77 @@ func _handle_attack_click() -> void:
 		combat_grid.update_occupied_tiles(_units.filter(func(u): return u.is_alive()))
 		# Clear movement overlay since turn ended
 		combat_grid.clear_movement_overlay()
+
+# ===== BATTLE RESULT POPUP (Task 1.9) =====
+func _setup_battle_result_popup() -> void:
+	## Create and configure the battle result popup
+	_battle_result_popup = BattleResultPopupScene.instantiate() as BattleResultPopup
+	add_child(_battle_result_popup)
+
+	# Connect popup signals
+	_battle_result_popup.continue_pressed.connect(_on_continue_pressed)
+	_battle_result_popup.retry_pressed.connect(_on_retry_pressed)
+
+	print("[Main] Battle result popup initialized")
+
+func _on_unit_died(unit: Unit) -> void:
+	## Handle unit death - remove from turn order
+	var turn_manager = CombatManager.get_turn_manager()
+	if turn_manager:
+		turn_manager.remove_unit(unit)
+
+	# Remove from our units list
+	var index = _units.find(unit)
+	if index != -1:
+		_units.remove_at(index)
+
+	print("[Main] Unit died: %s" % unit.unit_name)
+
+func _on_battle_won(gold_earned: int) -> void:
+	## Handle victory - show popup
+	print("[Main] Victory! Gold earned: %d" % gold_earned)
+	if _battle_result_popup:
+		_battle_result_popup.show_victory(gold_earned)
+
+func _on_battle_lost() -> void:
+	## Handle defeat - show popup
+	print("[Main] Defeat!")
+	if _battle_result_popup:
+		_battle_result_popup.show_defeat()
+
+func _on_continue_pressed() -> void:
+	## Handle continue button (victory)
+	print("[Main] Continue pressed - battle complete")
+	# For now, just log. In Phase 3, this would return to hub/contract selection
+
+func _on_retry_pressed() -> void:
+	## Handle retry button (defeat) - restart battle
+	print("[Main] Retry pressed - restarting battle")
+	_restart_battle()
+
+func _restart_battle() -> void:
+	## Restart the battle from scratch
+	print("[Main] Restarting battle...")
+
+	# Clear existing units
+	for unit in _units.duplicate():
+		if is_instance_valid(unit):
+			unit.queue_free()
+	_units.clear()
+
+	# Wait a frame for cleanup
+	await get_tree().process_frame
+
+	# Respawn units from initial data
+	for data in _initial_spawn_data:
+		_spawn_unit(data["type"], data["pos"], data["name"])
+
+	# Update pathfinding
+	combat_grid.update_occupied_tiles(_units)
+
+	# Start new battle
+	CombatManager.start_battle(_units)
+	print("[Main] Battle restarted with %d units" % _units.size())
 
 # ===== DEBUG FUNCTIONS (Task 1.3) =====
 func _get_unit_under_mouse() -> Unit:
