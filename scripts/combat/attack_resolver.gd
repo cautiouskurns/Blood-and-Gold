@@ -53,86 +53,20 @@ static func is_adjacent(attacker: Unit, target: Unit) -> bool:
 
 # ===== INTERNAL HELPERS =====
 static func _get_attack_bonus(unit: Unit) -> int:
-	## Get total attack bonus for a unit
-	## Prototype: Hardcoded based on unit type from GDD
-	match unit.unit_type:
-		Unit.UnitType.PLAYER:
-			return 4  # STR 14 (+2) + Skill (+2)
-		Unit.UnitType.THORNE:
-			return 5  # STR 16 (+3) + Skill (+2)
-		Unit.UnitType.LYRA:
-			return 5  # DEX 16 (+3) + Skill (+2) - finesse
-		Unit.UnitType.MATTHIAS:
-			return 2  # STR 10 (+0) + Skill (+2)
-		Unit.UnitType.ENEMY:
-			return 3  # Bandit attack bonus
-		Unit.UnitType.INFANTRY:
-			return 3
-		Unit.UnitType.ARCHER:
-			return 3
-		_:
-			return 0
+	## Get total attack bonus from unit's stats (Task 2.1)
+	return unit.get_attack_bonus()
 
 static func _get_defense(unit: Unit) -> int:
-	## Get defense value for a unit
-	## Defense = 10 + DEX modifier + Armor bonus
-	match unit.unit_type:
-		Unit.UnitType.PLAYER:
-			return 14  # 10 + DEX 12 (+1) + Chain Shirt (+3)
-		Unit.UnitType.THORNE:
-			return 16  # 10 + DEX 10 (+0) + Plate (+6)
-		Unit.UnitType.LYRA:
-			return 15  # 10 + DEX 16 (+3) + Leather (+2)
-		Unit.UnitType.MATTHIAS:
-			return 13  # 10 + DEX 10 (+0) + Chain Shirt (+3)
-		Unit.UnitType.ENEMY:
-			return 12  # Bandit defense
-		Unit.UnitType.INFANTRY:
-			return 13
-		Unit.UnitType.ARCHER:
-			return 11
-		_:
-			return 10
+	## Get defense value from unit's stats (Task 2.1)
+	return unit.get_defense()
 
 static func _get_damage_dice(unit: Unit) -> int:
-	## Get weapon damage die (e.g., 8 for 1d8)
-	match unit.unit_type:
-		Unit.UnitType.PLAYER:
-			return 8  # Sword 1d8
-		Unit.UnitType.THORNE:
-			return 8  # Sword 1d8
-		Unit.UnitType.LYRA:
-			return 4  # Dagger 1d4
-		Unit.UnitType.MATTHIAS:
-			return 6  # Staff 1d6
-		Unit.UnitType.ENEMY:
-			return 6  # Bandit weapon 1d6
-		Unit.UnitType.INFANTRY:
-			return 6
-		Unit.UnitType.ARCHER:
-			return 6
-		_:
-			return 6
+	## Get weapon damage die from unit's stats (Task 2.1)
+	return unit.get_damage_die()
 
 static func _get_damage_modifier(unit: Unit) -> int:
-	## Get damage modifier (usually STR, or DEX for finesse)
-	match unit.unit_type:
-		Unit.UnitType.PLAYER:
-			return 2  # STR 14 (+2)
-		Unit.UnitType.THORNE:
-			return 3  # STR 16 (+3)
-		Unit.UnitType.LYRA:
-			return 3  # DEX 16 (+3) - finesse
-		Unit.UnitType.MATTHIAS:
-			return 0  # STR 10 (+0)
-		Unit.UnitType.ENEMY:
-			return 2  # Bandit STR
-		Unit.UnitType.INFANTRY:
-			return 1
-		Unit.UnitType.ARCHER:
-			return 0
-		_:
-			return 0
+	## Get damage modifier from unit's stats (Task 2.1)
+	return unit.get_damage_modifier()
 
 static func _roll_damage(dice: int, modifier: int) -> int:
 	## Roll damage: 1d[dice] + modifier

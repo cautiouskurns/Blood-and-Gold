@@ -86,15 +86,15 @@ Writing 11,000+ lines of branching dialogue with skill checks, flags, and quest 
 
 ```mermaid
 graph LR
-    A[Create New Tree] --> B[Add Start Node]
-    B --> C[Add Speaker Nodes]
-    C --> D[Add Choice Branches]
-    D --> E[Connect Nodes]
-    E --> F[Test in Editor]
-    F --> G{Issues?}
-    G -->|Yes| C
-    G -->|No| H[Export JSON]
-    H --> I[Use in Game]
+	A[Create New Tree] --> B[Add Start Node]
+	B --> C[Add Speaker Nodes]
+	C --> D[Add Choice Branches]
+	D --> E[Connect Nodes]
+	E --> F[Test in Editor]
+	F --> G{Issues?}
+	G -->|Yes| C
+	G -->|No| H[Export JSON]
+	H --> I[Use in Game]
 ```
 
 **Primary Flow:**
@@ -225,53 +225,53 @@ graph LR
 {
   "dialogue_id": "thorne_contract_1",
   "metadata": {
-    "author": "writer",
-    "created": "2026-01-12",
-    "modified": "2026-01-12",
-    "version": 1
+	"author": "writer",
+	"created": "2026-01-12",
+	"modified": "2026-01-12",
+	"version": 1
   },
   "canvas": {
-    "zoom": 1.0,
-    "offset": [0, 0]
+	"zoom": 1.0,
+	"offset": [0, 0]
   },
   "nodes": [
-    {
-      "id": 1,
-      "type": "start",
-      "position": [100, 100],
-      "connections": [2]
-    },
-    {
-      "id": 2,
-      "type": "speaker",
-      "position": [100, 200],
-      "data": {
-        "speaker": "Thorne",
-        "text": "We need gold. Take this contract?",
-        "portrait": "thorne_neutral"
-      },
-      "connections": [3, 4]
-    },
-    {
-      "id": 3,
-      "type": "choice",
-      "position": [50, 350],
-      "data": {
-        "text": "Accept the contract.",
-        "skill_check": null
-      },
-      "connections": [5]
-    },
-    {
-      "id": 4,
-      "type": "choice",
-      "position": [250, 350],
-      "data": {
-        "text": "We don't need the money.",
-        "skill_check": null
-      },
-      "connections": [6]
-    }
+	{
+	  "id": 1,
+	  "type": "start",
+	  "position": [100, 100],
+	  "connections": [2]
+	},
+	{
+	  "id": 2,
+	  "type": "speaker",
+	  "position": [100, 200],
+	  "data": {
+		"speaker": "Thorne",
+		"text": "We need gold. Take this contract?",
+		"portrait": "thorne_neutral"
+	  },
+	  "connections": [3, 4]
+	},
+	{
+	  "id": 3,
+	  "type": "choice",
+	  "position": [50, 350],
+	  "data": {
+		"text": "Accept the contract.",
+		"skill_check": null
+	  },
+	  "connections": [5]
+	},
+	{
+	  "id": 4,
+	  "type": "choice",
+	  "position": [250, 350],
+	  "data": {
+		"text": "We don't need the money.",
+		"skill_check": null
+	  },
+	  "connections": [6]
+	}
   ]
 }
 ```
@@ -281,33 +281,33 @@ graph LR
 {
   "dialogue_id": "thorne_contract_1",
   "nodes": {
-    "1": {
-      "type": "speaker",
-      "speaker": "Thorne",
-      "text": "We need gold. Take this contract?",
-      "portrait": "thorne_neutral",
-      "next": ["2", "3"]
-    },
-    "2": {
-      "type": "choice",
-      "text": "Accept the contract.",
-      "effects": [],
-      "next": "4"
-    },
-    "3": {
-      "type": "choice",
-      "text": "We don't need the money.",
-      "effects": [
-        {"type": "reputation", "faction": "Thorne", "amount": -5}
-      ],
-      "next": "5"
-    },
-    "4": {
-      "type": "quest",
-      "action": "start",
-      "quest_id": "contract_1",
-      "next": null
-    }
+	"1": {
+	  "type": "speaker",
+	  "speaker": "Thorne",
+	  "text": "We need gold. Take this contract?",
+	  "portrait": "thorne_neutral",
+	  "next": ["2", "3"]
+	},
+	"2": {
+	  "type": "choice",
+	  "text": "Accept the contract.",
+	  "effects": [],
+	  "next": "4"
+	},
+	"3": {
+	  "type": "choice",
+	  "text": "We don't need the money.",
+	  "effects": [
+		{"type": "reputation", "faction": "Thorne", "amount": -5}
+	  ],
+	  "next": "5"
+	},
+	"4": {
+	  "type": "quest",
+	  "action": "start",
+	  "quest_id": "contract_1",
+	  "next": null
+	}
   },
   "start": "1"
 }
@@ -464,15 +464,15 @@ graph LR
   "type": "choice",
   "text": "string (player response text)",
   "skill_check": {
-    "skill": "string (persuasion, intimidation, etc.)",
-    "dc": "int (difficulty class)",
-    "success_next": "int (node ID)",
-    "fail_next": "int (node ID)"
+	"skill": "string (persuasion, intimidation, etc.)",
+	"dc": "int (difficulty class)",
+	"success_next": "int (node ID)",
+	"fail_next": "int (node ID)"
   },
   "requirements": {
-    "flags": ["array of required flags"],
-    "items": ["array of required items"],
-    "reputation": {"faction": "min_value"}
+	"flags": ["array of required flags"],
+	"items": ["array of required items"],
+	"reputation": {"faction": "min_value"}
   },
   "tooltip": "string (shown on hover if requirements not met)"
 }
@@ -484,11 +484,11 @@ graph LR
   "type": "branch",
   "conditions": [
     {
-      "type": "flag|reputation|item|stat",
-      "key": "string",
-      "operator": "==|!=|>|<|>=|<=",
-      "value": "any",
-      "next": "int (node ID)"
+	  "type": "flag|reputation|item|stat",
+	  "key": "string",
+	  "operator": "==|!=|>|<|>=|<=",
+	  "value": "any",
+	  "next": "int (node ID)"
     }
   ],
   "default": "int (node ID if no conditions match)"
@@ -510,7 +510,7 @@ graph LR
 {
   "type": "reputation",
   "changes": [
-    {"faction": "string", "amount": "int (+/-)"}
+	{"faction": "string", "amount": "int (+/-)"}
   ]
 }
 ```
@@ -520,7 +520,7 @@ graph LR
 {
   "type": "flag_set",
   "flags": [
-    {"name": "string", "value": "bool|int|string"}
+	{"name": "string", "value": "bool|int|string"}
   ]
 }
 ```
@@ -543,7 +543,7 @@ graph LR
   "type": "item",
   "action": "give|take|check",
   "items": [
-    {"item_id": "string", "quantity": "int"}
+	{"item_id": "string", "quantity": "int"}
   ],
   "fail_next": "int (if check fails or can't take)"
 }

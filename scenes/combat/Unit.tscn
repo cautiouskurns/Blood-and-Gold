@@ -10,7 +10,6 @@ z_index = 10
 script = ExtResource("1_unit")
 
 [node name="SelectionIndicator" type="Sprite2D" parent="."]
-z_index = 0
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 z_index = 1
@@ -39,11 +38,6 @@ value = 100.0
 show_percentage = false
 
 [node name="ClickArea" type="Area2D" parent="."]
-collision_layer = 1
-collision_mask = 1
-input_pickable = true
-monitorable = true
-monitoring = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ClickArea"]
 shape = SubResource("CircleShape2D_click")

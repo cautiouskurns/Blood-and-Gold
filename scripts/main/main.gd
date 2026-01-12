@@ -85,21 +85,8 @@ func _spawn_unit(type: Unit.UnitType, grid_pos: Vector2i, unit_name: String) -> 
 	unit.unit_type = type
 	unit.unit_name = unit_name
 
-	# Set enemy flag based on type
-	unit.is_enemy = (type == Unit.UnitType.ENEMY)
-
-	# Set HP based on unit type (from GDD)
-	match type:
-		Unit.UnitType.PLAYER:
-			unit.max_hp = 35
-		Unit.UnitType.THORNE:
-			unit.max_hp = 40
-		Unit.UnitType.LYRA:
-			unit.max_hp = 25
-		Unit.UnitType.MATTHIAS:
-			unit.max_hp = 30
-		Unit.UnitType.ENEMY:
-			unit.max_hp = 15
+	# Note: Stats (HP, STR, DEX, etc.) are auto-configured in Unit._ready()
+	# based on unit_type via _configure_stats_for_type() (Task 2.1)
 
 	# Set grid reference first
 	unit.set_combat_grid(combat_grid)

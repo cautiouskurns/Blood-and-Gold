@@ -47,6 +47,7 @@ Implement [feature] from [tool] roadmap using tool-feature-implementer skill
 - Create error analyser skill
 - For roadmap skill, ensure a lot more detial is provided for each feature. 
 - Create editors and tools for everything
+- 
 
 
 ## Known Issues

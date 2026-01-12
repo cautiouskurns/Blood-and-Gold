@@ -19,10 +19,6 @@ const D20_MAX: int = 20
 const ENEMY_TURN_DELAY: float = 0.3
 const VICTORY_GOLD_REWARD: int = 100  # Placeholder reward (Task 1.9)
 
-# ===== INTERNAL STATE =====
-# DEX modifiers (from GDD) - initialized in _ready to use Unit.UnitType enum
-var _dex_modifiers: Dictionary = {}
-
 # ===== STATE =====
 var _turn_order: Array[Unit] = []
 var _current_turn_index: int = 0
@@ -31,20 +27,7 @@ var _is_battle_active: bool = false
 
 # ===== LIFECYCLE =====
 func _ready() -> void:
-	_initialize_dex_modifiers()
 	print("[TurnManager] Ready")
-
-func _initialize_dex_modifiers() -> void:
-	## Initialize DEX modifiers for initiative rolls (from GDD)
-	_dex_modifiers = {
-		Unit.UnitType.PLAYER: 1,      # DEX 12 = +1
-		Unit.UnitType.THORNE: 0,      # DEX 10 = +0
-		Unit.UnitType.LYRA: 3,        # DEX 16 = +3
-		Unit.UnitType.MATTHIAS: 0,    # DEX 10 = +0
-		Unit.UnitType.ENEMY: 1,       # Bandits DEX 12 = +1
-		Unit.UnitType.INFANTRY: 0,    # DEX 10 = +0
-		Unit.UnitType.ARCHER: 1,      # DEX 12 = +1
-	}
 
 # ===== PUBLIC API =====
 func start_battle(units: Array[Unit]) -> void:
@@ -133,7 +116,8 @@ func _roll_initiative(units: Array[Unit]) -> void:
 		if not is_instance_valid(unit) or not unit.is_alive():
 			continue
 
-		var dex_mod = _dex_modifiers.get(unit.unit_type, 0)
+		# Use unit's DEX modifier from stats system (Task 2.1)
+		var dex_mod = unit.get_dex_mod()
 		var roll = randi_range(D20_MIN, D20_MAX)
 		var total = roll + dex_mod
 

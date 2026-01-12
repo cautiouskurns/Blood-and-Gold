@@ -80,6 +80,21 @@ const UNIT_LETTERS: Dictionary = {
 @export var max_hp: int = 30
 @export var movement_range: int = 5  # Tiles per turn (Task 1.5)
 
+# ===== STATS (Task 2.1) =====
+# Core stats (D&D style)
+@export var strength: int = 10
+@export var dexterity: int = 10
+@export var constitution: int = 10
+@export var intelligence: int = 10
+@export var wisdom: int = 10
+@export var charisma: int = 10
+
+# Derived stats
+@export var armor_bonus: int = 0
+@export var skill_rank: int = 2  # Base skill rank for attacks
+@export var weapon_damage_die: int = 6  # e.g., 6 for 1d6
+@export var uses_finesse: bool = false  # Uses DEX for attacks instead of STR
+
 # ===== NODE REFERENCES =====
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var letter_label: Label = $LetterLabel
@@ -95,9 +110,235 @@ var is_selected: bool = false
 var _is_moving: bool = false
 var _movement_tween: Tween
 
+# ===== ABILITY DATA (Task 2.2) =====
+var _abilities: Array[Dictionary] = []
+
+# ===== STAT MODIFIERS (Task 2.1) =====
+func get_stat_modifier(stat_value: int) -> int:
+	## Calculate D&D-style modifier: floor((stat - 10) / 2)
+	return int(floor((stat_value - 10) / 2.0))
+
+func get_str_mod() -> int:
+	return get_stat_modifier(strength)
+
+func get_dex_mod() -> int:
+	return get_stat_modifier(dexterity)
+
+func get_con_mod() -> int:
+	return get_stat_modifier(constitution)
+
+func get_int_mod() -> int:
+	return get_stat_modifier(intelligence)
+
+func get_wis_mod() -> int:
+	return get_stat_modifier(wisdom)
+
+func get_cha_mod() -> int:
+	return get_stat_modifier(charisma)
+
+# ===== COMBAT CALCULATIONS (Task 2.1) =====
+func get_defense() -> int:
+	## Calculate defense value: 10 + DEX mod + armor bonus
+	return 10 + get_dex_mod() + armor_bonus
+
+func get_melee_attack_bonus() -> int:
+	## Calculate melee attack bonus: STR mod + skill rank
+	return get_str_mod() + skill_rank
+
+func get_ranged_attack_bonus() -> int:
+	## Calculate ranged attack bonus: DEX mod + skill rank
+	return get_dex_mod() + skill_rank
+
+func get_attack_bonus() -> int:
+	## Get appropriate attack bonus based on finesse property
+	if uses_finesse:
+		return get_ranged_attack_bonus()
+	return get_melee_attack_bonus()
+
+func get_damage_modifier() -> int:
+	## Get damage modifier (STR or DEX for finesse weapons)
+	if uses_finesse:
+		return get_dex_mod()
+	return get_str_mod()
+
+func get_damage_die() -> int:
+	## Get weapon damage die
+	return weapon_damage_die
+
+# ===== STATS CONFIGURATION (Task 2.1) =====
+func _configure_stats_for_type() -> void:
+	## Set stats based on unit type (from GDD)
+	match unit_type:
+		UnitType.PLAYER:
+			strength = 14
+			dexterity = 12
+			constitution = 14
+			intelligence = 10
+			wisdom = 10
+			charisma = 12
+			max_hp = 35
+			armor_bonus = 3  # Chain Shirt
+			movement_range = 5
+			weapon_damage_die = 8  # Sword 1d8
+			uses_finesse = false
+			skill_rank = 2
+
+		UnitType.THORNE:
+			strength = 16
+			dexterity = 10
+			constitution = 14
+			intelligence = 10
+			wisdom = 12
+			charisma = 8
+			max_hp = 40
+			armor_bonus = 5  # Plate
+			movement_range = 4
+			weapon_damage_die = 8  # Sword 1d8
+			uses_finesse = false
+			skill_rank = 2
+
+		UnitType.LYRA:
+			strength = 10
+			dexterity = 16
+			constitution = 10
+			intelligence = 14
+			wisdom = 12
+			charisma = 12
+			max_hp = 25
+			armor_bonus = 2  # Leather
+			movement_range = 6
+			weapon_damage_die = 4  # Dagger 1d4
+			uses_finesse = true  # Uses DEX for attacks
+			skill_rank = 2
+
+		UnitType.MATTHIAS:
+			strength = 10
+			dexterity = 10
+			constitution = 12
+			intelligence = 12
+			wisdom = 16
+			charisma = 14
+			max_hp = 30
+			armor_bonus = 4  # Scale Mail
+			movement_range = 5
+			weapon_damage_die = 6  # Staff 1d6
+			uses_finesse = false
+			skill_rank = 2
+
+		UnitType.ENEMY:
+			strength = 12
+			dexterity = 12
+			constitution = 10
+			intelligence = 8
+			wisdom = 8
+			charisma = 8
+			max_hp = 15
+			armor_bonus = 2  # Light armor
+			movement_range = 5
+			weapon_damage_die = 6  # 1d6
+			uses_finesse = false
+			skill_rank = 1
+
+		UnitType.INFANTRY:
+			strength = 12
+			dexterity = 10
+			constitution = 12
+			intelligence = 8
+			wisdom = 10
+			charisma = 8
+			max_hp = 20
+			armor_bonus = 3  # Medium armor
+			movement_range = 4
+			weapon_damage_die = 6  # 1d6
+			uses_finesse = false
+			skill_rank = 1
+
+		UnitType.ARCHER:
+			strength = 10
+			dexterity = 12
+			constitution = 10
+			intelligence = 10
+			wisdom = 10
+			charisma = 8
+			max_hp = 15
+			armor_bonus = 1  # Light armor
+			movement_range = 5
+			weapon_damage_die = 6  # Bow 1d6
+			uses_finesse = true  # Uses DEX for ranged
+			skill_rank = 1
+
+# ===== ABILITY CONFIGURATION (Task 2.2) =====
+func _init_abilities() -> void:
+	## Initialize abilities based on unit type (from GDD)
+	match unit_type:
+		UnitType.PLAYER:
+			_abilities = [
+				{"id": "basic_attack", "name": "Attack", "icon": ""},
+				{"id": "power_attack", "name": "Power Attack", "icon": ""},
+				{"id": "shield_bash", "name": "Shield Bash", "icon": ""},
+				{"id": "rally", "name": "Rally", "icon": ""},
+			]
+		UnitType.THORNE:
+			_abilities = [
+				{"id": "basic_attack", "name": "Attack", "icon": ""},
+				{"id": "cleave", "name": "Cleave", "icon": ""},
+				{"id": "taunt", "name": "Taunt", "icon": ""},
+				{"id": "last_stand", "name": "Last Stand", "icon": ""},
+			]
+		UnitType.LYRA:
+			_abilities = [
+				{"id": "basic_attack", "name": "Attack", "icon": ""},
+				{"id": "backstab", "name": "Backstab", "icon": ""},
+				{"id": "shadowstep", "name": "Shadowstep", "icon": ""},
+				{"id": "poison_blade", "name": "Poison Blade", "icon": ""},
+			]
+		UnitType.MATTHIAS:
+			_abilities = [
+				{"id": "basic_attack", "name": "Attack", "icon": ""},
+				{"id": "heal", "name": "Heal", "icon": ""},
+				{"id": "bless", "name": "Bless", "icon": ""},
+				{"id": "smite", "name": "Smite", "icon": ""},
+			]
+		UnitType.ENEMY:
+			_abilities = [
+				{"id": "basic_attack", "name": "Attack", "icon": ""},
+				{"id": "none1", "name": "", "icon": ""},
+				{"id": "none2", "name": "", "icon": ""},
+				{"id": "none3", "name": "", "icon": ""},
+			]
+		_:
+			# Default basic attack only for soldiers/other units
+			_abilities = [
+				{"id": "basic_attack", "name": "Attack", "icon": ""},
+				{"id": "none1", "name": "", "icon": ""},
+				{"id": "none2", "name": "", "icon": ""},
+				{"id": "none3", "name": "", "icon": ""},
+			]
+
+func get_abilities() -> Array[Dictionary]:
+	## Get this unit's abilities
+	return _abilities.duplicate()
+
+func is_ability_available(ability_id: String) -> bool:
+	## Check if an ability can be used
+	## For now, all valid abilities are available (future: cooldowns, costs, targets)
+	if ability_id.is_empty():
+		return false
+	# "none" abilities are always unavailable
+	if ability_id.begins_with("none"):
+		return false
+	# Check if ability exists for this unit
+	for ability in _abilities:
+		if ability.get("id") == ability_id:
+			return true
+	return false
+
 # ===== LIFECYCLE =====
 func _ready() -> void:
+	# Configure stats based on unit type FIRST
+	_configure_stats_for_type()
 	current_hp = max_hp
+	_init_abilities()  # Initialize abilities (Task 2.2)
 	_update_visual()
 	_setup_hp_bar()
 	_update_hp_bar()
@@ -110,6 +351,12 @@ func _ready() -> void:
 
 	# Set soldier flag based on unit type (Task 1.9)
 	is_soldier = (unit_type == UnitType.INFANTRY or unit_type == UnitType.ARCHER)
+
+	# Debug print stats
+	print("[Unit] %s stats: STR %d(%+d) DEX %d(%+d) HP %d DEF %d ATK %+d Move %d" % [
+		unit_name, strength, get_str_mod(), dexterity, get_dex_mod(),
+		max_hp, get_defense(), get_attack_bonus(), movement_range
+	])
 
 func _update_visual() -> void:
 	## Update sprite and label based on unit type
