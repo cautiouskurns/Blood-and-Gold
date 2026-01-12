@@ -9,6 +9,7 @@ enum TurnState {
 	INACTIVE,          # No battle active
 	WAITING_FOR_INPUT, # Current unit can act
 	MOVING,            # Unit is moving
+	TARGETING,         # Selecting target for ability (Task 2.3)
 	ACTING,            # Unit is performing action
 	TURN_END,          # Turn is ending
 	BATTLE_ENDED       # Battle has concluded (Task 1.9)
@@ -28,19 +29,48 @@ signal battle_lost()                  # Task 1.9
 signal turn_started(unit: Unit)
 signal turn_ended(unit: Unit)
 signal attack_executed(attacker: Unit, target: Unit, hit: bool, damage: int)
+signal ability_targeting_started(ability_id: String, valid_targets: Array[Unit])
+signal ability_targeting_cancelled()
+signal ability_executed(user: Unit, ability_id: String, result: Dictionary)
+signal unit_teleported(unit: Unit, from: Vector2i, to: Vector2i)  # Task 2.5: Shadowstep
+signal tile_targeting_started(ability_id: String, valid_tiles: Array[Vector2i])  # Task 2.5
 
 # ===== STATE =====
 var selected_unit: Unit = null
 var _moving_unit: Unit = null
+
+# ===== ABILITY TARGETING STATE (Task 2.3) =====
+var _pending_ability_id: String = ""
+var _pending_ability: Resource = null  # Ability resource
+var _valid_targets: Array[Unit] = []
+
+# ===== TILE TARGETING STATE (Task 2.5) =====
+var _valid_teleport_tiles: Array[Vector2i] = []  # For Shadowstep targeting
 
 # ===== TURN STATE =====
 var _turn_state: TurnState = TurnState.INACTIVE
 var _current_turn_unit: Unit = null
 var _turn_manager: TurnManager = null
 
+# ===== GRID REFERENCE (Task 2.7) =====
+var _combat_grid: CombatGrid = null
+
 # ===== LIFECYCLE =====
 func _ready() -> void:
 	print("[CombatManager] Initialized")
+
+func _unhandled_input(event: InputEvent) -> void:
+	## Handle global input for combat (Task 2.3)
+	# Cancel ability targeting on right-click or ESC
+	if _turn_state == TurnState.TARGETING:
+		if event is InputEventMouseButton:
+			if event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+				cancel_ability_targeting()
+				get_viewport().set_input_as_handled()
+		elif event is InputEventKey:
+			if event.keycode == KEY_ESCAPE and event.pressed:
+				cancel_ability_targeting()
+				get_viewport().set_input_as_handled()
 
 # ===== TURN STATE MANAGEMENT =====
 func set_turn_state(new_state: TurnState) -> void:
@@ -61,7 +91,8 @@ func is_waiting_for_input() -> bool:
 
 func can_unit_act(unit: Unit) -> bool:
 	## Check if a unit is allowed to act right now
-	if _turn_state != TurnState.WAITING_FOR_INPUT:
+	# Allow actions in WAITING_FOR_INPUT or TARGETING state
+	if _turn_state != TurnState.WAITING_FOR_INPUT and _turn_state != TurnState.TARGETING:
 		return false
 	return unit == _current_turn_unit
 
@@ -330,3 +361,558 @@ func _on_action_completed(_unit: Unit) -> void:
 	# Actions end the turn
 	if _turn_manager:
 		_turn_manager.end_current_turn()
+
+# ===== ABILITY HELPER METHODS (Task 2.3) =====
+func has_adjacent_enemies(unit: Unit) -> bool:
+	## Check if the unit has any adjacent enemies
+	if not unit or not _turn_manager:
+		return false
+
+	var turn_order = _turn_manager.get_turn_order()
+	for other in turn_order:
+		if not is_instance_valid(other) or not other.is_alive():
+			continue
+		# Check if enemy and adjacent
+		if other.is_enemy != unit.is_enemy:
+			if AttackResolver.is_adjacent(unit, other):
+				return true
+	return false
+
+func get_adjacent_enemies(unit: Unit) -> Array[Unit]:
+	## Get all adjacent enemy units
+	var enemies: Array[Unit] = []
+	if not unit or not _turn_manager:
+		return enemies
+
+	var turn_order = _turn_manager.get_turn_order()
+	print("[CombatManager] Checking adjacent enemies for %s at %s" % [unit.unit_name, unit.grid_position])
+	for other in turn_order:
+		if not is_instance_valid(other) or not other.is_alive():
+			continue
+		if other.is_enemy != unit.is_enemy:
+			var is_adj = AttackResolver.is_adjacent(unit, other)
+			print("[CombatManager]   %s at %s - adjacent=%s" % [other.unit_name, other.grid_position, is_adj])
+			if is_adj:
+				enemies.append(other)
+	return enemies
+
+func get_friendly_soldiers(unit: Unit) -> Array[Unit]:
+	## Get all friendly soldier units for the given unit's faction
+	var soldiers: Array[Unit] = []
+	if not unit or not _turn_manager:
+		return soldiers
+
+	var turn_order = _turn_manager.get_turn_order()
+	for other in turn_order:
+		if not is_instance_valid(other) or not other.is_alive():
+			continue
+		# Same faction and is a soldier
+		if other.is_enemy == unit.is_enemy and other.is_soldier:
+			soldiers.append(other)
+	return soldiers
+
+func get_all_friendly_units(unit: Unit) -> Array[Unit]:
+	## Get all friendly units (including party members)
+	var friendlies: Array[Unit] = []
+	if not unit or not _turn_manager:
+		return friendlies
+
+	var turn_order = _turn_manager.get_turn_order()
+	for other in turn_order:
+		if not is_instance_valid(other) or not other.is_alive():
+			continue
+		if other.is_enemy == unit.is_enemy:
+			friendlies.append(other)
+	return friendlies
+
+func get_enemies_in_range(unit: Unit, range_tiles: int) -> Array[Unit]:
+	## Get all enemy units within specified range (Task 2.4: for Taunt)
+	var enemies: Array[Unit] = []
+	if not unit or not _turn_manager:
+		return enemies
+
+	var turn_order = _turn_manager.get_turn_order()
+	for other in turn_order:
+		if not is_instance_valid(other) or not other.is_alive():
+			continue
+		# Check if enemy
+		if other.is_enemy != unit.is_enemy:
+			# Calculate grid distance
+			var distance = _calculate_grid_distance(unit.grid_position, other.grid_position)
+			if distance <= range_tiles:
+				enemies.append(other)
+	return enemies
+
+func _calculate_grid_distance(pos1: Vector2i, pos2: Vector2i) -> int:
+	## Calculate Chebyshev distance (allows diagonal movement)
+	return max(abs(pos1.x - pos2.x), abs(pos1.y - pos2.y))
+
+# ===== ALLY RANGE HELPER METHODS (Task 2.6) =====
+func get_allies_in_range(unit: Unit, range_tiles: int, exclude_self: bool = false) -> Array[Unit]:
+	## Get all friendly units within specified range (Task 2.6: for Heal)
+	var allies: Array[Unit] = []
+	if not unit or not _turn_manager:
+		return allies
+
+	var turn_order = _turn_manager.get_turn_order()
+	for other in turn_order:
+		if not is_instance_valid(other) or not other.is_alive():
+			continue
+		# Check if same faction
+		if other.is_enemy == unit.is_enemy:
+			# Skip self if exclude_self is true
+			if exclude_self and other == unit:
+				continue
+			# Calculate grid distance
+			var distance = _calculate_grid_distance(unit.grid_position, other.grid_position)
+			if distance <= range_tiles:
+				allies.append(other)
+	return allies
+
+func has_allies_in_range(unit: Unit, range_tiles: int, exclude_self: bool = false) -> bool:
+	## Check if there are any friendly units within range (Task 2.6)
+	var allies = get_allies_in_range(unit, range_tiles, exclude_self)
+	return allies.size() > 0
+
+func has_enemies_in_range_check(unit: Unit, range_tiles: int) -> bool:
+	## Check if there are any enemy units within range (Task 2.6)
+	var enemies = get_enemies_in_range(unit, range_tiles)
+	return enemies.size() > 0
+
+# ===== TAUNT HELPER METHODS (Task 2.4) =====
+func is_unit_taunted(unit: Unit) -> bool:
+	## Check if a unit is currently taunted
+	if not is_instance_valid(unit):
+		return false
+	return StatusEffectManager.has_effect(unit, "TAUNTED")
+
+func get_taunt_target(unit: Unit) -> Unit:
+	## Get the unit that a taunted unit must attack (Task 2.4)
+	## Returns null if unit is not taunted or taunt source is dead
+	if not is_instance_valid(unit):
+		return null
+
+	var taunt_source = StatusEffectManager.get_taunt_source(unit)
+	if taunt_source and is_instance_valid(taunt_source) and taunt_source.is_alive():
+		return taunt_source
+	return null
+
+func notify_unit_death(unit: Unit) -> void:
+	## Notify turn manager that a unit has died
+	if _turn_manager:
+		_turn_manager.remove_unit(unit)
+
+# ===== TELEPORT HELPER METHODS (Task 2.5) =====
+func has_valid_teleport_tiles(unit: Unit, range_tiles: int) -> bool:
+	## Check if there are valid teleport destinations (for Shadowstep availability)
+	var valid_tiles = get_valid_teleport_tiles(unit, range_tiles)
+	return valid_tiles.size() > 0
+
+func get_valid_teleport_tiles(unit: Unit, range_tiles: int) -> Array[Vector2i]:
+	## Get all valid teleport destinations within range (Task 2.5: Shadowstep)
+	## Valid tiles: within range, not occupied, optionally on grid
+	var valid_tiles: Array[Vector2i] = []
+	if not unit:
+		return valid_tiles
+
+	var unit_pos = unit.grid_position
+
+	# Check all tiles within Chebyshev distance (allows diagonal)
+	for dx in range(-range_tiles, range_tiles + 1):
+		for dy in range(-range_tiles, range_tiles + 1):
+			if dx == 0 and dy == 0:
+				continue  # Can't teleport to current position
+
+			var check_pos = Vector2i(unit_pos.x + dx, unit_pos.y + dy)
+
+			# Check if within range (Chebyshev distance)
+			var distance = max(abs(dx), abs(dy))
+			if distance > range_tiles:
+				continue
+
+			# Check if tile is occupied
+			if is_tile_occupied(check_pos):
+				continue
+
+			# Check if tile is within grid bounds (if we have grid reference)
+			if unit.combat_grid and not unit.combat_grid.is_valid_position(check_pos):
+				continue
+
+			valid_tiles.append(check_pos)
+
+	return valid_tiles
+
+func is_tile_occupied(position: Vector2i) -> bool:
+	## Check if a grid position is occupied by any unit (Task 2.5)
+	if not _turn_manager:
+		return false
+
+	var turn_order = _turn_manager.get_turn_order()
+	for unit in turn_order:
+		if is_instance_valid(unit) and unit.is_alive():
+			if unit.grid_position == position:
+				return true
+	return false
+
+# ===== LINE OF SIGHT HELPERS (Task 2.7) =====
+func set_combat_grid(grid: CombatGrid) -> void:
+	## Set reference to combat grid for LoS checks
+	_combat_grid = grid
+	print("[CombatManager] Combat grid reference set")
+
+func get_combat_grid() -> CombatGrid:
+	## Get the combat grid reference
+	# Try stored reference first
+	if _combat_grid:
+		return _combat_grid
+	# Fallback: try to get from current turn unit
+	if _current_turn_unit and _current_turn_unit.combat_grid:
+		return _current_turn_unit.combat_grid
+	# Last resort: try to get from any unit in battle
+	if _turn_manager:
+		var units = _turn_manager.get_turn_order()
+		for unit in units:
+			if is_instance_valid(unit) and unit.combat_grid:
+				return unit.combat_grid
+	return null
+
+func is_tile_blocked_for_los(position: Vector2i) -> bool:
+	## Check if a tile blocks line of sight (obstacles only, NOT units)
+	## Returns true if tile blocks LoS, false otherwise
+	var grid = get_combat_grid()
+	if not grid:
+		# No grid reference, assume not blocked
+		return false
+
+	# Check if out of bounds (blocks LoS)
+	if not grid.is_valid_position(position):
+		return true
+
+	# Check if tile is an obstacle
+	return grid.is_obstacle(position)
+
+func get_enemies_in_range_with_los(unit: Unit, range_tiles: int) -> Array[Unit]:
+	## Get all enemy units within range AND with clear line of sight (Task 2.7)
+	var enemies: Array[Unit] = []
+	if not unit or not _turn_manager:
+		return enemies
+
+	var turn_order = _turn_manager.get_turn_order()
+	for other in turn_order:
+		if not is_instance_valid(other) or not other.is_alive():
+			continue
+		# Check if enemy
+		if other.is_enemy != unit.is_enemy:
+			# Use AttackResolver's range and LoS check
+			if AttackResolver.can_attack_at_range(unit, other):
+				enemies.append(other)
+	return enemies
+
+func teleport_unit(unit: Unit, destination: Vector2i) -> void:
+	## Execute teleport for a unit (Task 2.5: Shadowstep)
+	if not unit:
+		return
+
+	var from_position = unit.grid_position
+	unit.teleport_to(destination)
+	unit_teleported.emit(unit, from_position, destination)
+	print("[CombatManager] %s teleported from %s to %s" % [unit.unit_name, from_position, destination])
+
+func get_valid_teleport_tiles_for_targeting() -> Array[Vector2i]:
+	## Get cached valid teleport tiles for current targeting
+	return _valid_teleport_tiles
+
+# ===== ABILITY EXECUTION API (Task 2.3) =====
+func execute_ability(user: Unit, ability_id: String, target: Unit = null) -> bool:
+	## Execute an ability for a unit
+	if not user or not is_battle_active():
+		return false
+
+	# Check if it's the user's turn
+	if not can_unit_act(user):
+		print("[CombatManager] Cannot use ability - not this unit's turn")
+		return false
+
+	# Load the ability resource
+	var ability = user.get_ability_resource(ability_id)
+	if not ability:
+		print("[CombatManager] Ability not found: %s" % ability_id)
+		return false
+
+	# Check if ability is available
+	if not user.is_ability_available(ability_id):
+		print("[CombatManager] Ability not available: %s" % ability_id)
+		return false
+
+	# Set state to Acting
+	set_turn_state(TurnState.ACTING)
+
+	# Execute using AbilityExecutor
+	var result = AbilityExecutor.execute(user, ability, target)
+
+	# Record ability use
+	user.use_ability(ability_id)
+
+	print("[CombatManager] %s used %s - %s" % [
+		user.unit_name,
+		ability.display_name,
+		"Hit!" if result.get("hit", false) else ("Buffed" if result.get("buff_applied", false) else "Missed")
+	])
+
+	# Emit ability executed signal
+	ability_executed.emit(user, ability_id, result)
+
+	# If ability ends turn, complete the action
+	if ability.ends_turn:
+		_on_action_completed(user)
+
+	return true
+
+# ===== ABILITY SELECTION API (Task 2.3) =====
+func select_ability(ability_id: String) -> void:
+	## Called when player selects an ability from the ability bar
+	# Allow selecting ability from WAITING_FOR_INPUT or TARGETING state (to switch abilities)
+	if not _current_turn_unit:
+		print("[CombatManager] Cannot select ability - no current unit")
+		return
+
+	if _turn_state != TurnState.WAITING_FOR_INPUT and _turn_state != TurnState.TARGETING:
+		print("[CombatManager] Cannot select ability - not in valid state")
+		return
+
+	# If already targeting, cancel current targeting first
+	if _turn_state == TurnState.TARGETING:
+		_pending_ability_id = ""
+		_pending_ability = null
+		_valid_targets.clear()
+		_valid_teleport_tiles.clear()
+
+	var ability = _current_turn_unit.get_ability_resource(ability_id)
+	if not ability:
+		print("[CombatManager] Ability not found: %s" % ability_id)
+		return
+
+	if not _current_turn_unit.is_ability_available(ability_id):
+		print("[CombatManager] Ability not available: %s" % ability_id)
+		return
+
+	# Check if ability requires a target
+	print("[CombatManager] Ability %s requires_target=%s, target_type=%s, ability_type=%s" % [
+		ability_id, ability.requires_target, ability.target_type, ability.ability_type
+	])
+
+	# Handle SELF_BUFF abilities - execute immediately (Task 2.5)
+	if ability.ability_type == Ability.AbilityType.SELF_BUFF:
+		print("[CombatManager] Executing self-buff %s immediately" % ability_id)
+		execute_ability(_current_turn_unit, ability_id, null)
+		return
+
+	# Handle PARTY_BUFF abilities - execute immediately (Task 2.6: Bless)
+	if ability.ability_type == Ability.AbilityType.PARTY_BUFF:
+		print("[CombatManager] Executing party buff %s immediately" % ability_id)
+		execute_ability(_current_turn_unit, ability_id, null)
+		return
+
+	# Handle TELEPORT abilities - target tiles instead of units (Task 2.5)
+	if ability.ability_type == Ability.AbilityType.TELEPORT:
+		_pending_ability_id = ability_id
+		_pending_ability = ability
+		_valid_teleport_tiles = get_valid_teleport_tiles(_current_turn_unit, ability.ability_range)
+
+		print("[CombatManager] Found %d valid teleport tiles for %s" % [_valid_teleport_tiles.size(), ability_id])
+
+		if _valid_teleport_tiles.is_empty():
+			print("[CombatManager] No valid teleport tiles for %s" % ability_id)
+			cancel_ability_targeting()
+			return
+
+		set_turn_state(TurnState.TARGETING)
+		tile_targeting_started.emit(ability_id, _valid_teleport_tiles)
+		print("[CombatManager] TILE TARGETING mode activated for %s - click a highlighted tile!" % ability_id)
+		return
+
+	if ability.requires_target:
+		# Enter targeting mode
+		_pending_ability_id = ability_id
+		_pending_ability = ability
+		_valid_targets = _get_valid_targets_for_ability(ability)
+
+		print("[CombatManager] Found %d valid targets for %s" % [_valid_targets.size(), ability_id])
+
+		if _valid_targets.is_empty():
+			print("[CombatManager] No valid targets for %s - need adjacent enemy!" % ability_id)
+			cancel_ability_targeting()
+			return
+
+		set_turn_state(TurnState.TARGETING)
+		ability_targeting_started.emit(ability_id, _valid_targets)
+		print("[CombatManager] TARGETING mode activated for %s - click a red highlighted enemy!" % ability_id)
+	else:
+		# Execute immediately (no target needed - e.g., Rally)
+		print("[CombatManager] Executing %s immediately (no target needed)" % ability_id)
+		execute_ability(_current_turn_unit, ability_id, null)
+
+func cancel_ability_targeting() -> void:
+	## Cancel ability targeting and return to waiting for input
+	if _turn_state != TurnState.TARGETING:
+		return
+
+	_pending_ability_id = ""
+	_pending_ability = null
+	_valid_targets.clear()
+	_valid_teleport_tiles.clear()  # Task 2.5
+	set_turn_state(TurnState.WAITING_FOR_INPUT)
+	ability_targeting_cancelled.emit()
+	print("[CombatManager] Ability targeting cancelled")
+
+func select_teleport_tile(tile_position: Vector2i) -> bool:
+	## Called when player clicks a tile while in teleport targeting mode (Task 2.5)
+	print("[CombatManager] select_teleport_tile called for %s" % tile_position)
+
+	if _turn_state != TurnState.TARGETING:
+		print("[CombatManager] FAILED: Not in TARGETING state")
+		return false
+
+	if _pending_ability_id.is_empty():
+		print("[CombatManager] FAILED: No pending ability")
+		return false
+
+	if not tile_position in _valid_teleport_tiles:
+		print("[CombatManager] FAILED: Tile not in valid teleport tiles")
+		return false
+
+	var ability_id = _pending_ability_id
+	print("[CombatManager] Executing teleport %s to %s" % [ability_id, tile_position])
+
+	# Execute the teleport ability
+	var success = execute_ability_on_tile(_current_turn_unit, ability_id, tile_position)
+
+	# Clear targeting state if execution succeeded
+	if success:
+		_pending_ability_id = ""
+		_pending_ability = null
+		_valid_teleport_tiles.clear()
+	else:
+		print("[CombatManager] Teleport execution failed, keeping targeting state")
+
+	return success
+
+func execute_ability_on_tile(user: Unit, ability_id: String, tile_position: Vector2i) -> bool:
+	## Execute an ability that targets a tile (Task 2.5: Shadowstep)
+	if not user or not is_battle_active():
+		return false
+
+	if not can_unit_act(user):
+		print("[CombatManager] Cannot use ability - not this unit's turn")
+		return false
+
+	var ability = user.get_ability_resource(ability_id)
+	if not ability:
+		print("[CombatManager] Ability not found: %s" % ability_id)
+		return false
+
+	if not user.is_ability_available(ability_id):
+		print("[CombatManager] Ability not available: %s" % ability_id)
+		return false
+
+	# Set state to Acting
+	set_turn_state(TurnState.ACTING)
+
+	# Execute using AbilityExecutor with tile target
+	var result = AbilityExecutor.execute_on_tile(user, ability, tile_position)
+
+	# Record ability use
+	user.use_ability(ability_id)
+
+	print("[CombatManager] %s used %s on tile %s - %s" % [
+		user.unit_name,
+		ability.display_name,
+		tile_position,
+		"Success" if result.get("success", false) else "Failed"
+	])
+
+	# Emit ability executed signal
+	ability_executed.emit(user, ability_id, result)
+
+	# If ability ends turn, complete the action
+	if ability.ends_turn:
+		_on_action_completed(user)
+	else:
+		# Return to waiting for input if ability doesn't end turn (Shadowstep)
+		set_turn_state(TurnState.WAITING_FOR_INPUT)
+
+	return result.get("success", false)
+
+func select_ability_target(target: Unit) -> bool:
+	## Called when player clicks a target while in targeting mode
+	print("[CombatManager] select_ability_target called for %s" % (target.unit_name if target else "null"))
+	print("[CombatManager] Current state: %s, pending ability: %s, valid targets: %d" % [
+		TurnState.keys()[_turn_state], _pending_ability_id, _valid_targets.size()
+	])
+
+	if _turn_state != TurnState.TARGETING:
+		print("[CombatManager] FAILED: Not in TARGETING state")
+		return false
+
+	if _pending_ability_id.is_empty():
+		print("[CombatManager] FAILED: No pending ability")
+		return false
+
+	if not target in _valid_targets:
+		print("[CombatManager] FAILED: Target not in valid_targets list")
+		for vt in _valid_targets:
+			print("[CombatManager]   Valid target: %s" % vt.unit_name)
+		return false
+
+	var ability_id = _pending_ability_id
+	print("[CombatManager] Executing ability %s on %s" % [ability_id, target.unit_name])
+
+	# Execute the ability on the target FIRST
+	var success = execute_ability(_current_turn_unit, ability_id, target)
+
+	# Only clear targeting state if execution succeeded
+	if success:
+		_pending_ability_id = ""
+		_pending_ability = null
+		_valid_targets.clear()
+	else:
+		print("[CombatManager] Ability execution failed, keeping targeting state")
+
+	return success
+
+func is_targeting_ability() -> bool:
+	## Check if we're in ability targeting mode
+	return _turn_state == TurnState.TARGETING
+
+func get_pending_ability_id() -> String:
+	## Get the ability being targeted
+	return _pending_ability_id
+
+func get_valid_targets() -> Array[Unit]:
+	## Get valid targets for current ability
+	return _valid_targets
+
+func _get_valid_targets_for_ability(ability: Resource) -> Array[Unit]:
+	## Get valid targets based on ability's target type
+	var targets: Array[Unit] = []
+
+	match ability.target_type:
+		Ability.TargetType.NONE:
+			pass
+		Ability.TargetType.ENEMY_ADJACENT:
+			targets = get_adjacent_enemies(_current_turn_unit)
+		Ability.TargetType.ENEMY_RANGE:
+			# Task 2.7: Use LoS check for ranged targets if unit has ranged weapon
+			if _current_turn_unit.is_ranged_weapon:
+				targets = get_enemies_in_range_with_los(_current_turn_unit, ability.ability_range)
+			else:
+				targets = get_enemies_in_range(_current_turn_unit, ability.ability_range)
+		Ability.TargetType.ALLY:
+			targets = get_all_friendly_units(_current_turn_unit)
+		Ability.TargetType.ALLY_RANGE:
+			# Task 2.6: Get allies within range, excluding self if specified
+			targets = get_allies_in_range(_current_turn_unit, ability.ability_range, ability.exclude_self)
+		_:
+			pass
+
+	return targets

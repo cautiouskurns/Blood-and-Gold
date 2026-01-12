@@ -70,28 +70,29 @@ graph LR
 **Dependencies:** Feature 1.1
 
 **Implementation Tasks:**
-- [ ] Replace main_panel content with GraphEdit node
-- [ ] Create `dialogue_canvas.gd` script for GraphEdit
-- [ ] Configure GraphEdit properties:
-  - [ ] Enable grid and snapping (20px)
-  - [ ] Enable minimap (bottom-right)
-  - [ ] Set zoom limits (25% - 200%)
-- [ ] Implement `connection_request` signal handler
-- [ ] Implement `disconnection_request` signal handler
-- [ ] Implement pan with middle mouse button
-- [ ] Implement zoom with scroll wheel
-- [ ] Add right-click context menu (placeholder)
+- [x] Replace main_panel content with GraphEdit node
+- [x] Create `dialogue_canvas.gd` script for GraphEdit
+- [x] Configure GraphEdit properties:
+  - [x] Enable grid and snapping (20px)
+  - [x] Enable minimap (bottom-right)
+  - [x] Set zoom limits (25% - 200%)
+- [x] Implement `connection_request` signal handler
+- [x] Implement `disconnection_request` signal handler
+- [x] Implement pan with middle mouse button
+- [x] Implement zoom with scroll wheel
+- [x] Add right-click context menu (placeholder)
 
 **Files to Create/Modify:**
-- `addons/dialogue_editor/scenes/main_panel.tscn`
-- `addons/dialogue_editor/scripts/dialogue_canvas.gd`
+- `addons/dialogue_editor/scenes/main_panel.tscn` ✓
+- `addons/dialogue_editor/scripts/dialogue_canvas.gd` ✓
+- `addons/dialogue_editor/scripts/main_panel.gd` ✓
 
 **Success Criteria:**
-- [ ] Canvas displays with visible grid
-- [ ] Can pan with middle mouse button
-- [ ] Can zoom with scroll wheel (25%-200%)
-- [ ] Minimap visible in corner
-- [ ] Snapping works when moving nodes
+- [x] Canvas displays with visible grid
+- [x] Can pan with middle mouse button
+- [x] Can zoom with scroll wheel (25%-200%)
+- [x] Minimap visible in corner
+- [x] Snapping works when moving nodes
 
 ---
 
@@ -102,30 +103,29 @@ graph LR
 **Dependencies:** Feature 1.2
 
 **Implementation Tasks:**
-- [ ] Create `node_palette.tscn` as VBoxContainer
-- [ ] Add palette to left side of main panel (HSplitContainer)
-- [ ] Create draggable buttons for each MVP node type:
-  - [ ] Start node button
-  - [ ] Speaker node button
-  - [ ] Choice node button
-  - [ ] Branch node button
-  - [ ] End node button
-- [ ] Implement drag-and-drop from palette to canvas
-- [ ] Implement right-click canvas → Add Node submenu
-- [ ] Generate unique node IDs on creation
+- [x] Create `node_palette.tscn` as VBoxContainer
+- [x] Add palette to left side of main panel (HSplitContainer)
+- [x] Create draggable buttons for each MVP node type:
+  - [x] Start node button
+  - [x] Speaker node button
+  - [x] Choice node button
+  - [x] Branch node button
+  - [x] End node button
+- [x] Implement drag-and-drop from palette to canvas
+- [x] Implement right-click canvas → Add Node submenu
+- [x] Generate unique node IDs on creation
 
 **Files to Create/Modify:**
-- `addons/dialogue_editor/scenes/main_panel.tscn`
-- `addons/dialogue_editor/scenes/node_palette.tscn`
-- `addons/dialogue_editor/scripts/node_palette.gd`
-- `addons/dialogue_editor/scripts/dialogue_canvas.gd`
+- `addons/dialogue_editor/scenes/main_panel.tscn` ✓
+- `addons/dialogue_editor/scripts/node_palette.gd` ✓
+- `addons/dialogue_editor/scripts/dialogue_canvas.gd` ✓
 
 **Success Criteria:**
-- [ ] Palette visible on left side
-- [ ] Can drag node type onto canvas to create
-- [ ] Can right-click canvas to add nodes
-- [ ] Each node gets unique ID
-- [ ] Separator visible between MVP and Phase 2 nodes
+- [x] Palette visible on left side
+- [x] Can drag node type onto canvas to create
+- [x] Can right-click canvas to add nodes
+- [x] Each node gets unique ID
+- [x] Separator visible between MVP and Phase 2 nodes
 
 ---
 
@@ -136,55 +136,51 @@ graph LR
 **Dependencies:** Feature 1.3
 
 **Implementation Tasks:**
-- [ ] Create base `dialogue_node.gd` with common functionality
-- [ ] Create `start_node.tscn` and `start_node.gd`:
-  - [ ] No input slot
-  - [ ] One output slot
-  - [ ] Green color styling
-- [ ] Create `speaker_node.tscn` and `speaker_node.gd`:
-  - [ ] One input slot
-  - [ ] Multiple output slots (dynamic)
-  - [ ] Speaker dropdown field
-  - [ ] Multi-line text field (500 char limit)
-  - [ ] Portrait field (optional)
-  - [ ] Color by speaker
-- [ ] Create `choice_node.tscn` and `choice_node.gd`:
-  - [ ] One input slot
-  - [ ] One output slot
-  - [ ] Text field for player response
-  - [ ] Blue color (player)
-- [ ] Create `branch_node.tscn` and `branch_node.gd`:
-  - [ ] One input slot
-  - [ ] Multiple output slots (per condition)
-  - [ ] Condition type dropdown
-  - [ ] Condition value field
-  - [ ] Yellow/orange color
-- [ ] Create `end_node.tscn` and `end_node.gd`:
-  - [ ] One input slot
-  - [ ] No output slot
-  - [ ] End type dropdown (normal, combat, trade, exit)
-  - [ ] Red color styling
+- [x] Create base `dialogue_node.gd` with common functionality
+- [x] Create `start_node.tscn` and `start_node.gd`:
+  - [x] No input slot
+  - [x] One output slot
+  - [x] Green color styling
+- [x] Create `speaker_node.tscn` and `speaker_node.gd`:
+  - [x] One input slot
+  - [x] Multiple output slots (dynamic)
+  - [x] Speaker dropdown field
+  - [x] Multi-line text field (500 char limit)
+  - [x] Portrait field (optional)
+  - [x] Color by speaker
+- [x] Create `choice_node.tscn` and `choice_node.gd`:
+  - [x] One input slot
+  - [x] One output slot
+  - [x] Text field for player response
+  - [x] Blue color (player)
+- [x] Create `branch_node.tscn` and `branch_node.gd`:
+  - [x] One input slot
+  - [x] Multiple output slots (per condition)
+  - [x] Condition type dropdown
+  - [x] Condition value field
+  - [x] Yellow/orange color
+- [x] Create `end_node.tscn` and `end_node.gd`:
+  - [x] One input slot
+  - [x] No output slot
+  - [x] End type dropdown (normal, combat, trade, exit)
+  - [x] Red color styling
 
 **Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/nodes/dialogue_node.gd` (base)
-- `addons/dialogue_editor/scenes/nodes/start_node.tscn`
-- `addons/dialogue_editor/scripts/nodes/start_node.gd`
-- `addons/dialogue_editor/scenes/nodes/speaker_node.tscn`
-- `addons/dialogue_editor/scripts/nodes/speaker_node.gd`
-- `addons/dialogue_editor/scenes/nodes/choice_node.tscn`
-- `addons/dialogue_editor/scripts/nodes/choice_node.gd`
-- `addons/dialogue_editor/scenes/nodes/branch_node.tscn`
-- `addons/dialogue_editor/scripts/nodes/branch_node.gd`
-- `addons/dialogue_editor/scenes/nodes/end_node.tscn`
-- `addons/dialogue_editor/scripts/nodes/end_node.gd`
+- `addons/dialogue_editor/scripts/nodes/dialogue_node.gd` (base) ✓
+- `addons/dialogue_editor/scripts/nodes/start_node.gd` ✓
+- `addons/dialogue_editor/scripts/nodes/speaker_node.gd` ✓
+- `addons/dialogue_editor/scripts/nodes/choice_node.gd` ✓
+- `addons/dialogue_editor/scripts/nodes/branch_node.gd` ✓
+- `addons/dialogue_editor/scripts/nodes/end_node.gd` ✓
+- `addons/dialogue_editor/scripts/dialogue_canvas.gd` ✓ (updated to use new nodes)
 
 **Success Criteria:**
-- [ ] All 5 node types can be created
-- [ ] Each node has correct input/output slots
-- [ ] Speaker node text field has 500 char limit
-- [ ] Speaker dropdown shows character options
-- [ ] Nodes are color-coded by type
-- [ ] Can edit all node properties inline
+- [x] All 5 node types can be created
+- [x] Each node has correct input/output slots
+- [x] Speaker node text field has 500 char limit
+- [x] Speaker dropdown shows character options
+- [x] Nodes are color-coded by type
+- [x] Can edit all node properties inline
 
 ---
 
@@ -195,26 +191,31 @@ graph LR
 **Dependencies:** Feature 1.4
 
 **Implementation Tasks:**
-- [ ] Configure slot types and colors in each node
-- [ ] Implement connection validation (prevent invalid connections)
-- [ ] Style connection lines (bezier curves)
-- [ ] Color connections based on source node type
-- [ ] Implement connection deletion (right-click or drag away)
-- [ ] Prevent multiple connections to same input slot
-- [ ] Allow multiple connections from same output slot (for choices)
-- [ ] Update node data when connections change
+- [x] Configure slot types and colors in each node
+- [x] Implement connection validation (prevent invalid connections)
+- [x] Style connection lines (bezier curves)
+- [x] Color connections based on source node type
+- [x] Implement connection deletion (right-click or drag away)
+- [x] Prevent multiple connections to same input slot
+- [x] Allow multiple connections from same output slot (for choices)
+- [x] Update node data when connections change
 
 **Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/dialogue_canvas.gd`
-- `addons/dialogue_editor/scripts/nodes/dialogue_node.gd`
+- `addons/dialogue_editor/scripts/dialogue_canvas.gd` ✓
+- `addons/dialogue_editor/scripts/nodes/dialogue_node.gd` ✓
+- `addons/dialogue_editor/scripts/nodes/start_node.gd` ✓
+- `addons/dialogue_editor/scripts/nodes/speaker_node.gd` ✓
+- `addons/dialogue_editor/scripts/nodes/choice_node.gd` ✓
+- `addons/dialogue_editor/scripts/nodes/branch_node.gd` ✓
+- `addons/dialogue_editor/scripts/nodes/end_node.gd` ✓
 
 **Success Criteria:**
-- [ ] Can drag from output to input to connect
-- [ ] Connection lines are visible and styled
-- [ ] Cannot connect output to output
-- [ ] Cannot connect to same node
-- [ ] Can delete connections
-- [ ] Speaker can connect to multiple choices
+- [x] Can drag from output to input to connect
+- [x] Connection lines are visible and styled
+- [x] Cannot connect output to output
+- [x] Cannot connect to same node
+- [x] Can delete connections
+- [x] Speaker can connect to multiple choices
 
 ---
 
@@ -225,34 +226,34 @@ graph LR
 **Dependencies:** Feature 1.5
 
 **Implementation Tasks:**
-- [ ] Define .dtree JSON structure (per spec)
-- [ ] Create `dialogue_tree_data.gd` Resource class
-- [ ] Implement `serialize_tree()` → Dictionary
-- [ ] Implement `deserialize_tree(data)` → rebuild canvas
-- [ ] Serialize node positions and zoom/offset
-- [ ] Add File menu to toolbar:
-  - [ ] New (Ctrl+N)
-  - [ ] Open (Ctrl+O)
-  - [ ] Save (Ctrl+S)
-  - [ ] Save As (Ctrl+Shift+S)
-- [ ] Implement file dialogs for open/save
-- [ ] Track "dirty" state (unsaved changes indicator)
-- [ ] Prompt to save on close if dirty
-- [ ] Store canvas zoom and scroll position
+- [x] Define .dtree JSON structure (per spec)
+- [x] Create `dialogue_tree_data.gd` Resource class
+- [x] Implement `serialize_tree()` → Dictionary
+- [x] Implement `deserialize_tree(data)` → rebuild canvas
+- [x] Serialize node positions and zoom/offset
+- [x] Add File menu to toolbar:
+  - [x] New (Ctrl+N)
+  - [x] Open (Ctrl+O)
+  - [x] Save (Ctrl+S)
+  - [x] Save As (Ctrl+Shift+S)
+- [x] Implement file dialogs for open/save
+- [x] Track "dirty" state (unsaved changes indicator)
+- [x] Prompt to save on close if dirty
+- [x] Store canvas zoom and scroll position
 
 **Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/dialogue_tree_data.gd`
-- `addons/dialogue_editor/scripts/dialogue_canvas.gd`
-- `addons/dialogue_editor/scenes/main_panel.tscn` (add toolbar)
-- `addons/dialogue_editor/scripts/main_panel.gd`
+- `addons/dialogue_editor/scripts/dialogue_tree_data.gd` ✓
+- `addons/dialogue_editor/scripts/dialogue_canvas.gd` ✓
+- `addons/dialogue_editor/scenes/main_panel.tscn` ✓
+- `addons/dialogue_editor/scripts/main_panel.gd` ✓
 
 **Success Criteria:**
-- [ ] Can save tree to .dtree file
-- [ ] Can load .dtree file and recreate tree exactly
-- [ ] Canvas position/zoom restored on load
-- [ ] Unsaved changes show indicator (*)
-- [ ] Prompted to save before closing
-- [ ] Keyboard shortcuts work
+- [x] Can save tree to .dtree file
+- [x] Can load .dtree file and recreate tree exactly
+- [x] Canvas position/zoom restored on load
+- [x] Unsaved changes show indicator (*)
+- [x] Prompted to save before closing
+- [x] Keyboard shortcuts work
 
 ---
 
@@ -745,11 +746,11 @@ Ideas that might be valuable but aren't committed:
 
 ### Phase 1 Progress
 - [x] Feature 1.1: Plugin Setup
-- [ ] Feature 1.2: Visual Node Canvas
-- [ ] Feature 1.3: Node Palette
-- [ ] Feature 1.4: Core Node Types
-- [ ] Feature 1.5: Node Connections
-- [ ] Feature 1.6: Save/Load System
+- [x] Feature 1.2: Visual Node Canvas
+- [x] Feature 1.3: Node Palette
+- [x] Feature 1.4: Core Node Types
+- [x] Feature 1.5: Node Connections
+- [x] Feature 1.6: Save/Load System
 - [ ] Feature 1.7: JSON Export
 - [ ] Feature 1.8: Undo/Redo System
 

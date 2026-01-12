@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="Ability" load_steps=2 format=3 uid="uid://crt6jx2mh8fap"]
+
+[ext_resource type="Script" path="res://scripts/resources/ability.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "poison_blade"
+display_name = "Poison Blade"
+description = "Your next 3 attacks deal +2 bonus damage."
+ability_type = 2
+target_type = 4
+uses_per_battle = 1
+ends_turn = true
+damage_multiplier = 1.0
+attack_modifier = 0
+bonus_damage = 2
+applies_status = "POISON_BLADE"
+status_duration = 0
+status_value = 3
+ability_range = 0
+targets_soldiers_only = false
+requires_target = false
+max_targets = 1
+arc_angle = 90
+is_passive = false
+passive_trigger = ""
+requires_behind = false
+backstab_multiplier = 2.0
+ignores_obstacles = false

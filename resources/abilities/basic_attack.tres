@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="Ability" load_steps=2 format=3 uid="uid://bxwqcqnkc2sgc"]
+
+[ext_resource type="Script" path="res://scripts/resources/ability.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "basic_attack"
+display_name = "Attack"
+description = "A standard melee attack."
+ability_type = 0
+target_type = 1
+uses_per_battle = -1
+ends_turn = true
+damage_multiplier = 1.0
+attack_modifier = 0
+bonus_damage = 0
+applies_status = ""
+status_duration = 0
+status_value = 0
+ability_range = 1
+targets_soldiers_only = false
+requires_target = true

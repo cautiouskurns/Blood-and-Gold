@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="Ability" load_steps=2 format=3 uid="uid://matthias_bless"]
+
+[ext_resource type="Script" path="res://scripts/resources/ability.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "matthias_bless"
+display_name = "Bless"
+description = "Grant all party members +2 to all rolls for 3 turns."
+ability_type = 6
+target_type = 0
+uses_per_battle = -1
+ends_turn = true
+damage_multiplier = 1.0
+attack_modifier = 0
+bonus_damage = 0
+applies_status = "BLESSED"
+status_duration = 3
+status_value = 2
+ability_range = 0
+targets_soldiers_only = false
+requires_target = false
+max_targets = 1
+arc_angle = 90
+is_passive = false
+passive_trigger = ""
+requires_behind = false
+backstab_multiplier = 2.0
+ignores_obstacles = false
+heal_dice_count = 0
+heal_dice_size = 0
+heal_bonus = 0
+auto_hit = false
+fixed_damage_die = 0
+exclude_self = false

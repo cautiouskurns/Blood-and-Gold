@@ -117,6 +117,9 @@ func _start_battle() -> void:
 		push_error("[Main] TurnOrderPanel not found!")
 		return
 
+	# Set combat grid reference on CombatManager (Task 2.7)
+	CombatManager.set_combat_grid(combat_grid)
+
 	# Start battle through CombatManager (creates TurnManager internally)
 	CombatManager.start_battle(_units)
 	print("[Main] Battle started")
@@ -218,6 +221,16 @@ func _handle_grid_click() -> void:
 
 	# Don't process clicks during movement
 	if CombatManager.is_unit_moving():
+		return
+
+	# Don't process grid clicks when in ability targeting mode (Task 2.3)
+	# Unit Area2D handles targeting clicks
+	if CombatManager.is_targeting_ability():
+		var unit = get_unit_at_grid_pos(grid_pos)
+		if unit == null:
+			# Clicking empty tile during targeting cancels it
+			CombatManager.cancel_ability_targeting()
+		# If clicking on a unit, their Area2D will handle it
 		return
 
 	# Check if click is outside grid bounds

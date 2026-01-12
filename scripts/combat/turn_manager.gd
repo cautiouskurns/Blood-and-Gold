@@ -38,6 +38,12 @@ func start_battle(units: Array[Unit]) -> void:
 
 	_is_battle_active = true
 	_current_round = 1
+
+	# Reset ability uses for all units at battle start (Task 2.3)
+	for unit in units:
+		if is_instance_valid(unit):
+			unit.reset_ability_uses()
+
 	_roll_initiative(units)
 
 	print("[TurnManager] Battle started - %d units" % _turn_order.size())
@@ -175,6 +181,16 @@ func _start_current_turn() -> void:
 		return
 
 	print("[TurnManager] Turn %d: %s" % [_current_turn_index + 1, unit.unit_name])
+
+	# Check if unit is stunned (Task 2.3)
+	if unit.is_stunned():
+		print("[TurnManager] %s is STUNNED - skipping turn!" % unit.unit_name)
+		turn_started.emit(unit)  # Emit so status effects tick
+		# Small delay for visual feedback
+		await get_tree().create_timer(ENEMY_TURN_DELAY).timeout
+		end_current_turn()
+		return
+
 	turn_started.emit(unit)
 
 	# If enemy, auto-skip turn (placeholder for Phase 2 AI)

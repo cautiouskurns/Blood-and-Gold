@@ -28,6 +28,10 @@ const COLOR_BACKGROUND: Color = Color("#0d1117")
 const COLOR_VALID_MOVE: Color = Color("#27ae60", 0.4)  # 40% opacity green
 const COLOR_PATH_LINE: Color = Color("#3498db")  # Blue
 
+# Attack range overlay colors (Task 2.7)
+const COLOR_ATTACK_RANGE: Color = Color("#4a90d9", 0.3)  # Blue tint at 30% opacity
+const COLOR_ATTACK_RANGE_BLOCKED: Color = Color("#888888", 0.2)  # Gray for blocked LoS
+
 # ===== NODE REFERENCES =====
 @onready var tile_map: TileMapLayer = $TileMapLayer
 
@@ -41,6 +45,10 @@ var _path_preview: Line2D
 var _valid_move_tiles: Array[Vector2i] = []
 var pathfinding: Pathfinding
 
+# Attack range overlay state (Task 2.7)
+var _attack_range_overlay: Node2D
+var _attack_range_tiles: Array[Vector2i] = []
+
 # ===== LIFECYCLE =====
 func _ready() -> void:
 	_initialize_grid_data()
@@ -49,6 +57,7 @@ func _ready() -> void:
 	_setup_movement_overlay()
 	_setup_path_preview()
 	_setup_pathfinding()
+	_setup_attack_range_overlay()  # Task 2.7
 	# Defer centering to ensure viewport size is correct
 	call_deferred("_center_grid")
 
@@ -165,6 +174,10 @@ func is_walkable(coords: Vector2i) -> bool:
 func is_obstacle(coords: Vector2i) -> bool:
 	## Check if a tile is an obstacle
 	return get_tile_type(coords) == TILE_OBSTACLE
+
+func is_valid_position(coords: Vector2i) -> bool:
+	## Check if coordinates are within grid bounds (Task 2.5: Shadowstep)
+	return _is_valid_coords(coords)
 
 func world_to_grid(world_pos: Vector2) -> Vector2i:
 	## Convert world position to grid coordinates
@@ -290,3 +303,80 @@ func update_occupied_tiles(units: Array[Unit]) -> void:
 	# Mark current unit positions
 	for unit in units:
 		pathfinding.set_tile_occupied(unit.grid_position, unit)
+
+# ===== ATTACK RANGE OVERLAY (Task 2.7) =====
+func _setup_attack_range_overlay() -> void:
+	## Create container for attack range highlight tiles
+	_attack_range_overlay = Node2D.new()
+	_attack_range_overlay.name = "AttackRangeOverlay"
+	_attack_range_overlay.z_index = 4  # Below movement overlay
+	add_child(_attack_range_overlay)
+
+func show_attack_range(unit: Unit) -> void:
+	## Display attack range indicator for unit's weapon
+	clear_attack_range_overlay()
+
+	if not unit:
+		return
+
+	var origin = unit.grid_position
+	var weapon_range = unit.weapon_range
+
+	# Calculate all tiles in range
+	for dx in range(-weapon_range, weapon_range + 1):
+		for dy in range(-weapon_range, weapon_range + 1):
+			var tile = Vector2i(origin.x + dx, origin.y + dy)
+
+			# Skip own tile
+			if tile == origin:
+				continue
+
+			# Check if within range (Chebyshev distance)
+			var distance = AttackResolver.get_distance(origin, tile)
+			if distance > weapon_range:
+				continue
+
+			# Check if tile is within grid bounds
+			if not _is_valid_coords(tile):
+				continue
+
+			# For ranged weapons, check line of sight
+			var has_los = true
+			if unit.is_ranged_weapon and distance > 1:
+				has_los = AttackResolver.has_line_of_sight(origin, tile)
+
+			# Create overlay for this tile
+			var overlay = ColorRect.new()
+			if has_los:
+				overlay.color = COLOR_ATTACK_RANGE
+				_attack_range_tiles.append(tile)
+			else:
+				overlay.color = COLOR_ATTACK_RANGE_BLOCKED
+
+			overlay.size = Vector2(TILE_SIZE, TILE_SIZE)
+			overlay.position = Vector2(tile.x * TILE_SIZE, tile.y * TILE_SIZE)
+			overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			_attack_range_overlay.add_child(overlay)
+
+	print("[CombatGrid] Showing attack range for %s: %d valid tiles (range %d)" % [
+		unit.unit_name, _attack_range_tiles.size(), weapon_range
+	])
+
+func hide_attack_range() -> void:
+	## Alias for clear_attack_range_overlay
+	clear_attack_range_overlay()
+
+func clear_attack_range_overlay() -> void:
+	## Remove all attack range highlights
+	if _attack_range_overlay:
+		for child in _attack_range_overlay.get_children():
+			child.queue_free()
+	_attack_range_tiles.clear()
+
+func is_in_attack_range(coords: Vector2i) -> bool:
+	## Check if a tile is in the current attack range with LoS
+	return _attack_range_tiles.has(coords)
+
+func get_attack_range_tiles() -> Array[Vector2i]:
+	## Get the current set of valid attack range tiles
+	return _attack_range_tiles

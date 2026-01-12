@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="Ability" load_steps=2 format=3 uid="uid://taunt_ability"]
+
+[ext_resource type="Script" path="res://scripts/resources/ability.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "taunt"
+display_name = "Taunt"
+description = "Force all enemies within 3 tiles to attack you next turn."
+ability_type = 7
+target_type = 0
+uses_per_battle = 1
+ends_turn = false
+damage_multiplier = 0.0
+attack_modifier = 0
+bonus_damage = 0
+applies_status = "TAUNTED"
+status_duration = 1
+status_value = 0
+ability_range = 3
+targets_soldiers_only = false
+requires_target = false
+max_targets = 1
+arc_angle = 90
+is_passive = false
+passive_trigger = ""

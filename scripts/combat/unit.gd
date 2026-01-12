@@ -24,6 +24,7 @@ const DEATH_FADE_DURATION: float = 0.5  # Death animation duration (Task 1.7)
 
 # ===== PRELOADS =====
 const DamageNumberScene = preload("res://scenes/UI/DamageNumber.tscn")
+const UnitNameplateScene = preload("res://scenes/UI/UnitNameplate.tscn")
 
 # HP Bar colors from spec (Task 1.3)
 const COLOR_HP_HEALTHY: Color = Color("#27ae60")    # Green - HP > 25%
@@ -94,6 +95,8 @@ const UNIT_LETTERS: Dictionary = {
 @export var skill_rank: int = 2  # Base skill rank for attacks
 @export var weapon_damage_die: int = 6  # e.g., 6 for 1d6
 @export var uses_finesse: bool = false  # Uses DEX for attacks instead of STR
+@export var weapon_range: int = 1  # 1 = melee, 8 = shortbow, 10 = crossbow (Task 2.7)
+@export var is_ranged_weapon: bool = false  # True for bows, crossbows (Task 2.7)
 
 # ===== NODE REFERENCES =====
 @onready var sprite: Sprite2D = $Sprite2D
@@ -109,9 +112,21 @@ var combat_grid: CombatGrid = null
 var is_selected: bool = false
 var _is_moving: bool = false
 var _movement_tween: Tween
+var _nameplate: UnitNameplate = null  # Task 4.3: Floating nameplate
+
+# ===== FACING DIRECTION (Task 2.5) =====
+var facing_direction: Vector2i = Vector2i(0, 1)  # Default facing South (down)
+
+# ===== POISON BLADE STATE (Task 2.5) =====
+var _poison_blade_charges: int = 0   # Number of attacks remaining with poison
+var _poison_blade_damage: int = 0    # Bonus damage per attack
 
 # ===== ABILITY DATA (Task 2.2) =====
 var _abilities: Array[Dictionary] = []
+
+# ===== ABILITY USAGE TRACKING (Task 2.3) =====
+var _ability_uses: Dictionary = {}  # ability_id -> times used this battle
+var _ability_resources: Dictionary = {}  # ability_id -> Ability resource (cached)
 
 # ===== STAT MODIFIERS (Task 2.1) =====
 func get_stat_modifier(stat_value: int) -> int:
@@ -151,9 +166,16 @@ func get_ranged_attack_bonus() -> int:
 
 func get_attack_bonus() -> int:
 	## Get appropriate attack bonus based on finesse property
+	## Includes status effect bonuses (Task 2.3)
+	var base_bonus: int = 0
 	if uses_finesse:
-		return get_ranged_attack_bonus()
-	return get_melee_attack_bonus()
+		base_bonus = get_ranged_attack_bonus()
+	else:
+		base_bonus = get_melee_attack_bonus()
+
+	# Add attack buff from status effects
+	var buff_bonus = get_attack_buff()
+	return base_bonus + buff_bonus
 
 func get_damage_modifier() -> int:
 	## Get damage modifier (STR or DEX for finesse weapons)
@@ -207,8 +229,10 @@ func _configure_stats_for_type() -> void:
 			max_hp = 25
 			armor_bonus = 2  # Leather
 			movement_range = 6
-			weapon_damage_die = 4  # Dagger 1d4
+			weapon_damage_die = 6  # Shortbow 1d6 (Task 2.7)
 			uses_finesse = true  # Uses DEX for attacks
+			weapon_range = 8  # Shortbow range (Task 2.7)
+			is_ranged_weapon = true  # Task 2.7
 			skill_rank = 2
 
 		UnitType.MATTHIAS:
@@ -263,8 +287,10 @@ func _configure_stats_for_type() -> void:
 			max_hp = 15
 			armor_bonus = 1  # Light armor
 			movement_range = 5
-			weapon_damage_die = 6  # Bow 1d6
+			weapon_damage_die = 6  # Shortbow 1d6
 			uses_finesse = true  # Uses DEX for ranged
+			weapon_range = 8  # Shortbow range (Task 2.7)
+			is_ranged_weapon = true  # Task 2.7
 			skill_rank = 1
 
 # ===== ABILITY CONFIGURATION (Task 2.2) =====
@@ -287,21 +313,29 @@ func _init_abilities() -> void:
 			]
 		UnitType.LYRA:
 			_abilities = [
-				{"id": "basic_attack", "name": "Attack", "icon": ""},
+				{"id": "ranged_attack", "name": "Shoot", "icon": ""},  # Task 2.7: Ranged attack
 				{"id": "backstab", "name": "Backstab", "icon": ""},
 				{"id": "shadowstep", "name": "Shadowstep", "icon": ""},
 				{"id": "poison_blade", "name": "Poison Blade", "icon": ""},
 			]
 		UnitType.MATTHIAS:
 			_abilities = [
-				{"id": "basic_attack", "name": "Attack", "icon": ""},
-				{"id": "heal", "name": "Heal", "icon": ""},
-				{"id": "bless", "name": "Bless", "icon": ""},
-				{"id": "smite", "name": "Smite", "icon": ""},
+				{"id": "matthias_heal", "name": "Heal", "icon": ""},
+				{"id": "matthias_bless", "name": "Bless", "icon": ""},
+				{"id": "matthias_smite", "name": "Smite", "icon": ""},
+				{"id": "matthias_basic_attack", "name": "Attack", "icon": ""},
 			]
 		UnitType.ENEMY:
 			_abilities = [
 				{"id": "basic_attack", "name": "Attack", "icon": ""},
+				{"id": "none1", "name": "", "icon": ""},
+				{"id": "none2", "name": "", "icon": ""},
+				{"id": "none3", "name": "", "icon": ""},
+			]
+		UnitType.ARCHER:
+			# Task 2.7: Archers use ranged attack
+			_abilities = [
+				{"id": "ranged_attack", "name": "Shoot", "icon": ""},
 				{"id": "none1", "name": "", "icon": ""},
 				{"id": "none2", "name": "", "icon": ""},
 				{"id": "none3", "name": "", "icon": ""},
@@ -320,18 +354,164 @@ func get_abilities() -> Array[Dictionary]:
 	return _abilities.duplicate()
 
 func is_ability_available(ability_id: String) -> bool:
-	## Check if an ability can be used
-	## For now, all valid abilities are available (future: cooldowns, costs, targets)
+	## Check if an ability can be used (Task 2.3 update)
 	if ability_id.is_empty():
 		return false
 	# "none" abilities are always unavailable
 	if ability_id.begins_with("none"):
 		return false
 	# Check if ability exists for this unit
+	var has_ability = false
 	for ability in _abilities:
 		if ability.get("id") == ability_id:
-			return true
+			has_ability = true
+			break
+	if not has_ability:
+		return false
+
+	# Check uses_per_battle limit using Ability resource
+	var ability_res = get_ability_resource(ability_id)
+	if ability_res:
+		return ability_res.is_available_for_unit(self)
+	return true
+
+# ===== ABILITY USAGE API (Task 2.3) =====
+func use_ability(ability_id: String) -> void:
+	## Record that an ability was used this battle
+	if not _ability_uses.has(ability_id):
+		_ability_uses[ability_id] = 0
+	_ability_uses[ability_id] += 1
+	print("[Unit] %s used ability %s (%d times)" % [unit_name, ability_id, _ability_uses[ability_id]])
+
+func get_ability_uses(ability_id: String) -> int:
+	## Get how many times an ability has been used this battle
+	return _ability_uses.get(ability_id, 0)
+
+func reset_ability_uses() -> void:
+	## Reset ability usage counts (call at battle start)
+	_ability_uses.clear()
+	print("[Unit] %s ability uses reset" % unit_name)
+
+func get_ability_resource(ability_id: String) -> Resource:
+	## Get the Ability resource for a given ability ID
+	## Returns null if not found
+	if _ability_resources.has(ability_id):
+		return _ability_resources[ability_id]
+
+	# Try to load the ability resource
+	var path = "res://resources/abilities/%s.tres" % ability_id
+	if ResourceLoader.exists(path):
+		var ability_res = load(path)
+		_ability_resources[ability_id] = ability_res
+		return ability_res
+	return null
+
+# ===== STATUS EFFECT API (Task 2.3) =====
+func is_stunned() -> bool:
+	## Check if unit is currently stunned
+	if not Engine.has_singleton("StatusEffectManager"):
+		# Fallback: check autoload
+		var sem = get_node_or_null("/root/StatusEffectManager")
+		if sem:
+			return sem.has_effect(self, "STUNNED")
+		return false
 	return false
+
+func get_attack_buff() -> int:
+	## Get current attack buff value from status effects
+	## Includes both ATTACK_BUFF and BLESSED (Task 2.6)
+	var sem = get_node_or_null("/root/StatusEffectManager")
+	if sem:
+		return sem.get_roll_modifier(self)
+	return 0
+
+func get_all_status_effects() -> Array:
+	## Get all active status effects on this unit
+	var sem = get_node_or_null("/root/StatusEffectManager")
+	if sem:
+		return sem.get_unit_effects(self)
+	return []
+
+# ===== FACING DIRECTION API (Task 2.5) =====
+func get_facing_direction() -> Vector2i:
+	## Get the direction this unit is facing
+	return facing_direction
+
+func set_facing_direction(direction: Vector2i) -> void:
+	## Set facing direction (normalizes to -1, 0, or 1 per axis)
+	if direction != Vector2i.ZERO:
+		facing_direction = direction.sign()
+
+func _update_facing_from_movement(from: Vector2i, to: Vector2i) -> void:
+	## Update facing based on movement direction
+	var delta = to - from
+	if delta != Vector2i.ZERO:
+		set_facing_direction(delta)
+
+func is_behind(attacker: Unit) -> bool:
+	## Check if attacker is positioned behind this unit (Task 2.5: Backstab)
+	## Behind = attacker is in the opposite direction of facing
+	var direction_to_attacker = attacker.grid_position - grid_position
+
+	# Normalize to get direction
+	var attack_from = direction_to_attacker.sign()
+
+	# Behind = opposite of facing direction (180 degrees)
+	var behind_direction = -facing_direction
+
+	# For strict backstab: only directly behind (not diagonal)
+	# attacker must be in exactly the opposite direction of facing
+	return attack_from == behind_direction
+
+# ===== POISON BLADE API (Task 2.5) =====
+func apply_poison_blade(attacks: int, bonus_damage: int) -> void:
+	## Apply Poison Blade buff
+	_poison_blade_charges = attacks
+	_poison_blade_damage = bonus_damage
+	print("[Unit] %s Poison Blade active: +%d damage for %d attacks" % [
+		unit_name, bonus_damage, attacks
+	])
+
+func get_poison_blade_bonus() -> int:
+	## Get current Poison Blade bonus (0 if not active)
+	if _poison_blade_charges > 0:
+		return _poison_blade_damage
+	return 0
+
+func consume_poison_blade_charge() -> void:
+	## Use one Poison Blade charge after an attack
+	if _poison_blade_charges > 0:
+		_poison_blade_charges -= 1
+		print("[Unit] %s Poison Blade: %d charges remaining" % [
+			unit_name, _poison_blade_charges
+		])
+		if _poison_blade_charges == 0:
+			_poison_blade_damage = 0
+			print("[Unit] %s Poison Blade expired" % unit_name)
+
+func has_poison_blade() -> bool:
+	## Check if Poison Blade is currently active
+	return _poison_blade_charges > 0
+
+func get_poison_blade_charges() -> int:
+	## Get remaining Poison Blade charges
+	return _poison_blade_charges
+
+# ===== TELEPORT API (Task 2.5) =====
+func teleport_to(destination: Vector2i) -> void:
+	## Instantly teleport to a grid position (for Shadowstep)
+	var old_position = grid_position
+	grid_position = destination
+
+	# Update facing based on teleport direction
+	_update_facing_from_movement(old_position, destination)
+
+	# Snap to new position immediately
+	if combat_grid:
+		position = combat_grid.grid_to_world(destination)
+
+	print("[Unit] %s teleported from %s to %s" % [unit_name, old_position, destination])
+	unit_moved.emit(self, old_position, destination)
 
 # ===== LIFECYCLE =====
 func _ready() -> void:
@@ -344,6 +524,7 @@ func _ready() -> void:
 	_update_hp_bar()
 	_setup_selection_indicator()
 	_setup_click_detection()
+	_spawn_nameplate()  # Task 4.3: Floating nameplate
 	add_to_group("units")
 
 	# Set enemy flag based on unit type
@@ -474,19 +655,52 @@ func _setup_click_detection() -> void:
 	if not click_area:
 		push_error("[Unit] ClickArea not found for %s" % unit_name)
 		return
+	click_area.input_pickable = true
 	click_area.input_event.connect(_on_click_area_input_event)
-	print("[Unit] Click detection setup for %s" % unit_name)
+	print("[Unit] Click detection setup for %s (input_pickable=%s, is_enemy=%s)" % [
+		unit_name, click_area.input_pickable, is_enemy
+	])
 
-func _on_click_area_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:
+func _spawn_nameplate() -> void:
+	## Spawn floating nameplate above unit (Task 4.3)
+	if UnitNameplateScene:
+		_nameplate = UnitNameplateScene.instantiate()
+		# Add to root canvas layer so it appears above game elements
+		get_tree().root.add_child.call_deferred(_nameplate)
+		# Setup after adding to tree
+		_nameplate.call_deferred("setup", self)
+		print("[Unit] Nameplate spawned for %s" % unit_name)
+
+func _on_click_area_input_event(viewport: Node, event: InputEvent, _shape_idx: int) -> void:
 	## Handle click input on unit
 	if event is InputEventMouseButton:
-		print("[Unit] Mouse event on %s: button=%d pressed=%s" % [unit_name, event.button_index, event.pressed])
 		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			print("[Unit] LEFT CLICK on %s (is_enemy=%s, is_targeting=%s)" % [
+				unit_name, is_enemy, CombatManager.is_targeting_ability()
+			])
 			_handle_click()
+			# Mark input as handled to prevent other handlers from processing it
+			viewport.set_input_as_handled()
 
 func _handle_click() -> void:
 	## Process click on this unit
 	unit_clicked.emit(self)
+
+	print("[Unit] _handle_click on %s, is_targeting=%s, turn_state=%s" % [
+		unit_name,
+		CombatManager.is_targeting_ability(),
+		CombatManager.get_turn_state()
+	])
+
+	# Check if we're in ability targeting mode (Task 2.3)
+	if CombatManager.is_targeting_ability():
+		print("[Unit] In targeting mode, attempting to select %s as target" % unit_name)
+		# Try to select this unit as the ability target
+		if CombatManager.select_ability_target(self):
+			print("[Unit] SUCCESS: Selected as ability target: %s" % unit_name)
+		else:
+			print("[Unit] FAILED: Not a valid ability target: %s" % unit_name)
+		return
 
 	# Let CombatManager handle selection logic
 	if not is_enemy and is_alive():
@@ -539,8 +753,17 @@ func set_unit_type(type: UnitType) -> void:
 	_update_visual()
 
 func take_damage(amount: int) -> void:
-	## Apply damage to unit and update HP bar
-	current_hp = max(0, current_hp - amount)
+	## Apply damage to unit and update HP bar (Task 2.4: includes Last Stand check)
+	var new_hp = current_hp - amount
+
+	# Check for lethal damage and Last Stand (Task 2.4)
+	if new_hp <= 0:
+		if _check_last_stand():
+			new_hp = 1  # Survive at 1 HP
+			_on_last_stand_triggered()
+			print("[Unit] %s Last Stand triggered! HP set to 1" % unit_name)
+
+	current_hp = max(0, new_hp)
 	_update_hp_bar()
 	unit_damaged.emit(self, amount)
 
@@ -552,6 +775,41 @@ func heal(amount: int) -> void:
 	current_hp = min(max_hp, current_hp + amount)
 	_update_hp_bar()
 
+# ===== LAST STAND (Task 2.4) =====
+func _check_last_stand() -> bool:
+	## Check if Last Stand should trigger
+	# Must have Last Stand ability
+	if not has_ability("last_stand"):
+		return false
+
+	# Must not have used it already
+	if get_ability_uses("last_stand") >= 1:
+		return false
+
+	return true
+
+func _on_last_stand_triggered() -> void:
+	## Handle Last Stand activation (Task 2.4)
+	# Mark ability as used
+	use_ability("last_stand")
+
+	# Apply Last Stand visual indicator status effect
+	var sem = get_node_or_null("/root/StatusEffectManager")
+	if sem:
+		sem.apply_effect(self, "LAST_STAND", 1, 0)
+
+	# TODO: Spawn "LAST STAND!" floating text
+	# TODO: Visual golden glow effect
+
+	print("[Unit] %s's Last Stand activated! Surviving at 1 HP" % unit_name)
+
+func has_ability(ability_id: String) -> bool:
+	## Check if this unit has a specific ability (Task 2.4)
+	for ability in _abilities:
+		if ability.get("id") == ability_id:
+			return true
+	return false
+
 func _die() -> void:
 	## Handle unit death with fade animation
 	unit_died.emit(self)
@@ -559,6 +817,8 @@ func _die() -> void:
 	# Disable click detection
 	if click_area:
 		click_area.input_pickable = false
+
+	# Nameplate handles its own cleanup via unit_died signal (Task 4.3)
 
 	# Fade out animation
 	var tween = create_tween()
@@ -615,20 +875,27 @@ func _on_movement_complete(final_coords: Vector2i) -> void:
 	var old_pos = grid_position
 	grid_position = final_coords
 	_is_moving = false
+
+	# Update facing direction based on last movement direction (Task 2.5)
+	_update_facing_from_movement(old_pos, final_coords)
+
 	movement_finished.emit(self)
 	unit_moved.emit(self, old_pos, final_coords)
 
-# ===== ATTACK HANDLING (Task 1.7) =====
+# ===== ATTACK HANDLING (Task 1.7, Task 2.7) =====
 func can_attack(target: Unit) -> bool:
-	## Check if this unit can attack the target
+	## Check if this unit can attack the target (supports melee and ranged)
 	if target == null or target == self:
 		return false
 	if not is_alive() or not target.is_alive():
 		return false
-	if not AttackResolver.is_adjacent(self, target):
-		return false
 	if target.is_friendly() == is_friendly():
 		return false  # No friendly fire
+
+	# Task 2.7: Use ranged attack check for range and LoS
+	if not AttackResolver.can_attack_at_range(self, target):
+		return false
+
 	return true
 
 func perform_attack(target: Unit) -> void:

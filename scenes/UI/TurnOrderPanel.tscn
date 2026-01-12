@@ -11,6 +11,7 @@ offset_left = -300.0
 offset_right = 300.0
 offset_bottom = 60.0
 grow_horizontal = 2
+mouse_filter = 2
 script = ExtResource("1_panel")
 
 [node name="PanelBackground" type="Panel" parent="."]

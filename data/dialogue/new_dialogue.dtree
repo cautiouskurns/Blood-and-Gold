@@ -1,0 +1,54 @@
+{
+	"canvas": {
+		"scroll_offset_x": 0.0,
+		"scroll_offset_y": -676.0,
+		"zoom": 1.0
+	},
+	"connections": [
+		{
+			"from_node": "Start_1",
+			"from_port": 0,
+			"to_node": "End_2",
+			"to_port": 0
+		},
+		{
+			"from_node": "Start_1",
+			"from_port": 0,
+			"to_node": "Branch_3",
+			"to_port": 0
+		}
+	],
+	"metadata": {
+		"author": "",
+		"created_date": "",
+		"description": "",
+		"dialogue_id": "new_dialogue",
+		"display_name": "",
+		"modified_date": "2026-01-12T23:10:05"
+	},
+	"nodes": [
+		{
+			"end_type": 0,
+			"id": "End_2",
+			"position_x": 753.0,
+			"position_y": -155.0,
+			"type": "End"
+		},
+		{
+			"id": "Start_1",
+			"position_x": 220.0,
+			"position_y": -360.0,
+			"type": "Start"
+		},
+		{
+			"condition_key": "",
+			"condition_type": 0,
+			"condition_value": "",
+			"id": "Branch_3",
+			"position_x": 657.0,
+			"position_y": 79.0,
+			"type": "Branch"
+		}
+	],
+	"version": 1
+}
