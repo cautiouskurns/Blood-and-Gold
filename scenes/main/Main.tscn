@@ -13,6 +13,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_right = 1920.0
 offset_bottom = 1080.0
+mouse_filter = 2
 color = Color(0.0509804, 0.0666667, 0.0901961, 1)
 
 [node name="CombatGrid" parent="." instance=ExtResource("1_combat_grid")]

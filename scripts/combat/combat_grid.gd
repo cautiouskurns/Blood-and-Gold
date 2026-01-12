@@ -24,6 +24,10 @@ const COLOR_OBSTACLE: Color = Color("#2d3436")
 const COLOR_OBSTACLE_BORDER: Color = Color("#1a1a2e")
 const COLOR_BACKGROUND: Color = Color("#0d1117")
 
+# Movement overlay colors (Task 1.5)
+const COLOR_VALID_MOVE: Color = Color("#27ae60", 0.4)  # 40% opacity green
+const COLOR_PATH_LINE: Color = Color("#3498db")  # Blue
+
 # ===== NODE REFERENCES =====
 @onready var tile_map: TileMapLayer = $TileMapLayer
 
@@ -31,12 +35,21 @@ const COLOR_BACKGROUND: Color = Color("#0d1117")
 var _tile_set: TileSet
 var _grid_data: Array[Array] = []  # Stores tile types for quick lookup
 
+# Movement overlay state (Task 1.5)
+var _movement_overlay: Node2D
+var _path_preview: Line2D
+var _valid_move_tiles: Array[Vector2i] = []
+var pathfinding: Pathfinding
+
 # ===== LIFECYCLE =====
 func _ready() -> void:
 	_initialize_grid_data()
 	_create_tileset()
 	_center_grid()
 	_generate_default_grid()
+	_setup_movement_overlay()
+	_setup_path_preview()
+	_setup_pathfinding()
 
 func _initialize_grid_data() -> void:
 	## Initialize the grid data array
@@ -184,3 +197,84 @@ func clear_grid() -> void:
 	for x in range(GRID_WIDTH):
 		for y in range(GRID_HEIGHT):
 			_set_tile(Vector2i(x, y), TILE_WALKABLE)
+
+# ===== MOVEMENT OVERLAY (Task 1.5) =====
+func _setup_movement_overlay() -> void:
+	## Create container for movement highlight tiles
+	_movement_overlay = Node2D.new()
+	_movement_overlay.name = "MovementOverlay"
+	_movement_overlay.z_index = 5  # Above tiles, below units
+	add_child(_movement_overlay)
+
+func _setup_path_preview() -> void:
+	## Create Line2D for path preview
+	_path_preview = Line2D.new()
+	_path_preview.name = "PathPreview"
+	_path_preview.width = 2.0
+	_path_preview.default_color = COLOR_PATH_LINE
+	_path_preview.z_index = 6
+	add_child(_path_preview)
+
+func _setup_pathfinding() -> void:
+	## Initialize pathfinding with grid data
+	pathfinding = Pathfinding.new()
+	pathfinding.initialize(GRID_WIDTH, GRID_HEIGHT)
+
+	# Mark obstacles as non-walkable
+	for x in range(GRID_WIDTH):
+		for y in range(GRID_HEIGHT):
+			var coords = Vector2i(x, y)
+			pathfinding.set_tile_walkable(coords, is_walkable(coords))
+	print("[CombatGrid] Pathfinding initialized")
+
+func show_movement_range(from: Vector2i, movement_range: float, exclude_unit: Unit = null) -> void:
+	## Display valid movement tiles for a unit
+	clear_movement_overlay()
+	_valid_move_tiles = pathfinding.get_reachable_tiles(from, movement_range, exclude_unit)
+
+	for coords in _valid_move_tiles:
+		var overlay = ColorRect.new()
+		overlay.color = COLOR_VALID_MOVE
+		overlay.size = Vector2(TILE_SIZE, TILE_SIZE)
+		overlay.position = Vector2(coords.x * TILE_SIZE, coords.y * TILE_SIZE)
+		overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE  # Don't block clicks
+		_movement_overlay.add_child(overlay)
+
+func clear_movement_overlay() -> void:
+	## Remove all movement highlights
+	for child in _movement_overlay.get_children():
+		child.queue_free()
+	_valid_move_tiles.clear()
+	hide_path_preview()
+
+func show_path_preview(from: Vector2i, to: Vector2i, exclude_unit: Unit = null) -> void:
+	## Draw path line from unit to target tile
+	_path_preview.clear_points()
+
+	if not _valid_move_tiles.has(to):
+		return  # Not a valid destination
+
+	var path = pathfinding.get_path(from, to, exclude_unit)
+	for coords in path:
+		var world_pos = grid_to_world(coords) - position  # Local coords
+		_path_preview.add_point(world_pos)
+
+func hide_path_preview() -> void:
+	## Clear the path preview line
+	_path_preview.clear_points()
+
+func is_valid_move_tile(coords: Vector2i) -> bool:
+	## Check if a tile is in the current valid move set
+	return _valid_move_tiles.has(coords)
+
+func get_valid_move_tiles() -> Array[Vector2i]:
+	## Get the current set of valid move tiles
+	return _valid_move_tiles
+
+func update_occupied_tiles(units: Array[Unit]) -> void:
+	## Update pathfinding with current unit positions
+	pathfinding.clear_occupied_tiles()
+
+	# Mark current unit positions
+	for unit in units:
+		pathfinding.set_tile_occupied(unit.grid_position, unit)

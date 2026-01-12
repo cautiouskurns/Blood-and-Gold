@@ -15,6 +15,10 @@ config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
 run/main_scene="res://scenes/main/Main.tscn"
 
+[autoload]
+
+CombatManager="*res://scripts/autoload/combat_manager.gd"
+
 [display]
 
 window/size/viewport_width=1920

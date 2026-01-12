@@ -9,17 +9,25 @@ signal unit_clicked(unit: Unit)
 signal unit_moved(unit: Unit, from: Vector2i, to: Vector2i)
 signal unit_damaged(unit: Unit, amount: int)
 signal unit_died(unit: Unit)
+signal movement_started(unit: Unit)
+signal movement_finished(unit: Unit)
 
 # ===== ENUMS =====
 enum UnitType { PLAYER, THORNE, LYRA, MATTHIAS, ENEMY, INFANTRY, ARCHER }
 
 # ===== CONSTANTS =====
 const SPRITE_SIZE: int = 56
+const MOVE_DURATION_PER_TILE: float = 0.15  # Seconds per tile (Task 1.5)
 
 # HP Bar colors from spec (Task 1.3)
 const COLOR_HP_HEALTHY: Color = Color("#27ae60")    # Green - HP > 25%
 const COLOR_HP_CRITICAL: Color = Color("#c0392b")   # Red - HP <= 25%
 const COLOR_HP_BACKGROUND: Color = Color("#7f1d1d") # Dark red background
+
+# Selection colors from spec (Task 1.4)
+const COLOR_SELECTION: Color = Color("#f1c40f")     # Yellow selection outline
+const SELECTION_OUTLINE_WIDTH: int = 3
+const CLICK_RADIUS: int = 28  # Half of sprite size
 
 # HP Bar dimensions from spec
 const HP_BAR_WIDTH: int = 48
@@ -63,16 +71,22 @@ const UNIT_LETTERS: Dictionary = {
 @export var unit_name: String = "Unit"
 @export var is_enemy: bool = false
 @export var max_hp: int = 30
+@export var movement_range: int = 5  # Tiles per turn (Task 1.5)
 
 # ===== NODE REFERENCES =====
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var letter_label: Label = $LetterLabel
 @onready var hp_bar: ProgressBar = $HPBar
+@onready var selection_indicator: Sprite2D = $SelectionIndicator
+@onready var click_area: Area2D = $ClickArea
 
 # ===== INTERNAL STATE =====
 var grid_position: Vector2i = Vector2i.ZERO
 var current_hp: int = 30
 var combat_grid: CombatGrid = null
+var is_selected: bool = false
+var _is_moving: bool = false
+var _movement_tween: Tween
 
 # ===== LIFECYCLE =====
 func _ready() -> void:
@@ -80,6 +94,8 @@ func _ready() -> void:
 	_update_visual()
 	_setup_hp_bar()
 	_update_hp_bar()
+	_setup_selection_indicator()
+	_setup_click_detection()
 	add_to_group("units")
 
 	# Set enemy flag based on unit type
@@ -168,6 +184,72 @@ func _update_hp_bar_color(hp_percent: float) -> void:
 	fill_style.corner_radius_bottom_right = 1
 	hp_bar.add_theme_stylebox_override("fill", fill_style)
 
+# ===== SELECTION MANAGEMENT (Task 1.4) =====
+func _setup_selection_indicator() -> void:
+	## Create yellow outline texture for selection indicator
+	if not selection_indicator:
+		return
+
+	var indicator_size = SPRITE_SIZE + (SELECTION_OUTLINE_WIDTH * 2)
+	var image = Image.create(indicator_size, indicator_size, false, Image.FORMAT_RGBA8)
+
+	# Draw hollow rectangle (outline only)
+	for x in range(indicator_size):
+		for y in range(indicator_size):
+			var is_outline = (
+				x < SELECTION_OUTLINE_WIDTH or
+				x >= indicator_size - SELECTION_OUTLINE_WIDTH or
+				y < SELECTION_OUTLINE_WIDTH or
+				y >= indicator_size - SELECTION_OUTLINE_WIDTH
+			)
+			if is_outline:
+				image.set_pixel(x, y, COLOR_SELECTION)
+			else:
+				image.set_pixel(x, y, Color.TRANSPARENT)
+
+	var texture = ImageTexture.create_from_image(image)
+	selection_indicator.texture = texture
+	selection_indicator.centered = true
+	selection_indicator.visible = false  # Hidden by default
+
+func _setup_click_detection() -> void:
+	## Configure Area2D for click detection
+	if not click_area:
+		push_error("[Unit] ClickArea not found for %s" % unit_name)
+		return
+	click_area.input_event.connect(_on_click_area_input_event)
+	print("[Unit] Click detection setup for %s" % unit_name)
+
+func _on_click_area_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:
+	## Handle click input on unit
+	if event is InputEventMouseButton:
+		print("[Unit] Mouse event on %s: button=%d pressed=%s" % [unit_name, event.button_index, event.pressed])
+		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			_handle_click()
+
+func _handle_click() -> void:
+	## Process click on this unit
+	unit_clicked.emit(self)
+
+	# Let CombatManager handle selection logic
+	if not is_enemy and is_alive():
+		CombatManager.select_unit(self)
+	else:
+		# Clicking enemy or dead unit deselects
+		CombatManager.deselect_unit()
+
+func select() -> void:
+	## Mark this unit as selected and show indicator
+	is_selected = true
+	if selection_indicator:
+		selection_indicator.visible = true
+
+func deselect() -> void:
+	## Mark this unit as not selected and hide indicator
+	is_selected = false
+	if selection_indicator:
+		selection_indicator.visible = false
+
 # ===== PUBLIC API =====
 func place_on_grid(coords: Vector2i) -> void:
 	## Place unit on grid at specified coordinates
@@ -231,6 +313,45 @@ func is_alive() -> bool:
 func is_friendly() -> bool:
 	## Check if unit is friendly (not enemy)
 	return not is_enemy
+
+# ===== MOVEMENT (Task 1.5) =====
+func is_moving() -> bool:
+	## Check if unit is currently animating movement
+	return _is_moving
+
+func move_along_path(path: Array[Vector2i]) -> void:
+	## Animate unit movement along a path
+	if path.size() < 2:
+		return  # Need at least start and end
+
+	_is_moving = true
+	movement_started.emit(self)
+
+	# Cancel any existing tween
+	if _movement_tween and _movement_tween.is_running():
+		_movement_tween.kill()
+
+	_movement_tween = create_tween()
+	_movement_tween.set_ease(Tween.EASE_IN_OUT)
+	_movement_tween.set_trans(Tween.TRANS_LINEAR)
+
+	# Animate through each tile in path (skip first - we're already there)
+	for i in range(1, path.size()):
+		var target_coords = path[i]
+		var target_pos = combat_grid.grid_to_world(target_coords)
+		_movement_tween.tween_property(self, "position", target_pos, MOVE_DURATION_PER_TILE)
+
+	# Update grid position to final destination
+	var final_coords = path[path.size() - 1]
+	_movement_tween.tween_callback(_on_movement_complete.bind(final_coords))
+
+func _on_movement_complete(final_coords: Vector2i) -> void:
+	## Called when movement animation finishes
+	var old_pos = grid_position
+	grid_position = final_coords
+	_is_moving = false
+	movement_finished.emit(self)
+	unit_moved.emit(self, old_pos, final_coords)
 
 # ===== STATIC HELPERS =====
 static func get_unit_display_name(type: UnitType) -> String:
