@@ -4,6 +4,8 @@ extends DialogueNode
 ## Choice node - Player response option.
 ## Has one input slot, text field, and one output slot.
 
+const SpeakerColorsScript = preload("res://addons/dialogue_editor/scripts/speaker_colors.gd")
+
 const MAX_TEXT_LENGTH := 200
 
 var choice_text: String = ""
@@ -16,7 +18,8 @@ func _setup_node() -> void:
 	node_type = "Choice"
 	title = "Choice"
 	custom_minimum_size = Vector2(220, 0)
-	apply_color_theme(Color.DODGER_BLUE)
+	# Use player color from centralized SpeakerColors manager
+	apply_color_theme(SpeakerColorsScript.get_player_color())
 
 
 func _setup_slots() -> void:

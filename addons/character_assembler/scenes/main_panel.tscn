@@ -1,0 +1,259 @@
+[gd_scene load_steps=8 format=3 uid="uid://dh4j6xqk5rn2c"]
+
+[ext_resource type="Script" path="res://addons/character_assembler/scripts/main_panel.gd" id="1_main_panel"]
+[ext_resource type="Script" path="res://addons/character_assembler/scripts/canvas_viewport.gd" id="2_canvas"]
+[ext_resource type="Script" path="res://addons/character_assembler/scripts/shape_tools_panel.gd" id="3_tools"]
+[ext_resource type="Script" path="res://addons/character_assembler/scripts/layer_panel.gd" id="4_layers"]
+[ext_resource type="Script" path="res://addons/character_assembler/scripts/shape_properties_panel.gd" id="5_properties"]
+[ext_resource type="Script" path="res://addons/character_assembler/scripts/body_part_tagger.gd" id="6_tagger"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_canvas"]
+bg_color = Color(0.12, 0.12, 0.12, 1)
+
+[node name="MainPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_main_panel")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="VBox" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Toolbar" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NewBtn" type="Button" parent="Margin/VBox/Toolbar"]
+layout_mode = 2
+text = "New"
+
+[node name="OpenBtn" type="Button" parent="Margin/VBox/Toolbar"]
+layout_mode = 2
+text = "Open"
+
+[node name="SaveBtn" type="Button" parent="Margin/VBox/Toolbar"]
+layout_mode = 2
+text = "Save"
+
+[node name="SaveAsBtn" type="Button" parent="Margin/VBox/Toolbar"]
+layout_mode = 2
+text = "Save As"
+
+[node name="Sep1" type="VSeparator" parent="Margin/VBox/Toolbar"]
+layout_mode = 2
+
+[node name="RefLabel" type="Label" parent="Margin/VBox/Toolbar"]
+layout_mode = 2
+text = "Reference:"
+
+[node name="LoadRefBtn" type="Button" parent="Margin/VBox/Toolbar"]
+layout_mode = 2
+text = "Load..."
+
+[node name="ClearRefBtn" type="Button" parent="Margin/VBox/Toolbar"]
+layout_mode = 2
+text = "Clear"
+
+[node name="OpacityLabel" type="Label" parent="Margin/VBox/Toolbar"]
+layout_mode = 2
+text = "Opacity:"
+
+[node name="OpacitySlider" type="HSlider" parent="Margin/VBox/Toolbar"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+min_value = 0.0
+max_value = 100.0
+step = 5.0
+value = 50.0
+
+[node name="Sep2" type="VSeparator" parent="Margin/VBox/Toolbar"]
+layout_mode = 2
+
+[node name="CanvasSizeLabel" type="Label" parent="Margin/VBox/Toolbar"]
+layout_mode = 2
+text = "Canvas:"
+
+[node name="CanvasSizeSpinBox" type="SpinBox" parent="Margin/VBox/Toolbar"]
+layout_mode = 2
+min_value = 16.0
+max_value = 128.0
+step = 16.0
+value = 64.0
+suffix = "px"
+
+[node name="Spacer" type="Control" parent="Margin/VBox/Toolbar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="OuterHSplit" type="HSplitContainer" parent="Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+split_offset = 180
+
+[node name="LeftPanel" type="PanelContainer" parent="Margin/VBox/OuterHSplit"]
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="LeftScroll" type="ScrollContainer" parent="Margin/VBox/OuterHSplit/LeftPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ShapeToolsPanel" type="VBoxContainer" parent="Margin/VBox/OuterHSplit/LeftPanel/LeftScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+script = ExtResource("3_tools")
+
+[node name="InnerHSplit" type="HSplitContainer" parent="Margin/VBox/OuterHSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+split_offset = -200
+
+[node name="CenterVBox" type="VBoxContainer" parent="Margin/VBox/OuterHSplit/InnerHSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="CanvasContainer" type="PanelContainer" parent="Margin/VBox/OuterHSplit/InnerHSplit/CenterVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_canvas")
+
+[node name="CharacterCanvas" type="Control" parent="Margin/VBox/OuterHSplit/InnerHSplit/CenterVBox/CanvasContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("2_canvas")
+
+[node name="CanvasToolbar" type="HBoxContainer" parent="Margin/VBox/OuterHSplit/InnerHSplit/CenterVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ZoomLabel" type="Label" parent="Margin/VBox/OuterHSplit/InnerHSplit/CenterVBox/CanvasToolbar"]
+layout_mode = 2
+text = "Zoom:"
+
+[node name="FitBtn" type="Button" parent="Margin/VBox/OuterHSplit/InnerHSplit/CenterVBox/CanvasToolbar"]
+layout_mode = 2
+text = "Fit"
+
+[node name="Zoom1xBtn" type="Button" parent="Margin/VBox/OuterHSplit/InnerHSplit/CenterVBox/CanvasToolbar"]
+layout_mode = 2
+text = "1x"
+
+[node name="Zoom2xBtn" type="Button" parent="Margin/VBox/OuterHSplit/InnerHSplit/CenterVBox/CanvasToolbar"]
+layout_mode = 2
+text = "2x"
+
+[node name="Zoom4xBtn" type="Button" parent="Margin/VBox/OuterHSplit/InnerHSplit/CenterVBox/CanvasToolbar"]
+layout_mode = 2
+text = "4x"
+
+[node name="Zoom8xBtn" type="Button" parent="Margin/VBox/OuterHSplit/InnerHSplit/CenterVBox/CanvasToolbar"]
+layout_mode = 2
+text = "8x"
+
+[node name="Sep" type="VSeparator" parent="Margin/VBox/OuterHSplit/InnerHSplit/CenterVBox/CanvasToolbar"]
+layout_mode = 2
+
+[node name="GridCheck" type="CheckBox" parent="Margin/VBox/OuterHSplit/InnerHSplit/CenterVBox/CanvasToolbar"]
+layout_mode = 2
+button_pressed = true
+text = "Grid"
+
+[node name="SnapCheck" type="CheckBox" parent="Margin/VBox/OuterHSplit/InnerHSplit/CenterVBox/CanvasToolbar"]
+layout_mode = 2
+button_pressed = true
+text = "Snap (8px)"
+
+[node name="Spacer" type="Control" parent="Margin/VBox/OuterHSplit/InnerHSplit/CenterVBox/CanvasToolbar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ZoomPercentLabel" type="Label" parent="Margin/VBox/OuterHSplit/InnerHSplit/CenterVBox/CanvasToolbar"]
+layout_mode = 2
+text = "400%"
+
+[node name="RightPanel" type="PanelContainer" parent="Margin/VBox/OuterHSplit/InnerHSplit"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="RightScroll" type="ScrollContainer" parent="Margin/VBox/OuterHSplit/InnerHSplit/RightPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="RightVBox" type="VBoxContainer" parent="Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="LayerPanel" type="VBoxContainer" parent="Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+script = ExtResource("4_layers")
+
+[node name="Sep" type="HSeparator" parent="Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox"]
+layout_mode = 2
+
+[node name="ShapePropertiesPanel" type="VBoxContainer" parent="Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+script = ExtResource("5_properties")
+
+[node name="Sep2" type="HSeparator" parent="Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox"]
+layout_mode = 2
+
+[node name="BodyPartTagger" type="VBoxContainer" parent="Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+script = ExtResource("6_tagger")
+
+[node name="StatusBar" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="ProjectNameLabel" type="Label" parent="Margin/VBox/StatusBar"]
+layout_mode = 2
+text = "Project: (untitled)"
+
+[node name="Sep1" type="VSeparator" parent="Margin/VBox/StatusBar"]
+layout_mode = 2
+
+[node name="StatusLabel" type="Label" parent="Margin/VBox/StatusBar"]
+layout_mode = 2
+text = "Canvas: 64x64 | Shapes: 0 | Body Parts: 0/14"
+
+[node name="Spacer" type="Control" parent="Margin/VBox/StatusBar"]
+layout_mode = 2
+size_flags_horizontal = 3

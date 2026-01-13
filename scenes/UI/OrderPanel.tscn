@@ -1,0 +1,70 @@
+[gd_scene load_steps=2 format=3 uid="uid://order_panel_scene"]
+
+[ext_resource type="Script" path="res://scripts/UI/order_panel.gd" id="1_script"]
+
+[node name="OrderPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -190.0
+offset_top = -140.0
+offset_right = -10.0
+offset_bottom = 140.0
+grow_horizontal = 0
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "ORDERS"
+horizontal_alignment = 1
+
+[node name="ButtonGrid" type="GridContainer" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+columns = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+
+[node name="AdvanceButton" type="Button" parent="PanelContainer/VBoxContainer/ButtonGrid"]
+custom_minimum_size = Vector2(75, 40)
+layout_mode = 2
+text = "ADV"
+
+[node name="HoldButton" type="Button" parent="PanelContainer/VBoxContainer/ButtonGrid"]
+custom_minimum_size = Vector2(75, 40)
+layout_mode = 2
+text = "HOLD"
+
+[node name="FocusFireButton" type="Button" parent="PanelContainer/VBoxContainer/ButtonGrid"]
+custom_minimum_size = Vector2(75, 40)
+layout_mode = 2
+text = "FOCUS"
+
+[node name="RetreatButton" type="Button" parent="PanelContainer/VBoxContainer/ButtonGrid"]
+custom_minimum_size = Vector2(75, 40)
+layout_mode = 2
+text = "RETR"
+
+[node name="ProtectButton" type="Button" parent="PanelContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "PROTECT"
+
+[node name="StatusLabel" type="Label" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+horizontal_alignment = 1

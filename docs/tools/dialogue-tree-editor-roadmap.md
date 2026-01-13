@@ -341,230 +341,224 @@ graph LR
 
 ---
 
-### Feature 2.1: Advanced Node Types
+### Feature 2.1: Advanced Node Types ✅
 
 **Description:** Add the 6 Phase 2 node types for game logic integration.
 
 **Dependencies:** Phase 1 complete
 
 **Implementation Tasks:**
-- [ ] Create `skill_check_node.tscn` and script:
-  - [ ] Skill dropdown (persuasion, intimidation, etc.)
-  - [ ] DC (difficulty class) spinner
-  - [ ] Two outputs: success, fail
-- [ ] Create `flag_check_node.tscn` and script:
-  - [ ] Flag name field (with autocomplete if registry exists)
-  - [ ] Operator dropdown (==, !=, >, <)
-  - [ ] Value field
-  - [ ] Two outputs: true, false
-- [ ] Create `flag_set_node.tscn` and script:
-  - [ ] Flag name field
-  - [ ] Value field
-  - [ ] One output
-- [ ] Create `quest_node.tscn` and script:
-  - [ ] Quest ID field (with autocomplete if registry exists)
-  - [ ] Action dropdown (start, complete, fail, update)
-  - [ ] One output
-- [ ] Create `reputation_node.tscn` and script:
-  - [ ] Faction dropdown
-  - [ ] Amount spinner (+/-)
-  - [ ] One output
-- [ ] Create `item_node.tscn` and script:
-  - [ ] Action dropdown (give, take, check)
-  - [ ] Item ID field
-  - [ ] Quantity spinner
-  - [ ] Two outputs for "check" action
+- [x] Create `skill_check_node.tscn` and script:
+  - [x] Skill dropdown (persuasion, intimidation, etc.)
+  - [x] DC (difficulty class) spinner
+  - [x] Two outputs: success, fail
+- [x] Create `flag_check_node.tscn` and script:
+  - [x] Flag name field (with autocomplete if registry exists)
+  - [x] Operator dropdown (==, !=, >, <)
+  - [x] Value field
+  - [x] Two outputs: true, false
+- [x] Create `flag_set_node.tscn` and script:
+  - [x] Flag name field
+  - [x] Value field
+  - [x] One output
+- [x] Create `quest_node.tscn` and script:
+  - [x] Quest ID field (with autocomplete if registry exists)
+  - [x] Action dropdown (start, complete, fail, update)
+  - [x] One output
+- [x] Create `reputation_node.tscn` and script:
+  - [x] Faction dropdown
+  - [x] Amount spinner (+/-)
+  - [x] One output
+- [x] Create `item_node.tscn` and script:
+  - [x] Action dropdown (give, take, check)
+  - [x] Item ID field
+  - [x] Quantity spinner
+  - [x] Two outputs for "check" action
 
 **Files to Create/Modify:**
-- `addons/dialogue_editor/scenes/nodes/skill_check_node.tscn`
-- `addons/dialogue_editor/scripts/nodes/skill_check_node.gd`
-- `addons/dialogue_editor/scenes/nodes/flag_check_node.tscn`
-- `addons/dialogue_editor/scripts/nodes/flag_check_node.gd`
-- `addons/dialogue_editor/scenes/nodes/flag_set_node.tscn`
-- `addons/dialogue_editor/scripts/nodes/flag_set_node.gd`
-- `addons/dialogue_editor/scenes/nodes/quest_node.tscn`
-- `addons/dialogue_editor/scripts/nodes/quest_node.gd`
-- `addons/dialogue_editor/scenes/nodes/reputation_node.tscn`
-- `addons/dialogue_editor/scripts/nodes/reputation_node.gd`
-- `addons/dialogue_editor/scenes/nodes/item_node.tscn`
-- `addons/dialogue_editor/scripts/nodes/item_node.gd`
-- `addons/dialogue_editor/scripts/node_palette.gd` (add to palette)
-- `addons/dialogue_editor/scripts/dialogue_exporter.gd` (export support)
+- `addons/dialogue_editor/scripts/nodes/skill_check_node.gd` ✓
+- `addons/dialogue_editor/scripts/nodes/flag_check_node.gd` ✓
+- `addons/dialogue_editor/scripts/nodes/flag_set_node.gd` ✓
+- `addons/dialogue_editor/scripts/nodes/quest_node.gd` ✓
+- `addons/dialogue_editor/scripts/nodes/reputation_node.gd` ✓
+- `addons/dialogue_editor/scripts/nodes/item_node.gd` ✓
+- `addons/dialogue_editor/scripts/node_palette.gd` ✓ (add to palette)
+- `addons/dialogue_editor/scripts/dialogue_canvas.gd` ✓ (node creation support)
+- `addons/dialogue_editor/scripts/dialogue_exporter.gd` ✓ (export support)
 
 **Success Criteria:**
-- [ ] All 6 new node types available in palette
-- [ ] Each node has correct inputs/outputs
-- [ ] Export includes new node types correctly
-- [ ] Nodes serialize/deserialize properly
+- [x] All 6 new node types available in palette
+- [x] Each node has correct inputs/outputs
+- [x] Export includes new node types correctly
+- [x] Nodes serialize/deserialize properly
 
 ---
 
-### Feature 2.2: In-Editor Dialogue Testing
+### Feature 2.2: In-Editor Dialogue Testing ✅
 
 **Description:** Play through dialogue in the editor without running the game.
 
 **Dependencies:** Feature 2.1
 
 **Implementation Tasks:**
-- [ ] Create `test_panel.tscn` dialog/popup
-- [ ] Display current speaker and text
-- [ ] Show portrait if available
-- [ ] Display choice buttons for player responses
-- [ ] Highlight current node on canvas
-- [ ] Track and display simulated state:
-  - [ ] Flags set during test
-  - [ ] Reputation changes
-  - [ ] Items given/taken
-  - [ ] Quests started/completed
-- [ ] Add "Back" button (undo last choice)
-- [ ] Add "Restart" button
-- [ ] Add "Skip to Node" dropdown
-- [ ] Simulate skill checks (pass/fail toggle)
-- [ ] Add F5 shortcut to start test
-- [ ] Track which nodes visited (coverage)
+- [x] Create `test_panel.tscn` dialog/popup
+- [x] Display current speaker and text
+- [x] Show portrait if available
+- [x] Display choice buttons for player responses
+- [x] Highlight current node on canvas
+- [x] Track and display simulated state:
+  - [x] Flags set during test
+  - [x] Reputation changes
+  - [x] Items given/taken
+  - [x] Quests started/completed
+- [x] Add "Back" button (undo last choice)
+- [x] Add "Restart" button
+- [x] Add "Skip to Node" dropdown
+- [x] Simulate skill checks (pass/fail toggle)
+- [x] Add F5 shortcut to start test
+- [x] Track which nodes visited (coverage)
 
 **Files to Create/Modify:**
-- `addons/dialogue_editor/scenes/test_panel.tscn`
-- `addons/dialogue_editor/scripts/test_panel.gd`
-- `addons/dialogue_editor/scripts/dialogue_runner.gd` (test execution)
-- `addons/dialogue_editor/scripts/main_panel.gd`
+- `addons/dialogue_editor/scripts/test_panel.gd` ✓
+- `addons/dialogue_editor/scripts/dialogue_runner.gd` ✓
+- `addons/dialogue_editor/scripts/main_panel.gd` ✓
+- `addons/dialogue_editor/scenes/main_panel.tscn` ✓
 
 **Success Criteria:**
-- [ ] Can play through dialogue choosing options
-- [ ] Current node highlighted on canvas
-- [ ] Can see simulated flag/quest changes
-- [ ] Can go back to previous choice
-- [ ] Can restart from beginning
-- [ ] Can jump to any node
-- [ ] Coverage tracking shows visited nodes
+- [x] Can play through dialogue choosing options
+- [x] Current node highlighted on canvas
+- [x] Can see simulated flag/quest changes
+- [x] Can go back to previous choice
+- [x] Can restart from beginning
+- [x] Can jump to any node
+- [x] Coverage tracking shows visited nodes
 
 ---
 
-### Feature 2.3: Search & Filter
+### Feature 2.3: Search & Filter ✅
 
 **Description:** Find nodes by speaker, text content, or ID.
 
 **Dependencies:** Phase 1 complete
 
 **Implementation Tasks:**
-- [ ] Add search bar to toolbar
-- [ ] Implement search by:
-  - [ ] Node ID
-  - [ ] Speaker name
-  - [ ] Dialogue text content
-  - [ ] Node type
-- [ ] Highlight matching nodes on canvas
-- [ ] Add "Find Next" / "Find Previous" (F3 / Shift+F3)
-- [ ] Jump to and select found node
-- [ ] Show result count
-- [ ] Add filter dropdown to show only certain node types
+- [x] Add search bar to toolbar
+- [x] Implement search by:
+  - [x] Node ID
+  - [x] Speaker name
+  - [x] Dialogue text content
+  - [x] Node type
+- [x] Highlight matching nodes on canvas
+- [x] Add "Find Next" / "Find Previous" (F3 / Shift+F3)
+- [x] Jump to and select found node
+- [x] Show result count
+- [x] Add filter dropdown to show only certain node types
 
 **Files to Create/Modify:**
-- `addons/dialogue_editor/scenes/main_panel.tscn`
-- `addons/dialogue_editor/scripts/search_manager.gd`
-- `addons/dialogue_editor/scripts/dialogue_canvas.gd`
+- `addons/dialogue_editor/scenes/main_panel.tscn` ✓
+- `addons/dialogue_editor/scripts/search_manager.gd` ✓
+- `addons/dialogue_editor/scripts/main_panel.gd` ✓
 
 **Success Criteria:**
-- [ ] Can search by text content
-- [ ] Can search by speaker
-- [ ] Matching nodes highlighted
-- [ ] Can cycle through results
-- [ ] Can filter canvas to show only certain types
+- [x] Can search by text content
+- [x] Can search by speaker
+- [x] Matching nodes highlighted
+- [x] Can cycle through results
+- [x] Can filter canvas to show only certain types
 
 ---
 
-### Feature 2.4: Validation System
+### Feature 2.4: Validation System ✅
 
 **Description:** Detect and report structural issues in dialogue trees.
 
 **Dependencies:** Phase 1 complete
 
 **Implementation Tasks:**
-- [ ] Create `dialogue_validator.gd`
-- [ ] Detect orphan nodes (no incoming connections except Start)
-- [ ] Detect dead ends (non-End nodes with no outgoing connections)
-- [ ] Detect missing Start node
-- [ ] Detect multiple Start nodes
-- [ ] Detect unreachable nodes (not connected to Start)
-- [ ] Detect empty text fields
-- [ ] Add "Validate" button to toolbar
-- [ ] Show validation results panel
-- [ ] Click result to jump to problem node
-- [ ] Show warning icons on invalid nodes
-- [ ] Validate before export (optional block)
+- [x] Create `dialogue_validator.gd`
+- [x] Detect orphan nodes (no incoming connections except Start)
+- [x] Detect dead ends (non-End nodes with no outgoing connections)
+- [x] Detect missing Start node
+- [x] Detect multiple Start nodes
+- [x] Detect unreachable nodes (not connected to Start)
+- [x] Detect empty text fields
+- [x] Add "Validate" button to toolbar
+- [x] Show validation results panel
+- [x] Click result to jump to problem node
+- [x] Show warning icons on invalid nodes
+- [x] Validate before export (optional block)
 
 **Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/dialogue_validator.gd`
-- `addons/dialogue_editor/scenes/validation_panel.tscn`
-- `addons/dialogue_editor/scripts/validation_panel.gd`
-- `addons/dialogue_editor/scripts/main_panel.gd`
+- `addons/dialogue_editor/scripts/dialogue_validator.gd` ✓
+- `addons/dialogue_editor/scripts/validation_panel.gd` ✓
+- `addons/dialogue_editor/scripts/main_panel.gd` ✓
 
 **Success Criteria:**
-- [ ] Detects orphan nodes
-- [ ] Detects dead ends
-- [ ] Detects missing/multiple start
-- [ ] Detects empty required fields
-- [ ] Can click to jump to problem
-- [ ] Warning icons on canvas
-- [ ] Option to validate before export
+- [x] Detects orphan nodes
+- [x] Detects dead ends
+- [x] Detects missing/multiple start
+- [x] Detects empty required fields
+- [x] Can click to jump to problem
+- [x] Warning icons on canvas
+- [x] Option to validate before export
 
 ---
 
-### Feature 2.5: Speaker Color Coding
+### Feature 2.5: Speaker Color Coding ✅
 
 **Description:** Automatically color nodes based on speaker for visual clarity.
 
 **Dependencies:** Feature 1.4
 
 **Implementation Tasks:**
-- [ ] Define color palette per speaker (from spec)
-- [ ] Create speaker → color mapping (configurable)
-- [ ] Apply color to Speaker nodes based on speaker field
-- [ ] Apply player color to Choice nodes
-- [ ] Add color legend to palette or status bar
-- [ ] Allow custom speaker colors in settings
-- [ ] Update colors when speaker changes
+- [x] Define color palette per speaker (from spec)
+- [x] Create speaker → color mapping (configurable)
+- [x] Apply color to Speaker nodes based on speaker field
+- [x] Apply player color to Choice nodes
+- [x] Add color legend to palette or status bar
+- [x] Allow custom speaker colors in settings
+- [x] Update colors when speaker changes
 
 **Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/nodes/speaker_node.gd`
-- `addons/dialogue_editor/scripts/nodes/choice_node.gd`
-- `addons/dialogue_editor/scripts/speaker_colors.gd`
-- `addons/dialogue_editor/scenes/node_palette.tscn` (color legend)
+- `addons/dialogue_editor/scripts/nodes/speaker_node.gd` ✓
+- `addons/dialogue_editor/scripts/nodes/choice_node.gd` ✓
+- `addons/dialogue_editor/scripts/speaker_colors.gd` ✓
+- `addons/dialogue_editor/scripts/node_palette.gd` ✓ (color legend)
 
 **Success Criteria:**
-- [ ] Speaker nodes colored by speaker
-- [ ] Choice nodes always blue (player)
-- [ ] Colors match spec palette
-- [ ] Color updates when speaker changes
-- [ ] Legend visible showing color meanings
+- [x] Speaker nodes colored by speaker
+- [x] Choice nodes always blue (player)
+- [x] Colors match spec palette
+- [x] Color updates when speaker changes
+- [x] Legend visible showing color meanings
 
 ---
 
-### Feature 2.6: Auto-Save
+### Feature 2.6: Auto-Save ✓
 
 **Description:** Automatically save work to prevent data loss.
 
 **Dependencies:** Feature 1.6
 
 **Implementation Tasks:**
-- [ ] Implement auto-save timer (configurable, default 60s)
-- [ ] Save to temp file (not overwrite original)
-- [ ] Detect unsaved changes trigger
-- [ ] Add auto-save indicator to status bar
-- [ ] Recover from auto-save on crash
-- [ ] Add auto-save toggle in settings
-- [ ] Show "Recovered from auto-save" dialog if applicable
+- [x] Implement auto-save timer (configurable, default 60s)
+- [x] Save to temp file (not overwrite original)
+- [x] Detect unsaved changes trigger
+- [x] Add auto-save indicator to status bar
+- [x] Recover from auto-save on crash
+- [x] Add auto-save toggle in settings
+- [x] Show "Recovered from auto-save" dialog if applicable
 
 **Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/auto_save_manager.gd`
-- `addons/dialogue_editor/scripts/main_panel.gd`
+- `addons/dialogue_editor/scripts/auto_save_manager.gd` ✓
+- `addons/dialogue_editor/scripts/main_panel.gd` ✓
 
 **Success Criteria:**
-- [ ] Auto-saves every 60 seconds when dirty
-- [ ] Does not overwrite manual saves
-- [ ] Recovery works after crash
-- [ ] Can disable auto-save
-- [ ] Status bar shows last auto-save time
+- [x] Auto-saves every 60 seconds when dirty
+- [x] Does not overwrite manual saves
+- [x] Recovery works after crash
+- [x] Can disable auto-save
+- [x] Status bar shows last auto-save time
 
 ---
 
@@ -576,33 +570,32 @@ graph LR
 
 ---
 
-### Feature 3.1: Property Panel
+### Feature 3.1: Property Panel ✅
 
 **Description:** Dedicated slide-out panel for editing selected node properties.
 
 **Dependencies:** Phase 1 complete
 
 **Implementation Tasks:**
-- [ ] Create `property_panel.tscn` as slide-out panel
-- [ ] Show when node selected, hide when deselected
-- [ ] Display all node properties with appropriate editors
-- [ ] Larger text area for dialogue (easier editing than inline)
-- [ ] Character counter for text fields
-- [ ] Portrait preview for Speaker nodes
-- [ ] Add "Apply" and "Cancel" buttons (or auto-apply)
-- [ ] Animate slide in/out
+- [x] Create `property_panel.gd` as slide-out panel (programmatic UI)
+- [x] Show when node selected, hide when deselected
+- [x] Display all node properties with appropriate editors
+- [x] Larger text area for dialogue (easier editing than inline)
+- [x] Character counter for text fields
+- [x] Portrait preview for Speaker nodes
+- [x] Auto-apply changes (immediate update)
+- [x] Animate slide in/out with tween
 
 **Files to Create/Modify:**
-- `addons/dialogue_editor/scenes/property_panel.tscn`
-- `addons/dialogue_editor/scripts/property_panel.gd`
-- `addons/dialogue_editor/scenes/main_panel.tscn`
+- `addons/dialogue_editor/scripts/property_panel.gd` ✓
+- `addons/dialogue_editor/scripts/main_panel.gd` ✓
 
 **Success Criteria:**
-- [ ] Panel slides out when node selected
-- [ ] All properties editable
-- [ ] Character counter visible
-- [ ] Portrait preview works
-- [ ] Changes apply to node
+- [x] Panel slides out when node selected
+- [x] All properties editable
+- [x] Character counter visible
+- [x] Portrait preview works
+- [x] Changes apply to node
 
 ---
 
@@ -755,15 +748,15 @@ Ideas that might be valuable but aren't committed:
 - [x] Feature 1.8: Undo/Redo System
 
 ### Phase 2 Progress
-- [ ] Feature 2.1: Advanced Node Types
-- [ ] Feature 2.2: In-Editor Testing
-- [ ] Feature 2.3: Search & Filter
-- [ ] Feature 2.4: Validation System
-- [ ] Feature 2.5: Speaker Color Coding
-- [ ] Feature 2.6: Auto-Save
+- [x] Feature 2.1: Advanced Node Types ✅
+- [x] Feature 2.2: In-Editor Testing ✅
+- [x] Feature 2.3: Search & Filter ✅
+- [x] Feature 2.4: Validation System ✅
+- [x] Feature 2.5: Speaker Color Coding ✅
+- [x] Feature 2.6: Auto-Save
 
 ### Phase 3 Progress
-- [ ] Feature 3.1: Property Panel
+- [x] Feature 3.1: Property Panel ✅
 - [ ] Feature 3.2: Keyboard Shortcuts
 - [ ] Feature 3.3: Error Handling
 - [ ] Feature 3.4: Documentation

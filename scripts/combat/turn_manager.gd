@@ -17,10 +17,12 @@ signal battle_lost()
 const D20_MIN: int = 1
 const D20_MAX: int = 20
 const ENEMY_TURN_DELAY: float = 0.3
+const SOLDIER_TURN_DELAY: float = 0.2  # Task 2.8: Brief delay before soldier acts
 const VICTORY_GOLD_REWARD: int = 100  # Placeholder reward (Task 1.9)
 
 # ===== STATE =====
 var _turn_order: Array[Unit] = []
+var _combat_grid: CombatGrid = null  # Task 2.8: Reference for soldier AI pathfinding
 var _current_turn_index: int = 0
 var _current_round: int = 0
 var _is_battle_active: bool = false
@@ -113,6 +115,10 @@ func is_battle_active() -> bool:
 func get_current_round() -> int:
 	return _current_round
 
+func set_combat_grid(grid: CombatGrid) -> void:
+	## Task 2.8: Set combat grid reference for soldier AI pathfinding
+	_combat_grid = grid
+
 # ===== INTERNAL METHODS =====
 func _roll_initiative(units: Array[Unit]) -> void:
 	## Roll initiative for all units and sort by result
@@ -180,6 +186,9 @@ func _start_current_turn() -> void:
 	if not unit:
 		return
 
+	# Task 2.13: Reset opportunity attack flag at start of unit's turn
+	unit.reset_opportunity_attack()
+
 	print("[TurnManager] Turn %d: %s" % [_current_turn_index + 1, unit.unit_name])
 
 	# Check if unit is stunned (Task 2.3)
@@ -193,12 +202,23 @@ func _start_current_turn() -> void:
 
 	turn_started.emit(unit)
 
-	# If enemy, auto-skip turn (placeholder for Phase 2 AI)
+	# Task 2.14: If enemy, execute autonomous turn via EnemyAI
 	if unit.is_enemy:
-		print("[TurnManager] Enemy turn skipped (AI placeholder)")
-		# Small delay before ending enemy turn for visual feedback
+		print("[TurnManager] Enemy turn: %s" % unit.unit_name)
+		# Small delay before enemy acts for visual feedback
 		await get_tree().create_timer(ENEMY_TURN_DELAY).timeout
+		# EnemyAI handles the turn and we end turn when complete
+		await EnemyAI.execute_turn(unit, _combat_grid)
 		end_current_turn()
+		return
+
+	# Task 2.8: If soldier, execute autonomous turn via SoldierAI
+	if unit.is_soldier:
+		print("[TurnManager] Soldier turn: %s (Order: %s)" % [unit.unit_name, unit.get_order_name()])
+		# Small delay before soldier acts for visual feedback
+		await get_tree().create_timer(SOLDIER_TURN_DELAY).timeout
+		# SoldierAI handles the turn and calls CombatManager.end_current_turn() when done
+		SoldierAI.execute_turn(unit, _combat_grid)
 
 func _print_initiative_order() -> void:
 	## Debug print the initiative order

@@ -12,6 +12,11 @@ class AttackResult:
 	var total_attack: int = 0
 	var target_defense: int = 0
 	var is_critical: bool = false
+	# Task 2.12: Terrain bonus tracking for combat log
+	var terrain_attack_bonus: int = 0      # High ground bonus applied to attack
+	var terrain_defense_bonus: int = 0     # Cover bonus applied to defense
+	var attacker_on_high_ground: bool = false
+	var target_in_cover: bool = false
 
 # ===== PUBLIC API =====
 static func resolve_attack(attacker: Unit, target: Unit) -> AttackResult:
@@ -24,11 +29,24 @@ static func resolve_attack(attacker: Unit, target: Unit) -> AttackResult:
 	var damage_modifier = _get_damage_modifier(attacker)
 
 	# Get target defense
-	result.target_defense = _get_defense(target)
+	var base_defense = _get_defense(target)
+
+	# Task 2.12: Apply terrain bonuses
+	var terrain_attack = _get_terrain_attack_bonus(attacker)
+	var terrain_defense = _get_terrain_defense_bonus(target)
+
+	# Store terrain info in result for combat log
+	result.terrain_attack_bonus = terrain_attack
+	result.terrain_defense_bonus = terrain_defense
+	result.attacker_on_high_ground = terrain_attack > 0
+	result.target_in_cover = terrain_defense > 0
+
+	# Apply terrain bonuses
+	result.target_defense = base_defense + terrain_defense
 
 	# Roll attack (d20)
 	result.roll = randi_range(1, 20)
-	result.total_attack = result.roll + attack_bonus
+	result.total_attack = result.roll + attack_bonus + terrain_attack
 
 	# Check for hit
 	result.hit = result.total_attack >= result.target_defense
@@ -151,3 +169,24 @@ static func _get_damage_modifier(unit: Unit) -> int:
 static func _roll_damage(dice: int, modifier: int) -> int:
 	## Roll damage: 1d[dice] + modifier
 	return randi_range(1, dice) + modifier
+
+# ===== TERRAIN BONUS HELPERS (Task 2.12) =====
+static func _get_terrain_attack_bonus(unit: Unit) -> int:
+	## Get high ground attack bonus for attacker
+	## Only applies to ranged attacks
+	if not unit.is_ranged_weapon:
+		return 0
+
+	var combat_grid = CombatManager.get_combat_grid()
+	if not combat_grid:
+		return 0
+
+	return combat_grid.get_high_ground_bonus(unit.grid_position)
+
+static func _get_terrain_defense_bonus(unit: Unit) -> int:
+	## Get cover defense bonus for defender
+	var combat_grid = CombatManager.get_combat_grid()
+	if not combat_grid:
+		return 0
+
+	return combat_grid.get_cover_bonus(unit.grid_position)

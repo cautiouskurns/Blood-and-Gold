@@ -4,10 +4,12 @@ extends DialogueNode
 ## Speaker node - NPC dialogue line.
 ## Has one input slot, speaker dropdown, text field (500 char limit), and outputs.
 
+const SpeakerColorsScript = preload("res://addons/dialogue_editor/scripts/speaker_colors.gd")
+
 const MAX_TEXT_LENGTH := 500
 
-# Speaker options (can be extended via project settings or data file)
-const DEFAULT_SPEAKERS := ["Narrator", "Player", "NPC", "Guard", "Merchant", "Villager"]
+# Speaker options - loaded from SpeakerColors for consistency
+var _available_speakers: Array[String] = []
 
 var speaker: String = "NPC"
 var dialogue_text: String = ""
@@ -23,7 +25,9 @@ func _setup_node() -> void:
 	node_type = "Speaker"
 	title = "Speaker"
 	custom_minimum_size = Vector2(280, 0)
-	apply_color_theme(Color.CYAN)
+	_available_speakers = SpeakerColorsScript.get_common_speakers()
+	# Initial color will be set after speaker dropdown is created
+	apply_color_theme(SpeakerColorsScript.get_speaker_color("NPC"))
 
 
 func _setup_slots() -> void:
@@ -36,11 +40,27 @@ func _setup_slots() -> void:
 
 	_speaker_dropdown = OptionButton.new()
 	_speaker_dropdown.custom_minimum_size = Vector2(140, 0)
-	for s in DEFAULT_SPEAKERS:
+	for s in _available_speakers:
 		_speaker_dropdown.add_item(s)
 	_speaker_dropdown.item_selected.connect(_on_speaker_changed)
 	speaker_row.add_child(_speaker_dropdown)
 	add_child(speaker_row)
+
+	# Set initial speaker and color
+	if _speaker_dropdown.item_count > 0:
+		# Default to NPC if available, otherwise first item
+		var npc_index = -1
+		for i in _speaker_dropdown.item_count:
+			if _speaker_dropdown.get_item_text(i) == "NPC":
+				npc_index = i
+				break
+		if npc_index >= 0:
+			_speaker_dropdown.select(npc_index)
+			speaker = "NPC"
+		else:
+			_speaker_dropdown.select(0)
+			speaker = _speaker_dropdown.get_item_text(0)
+		_update_color_by_speaker()
 
 	# Text edit for dialogue
 	_text_edit = TextEdit.new()
@@ -94,20 +114,8 @@ func _update_char_count() -> void:
 
 
 func _update_color_by_speaker() -> void:
-	# Color code by speaker type
-	var color = Color.CYAN
-	match speaker:
-		"Narrator":
-			color = Color.GRAY
-		"Player":
-			color = Color.DODGER_BLUE
-		"Guard":
-			color = Color.DARK_RED
-		"Merchant":
-			color = Color.GOLD
-		_:
-			color = Color.CYAN
-
+	# Get color from centralized SpeakerColors manager
+	var color = SpeakerColorsScript.get_speaker_color(speaker)
 	apply_color_theme(color)
 
 

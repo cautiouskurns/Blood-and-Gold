@@ -65,6 +65,9 @@ func _spawn_test_units() -> void:
 		{"type": Unit.UnitType.THORNE, "pos": Vector2i(1, 3), "name": "Thorne"},
 		{"type": Unit.UnitType.LYRA, "pos": Vector2i(1, 7), "name": "Lyra"},
 		{"type": Unit.UnitType.MATTHIAS, "pos": Vector2i(2, 5), "name": "Matthias"},
+		# Task 2.8: Test infantry soldiers
+		{"type": Unit.UnitType.INFANTRY, "pos": Vector2i(2, 3), "name": "Soldier 1", "order": Unit.SoldierOrder.ADVANCE},
+		{"type": Unit.UnitType.INFANTRY, "pos": Vector2i(2, 7), "name": "Soldier 2", "order": Unit.SoldierOrder.HOLD},
 		{"type": Unit.UnitType.ENEMY, "pos": Vector2i(10, 4), "name": "Bandit 1"},
 		{"type": Unit.UnitType.ENEMY, "pos": Vector2i(10, 6), "name": "Bandit 2"},
 		{"type": Unit.UnitType.ENEMY, "pos": Vector2i(9, 5), "name": "Bandit 3"},
@@ -72,7 +75,10 @@ func _spawn_test_units() -> void:
 
 	# Spawn all units from data
 	for data in _initial_spawn_data:
-		_spawn_unit(data["type"], data["pos"], data["name"])
+		var unit = _spawn_unit(data["type"], data["pos"], data["name"])
+		# Task 2.8: Set soldier order if specified
+		if data.has("order") and unit.is_soldier:
+			unit.set_order(data["order"])
 
 	print("[Main] Test units spawned: %d total" % _units.size())
 
@@ -344,7 +350,10 @@ func _restart_battle() -> void:
 
 	# Respawn units from initial data
 	for data in _initial_spawn_data:
-		_spawn_unit(data["type"], data["pos"], data["name"])
+		var unit = _spawn_unit(data["type"], data["pos"], data["name"])
+		# Task 2.8: Set soldier order if specified
+		if data.has("order") and unit.is_soldier:
+			unit.set_order(data["order"])
 
 	# Update pathfinding
 	combat_grid.update_occupied_tiles(_units)

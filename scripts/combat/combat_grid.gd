@@ -16,6 +16,13 @@ const TILE_SIZE: int = 64
 # Tile type identifiers
 const TILE_WALKABLE: int = 0
 const TILE_OBSTACLE: int = 1
+const TILE_COVER: int = 2           # Task 2.12: Cover tiles (+2 Defense)
+const TILE_HIGH_GROUND: int = 3     # Task 2.12: High ground tiles (+2 ranged attack)
+const TILE_COVER_HIGH_GROUND: int = 4  # Task 2.12: Combined (both bonuses)
+
+# Terrain bonus constants (Task 2.12)
+const COVER_DEFENSE_BONUS: int = 2
+const HIGH_GROUND_ATTACK_BONUS: int = 2
 
 # Colors from spec
 const COLOR_WALKABLE: Color = Color("#4a6741")
@@ -23,6 +30,14 @@ const COLOR_WALKABLE_BORDER: Color = Color("#3d5636")
 const COLOR_OBSTACLE: Color = Color("#2d3436")
 const COLOR_OBSTACLE_BORDER: Color = Color("#1a1a2e")
 const COLOR_BACKGROUND: Color = Color("#0d1117")
+
+# Cover and High Ground colors (Task 2.12)
+const COLOR_COVER: Color = Color("#3d5636")           # Darker forest green
+const COLOR_COVER_BORDER: Color = Color("#2d4226")
+const COLOR_HIGH_GROUND: Color = Color("#8b7355")     # Tan/brown
+const COLOR_HIGH_GROUND_BORDER: Color = Color("#6b5345")
+const COLOR_COVER_HIGH_GROUND: Color = Color("#5d6355")  # Mixed green-brown
+const COLOR_COVER_HIGH_GROUND_BORDER: Color = Color("#4d5345")
 
 # Movement overlay colors (Task 1.5)
 const COLOR_VALID_MOVE: Color = Color("#27ae60", 0.4)  # 40% opacity green
@@ -80,9 +95,12 @@ func _create_tileset() -> void:
 	source.texture = _create_tile_atlas_texture()
 	source.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
 
-	# Add tiles to source (walkable at 0,0 and obstacle at 1,0)
+	# Add tiles to source (Task 2.12: expanded to 5 tile types)
 	source.create_tile(Vector2i(0, 0))  # Walkable
 	source.create_tile(Vector2i(1, 0))  # Obstacle
+	source.create_tile(Vector2i(2, 0))  # Cover
+	source.create_tile(Vector2i(3, 0))  # High Ground
+	source.create_tile(Vector2i(4, 0))  # Cover + High Ground
 
 	# Add source to tileset
 	_tile_set.add_source(source, 0)
@@ -91,17 +109,26 @@ func _create_tileset() -> void:
 	tile_map.tile_set = _tile_set
 
 func _create_tile_atlas_texture() -> ImageTexture:
-	## Create an atlas texture containing both tile types
-	var atlas_width = TILE_SIZE * 2  # 2 tiles wide
+	## Create an atlas texture containing all tile types (Task 2.12: expanded to 5)
+	var atlas_width = TILE_SIZE * 5  # 5 tiles wide
 	var atlas_height = TILE_SIZE
 
 	var image = Image.create(atlas_width, atlas_height, false, Image.FORMAT_RGBA8)
 
-	# Draw walkable tile (left side, 0-63)
+	# Draw walkable tile (0)
 	_draw_tile_to_image(image, 0, COLOR_WALKABLE, COLOR_WALKABLE_BORDER)
 
-	# Draw obstacle tile (right side, 64-127)
+	# Draw obstacle tile (1)
 	_draw_tile_to_image(image, TILE_SIZE, COLOR_OBSTACLE, COLOR_OBSTACLE_BORDER)
+
+	# Draw cover tile (2) - Task 2.12
+	_draw_tile_with_icon(image, TILE_SIZE * 2, COLOR_COVER, COLOR_COVER_BORDER, "cover")
+
+	# Draw high ground tile (3) - Task 2.12
+	_draw_tile_with_icon(image, TILE_SIZE * 3, COLOR_HIGH_GROUND, COLOR_HIGH_GROUND_BORDER, "high_ground")
+
+	# Draw cover + high ground tile (4) - Task 2.12
+	_draw_tile_with_icon(image, TILE_SIZE * 4, COLOR_COVER_HIGH_GROUND, COLOR_COVER_HIGH_GROUND_BORDER, "both")
 
 	var texture = ImageTexture.create_from_image(image)
 	return texture
@@ -113,6 +140,89 @@ func _draw_tile_to_image(image: Image, x_offset: int, fill_color: Color, border_
 			var is_border = (x == 0 or x == TILE_SIZE - 1 or y == 0 or y == TILE_SIZE - 1)
 			var color = border_color if is_border else fill_color
 			image.set_pixel(x_offset + x, y, color)
+
+func _draw_tile_with_icon(image: Image, x_offset: int, fill_color: Color, border_color: Color, icon_type: String) -> void:
+	## Draw a tile with a terrain indicator icon (Task 2.12)
+	# First draw the base tile
+	_draw_tile_to_image(image, x_offset, fill_color, border_color)
+
+	# Icon parameters
+	var icon_color = Color(1, 1, 1, 0.6)  # White at 60% opacity
+	var center_x = TILE_SIZE / 2
+	var center_y = TILE_SIZE / 2
+
+	match icon_type:
+		"cover":
+			# Draw shield-like icon (filled rounded rectangle)
+			_draw_shield_icon(image, x_offset, center_x, center_y, icon_color)
+		"high_ground":
+			# Draw up arrow icon
+			_draw_arrow_icon(image, x_offset, center_x, center_y, icon_color)
+		"both":
+			# Draw both icons (shield smaller, arrow smaller)
+			_draw_shield_icon(image, x_offset, center_x - 10, center_y, icon_color, 0.7)
+			_draw_arrow_icon(image, x_offset, center_x + 10, center_y, icon_color, 0.7)
+
+func _draw_shield_icon(image: Image, x_offset: int, cx: int, cy: int, color: Color, scale: float = 1.0) -> void:
+	## Draw a simple shield icon (rounded top, pointed bottom)
+	var size = int(12 * scale)
+	var half = size / 2
+
+	for x in range(-half, half + 1):
+		for y in range(-half - 2, half + 4):
+			var px = x_offset + cx + x
+			var py = cy + y
+
+			if px < x_offset or px >= x_offset + TILE_SIZE:
+				continue
+			if py < 0 or py >= TILE_SIZE:
+				continue
+
+			# Shield shape: rectangle top, triangle bottom
+			var in_shield = false
+			if y >= -half - 2 and y <= 2:
+				# Top rectangle part
+				if abs(x) <= half:
+					in_shield = true
+			elif y > 2 and y <= half + 4:
+				# Bottom triangle part
+				var max_x = half - (y - 2) * half / (half + 2)
+				if abs(x) <= max_x:
+					in_shield = true
+
+			if in_shield:
+				image.set_pixel(px, py, color)
+
+func _draw_arrow_icon(image: Image, x_offset: int, cx: int, cy: int, color: Color, scale: float = 1.0) -> void:
+	## Draw an up arrow icon
+	var size = int(10 * scale)
+	var half = size / 2
+
+	for x in range(-half - 2, half + 3):
+		for y in range(-half - 4, half + 2):
+			var px = x_offset + cx + x
+			var py = cy + y
+
+			if px < x_offset or px >= x_offset + TILE_SIZE:
+				continue
+			if py < 0 or py >= TILE_SIZE:
+				continue
+
+			var in_arrow = false
+
+			# Arrow head (triangle pointing up)
+			if y >= -half - 4 and y <= 0:
+				var max_x = (half + 2) - abs(y + half + 4) * (half + 2) / (half + 4)
+				if abs(x) <= max_x:
+					in_arrow = true
+
+			# Arrow shaft (vertical line)
+			if y > 0 and y <= half + 2:
+				if abs(x) <= 2:
+					in_arrow = true
+
+			if in_arrow:
+				image.set_pixel(px, py, color)
 
 func _center_grid() -> void:
 	## Center the grid in the viewport
@@ -142,6 +252,26 @@ func _generate_default_grid() -> void:
 	_set_obstacle(Vector2i(3, 8))
 	_set_obstacle(Vector2i(8, 9))
 
+	# Task 2.12: Add cover tiles (trees/rocks for defense bonus)
+	set_tile_cover(Vector2i(1, 4))
+	set_tile_cover(Vector2i(1, 5))
+	set_tile_cover(Vector2i(2, 6))
+	set_tile_cover(Vector2i(10, 4))
+	set_tile_cover(Vector2i(10, 5))
+	set_tile_cover(Vector2i(9, 6))
+
+	# Task 2.12: Add high ground tiles (elevated positions for ranged bonus)
+	set_tile_high_ground(Vector2i(6, 1))
+	set_tile_high_ground(Vector2i(7, 1))
+	set_tile_high_ground(Vector2i(6, 10))
+	set_tile_high_ground(Vector2i(7, 10))
+
+	# Task 2.12: Add combined cover + high ground tile (defensive tower)
+	set_tile_cover_high_ground(Vector2i(11, 1))
+	set_tile_cover_high_ground(Vector2i(0, 10))
+
+	print("[CombatGrid] Added terrain: 6 cover tiles, 4 high ground tiles, 2 combined tiles")
+
 func _set_tile(coords: Vector2i, tile_type: int) -> void:
 	## Set a tile at the given coordinates
 	if not _is_valid_coords(coords):
@@ -168,12 +298,47 @@ func get_tile_type(coords: Vector2i) -> int:
 	return _grid_data[coords.x][coords.y]
 
 func is_walkable(coords: Vector2i) -> bool:
-	## Check if a tile is walkable
-	return get_tile_type(coords) == TILE_WALKABLE
+	## Check if a tile is walkable (includes cover and high ground - Task 2.12)
+	var tile_type = get_tile_type(coords)
+	return tile_type == TILE_WALKABLE or tile_type == TILE_COVER or tile_type == TILE_HIGH_GROUND or tile_type == TILE_COVER_HIGH_GROUND
 
 func is_obstacle(coords: Vector2i) -> bool:
 	## Check if a tile is an obstacle
 	return get_tile_type(coords) == TILE_OBSTACLE
+
+# ===== TERRAIN BONUS METHODS (Task 2.12) =====
+func is_cover(coords: Vector2i) -> bool:
+	## Check if a tile provides cover (+2 Defense)
+	var tile_type = get_tile_type(coords)
+	return tile_type == TILE_COVER or tile_type == TILE_COVER_HIGH_GROUND
+
+func is_high_ground(coords: Vector2i) -> bool:
+	## Check if a tile is high ground (+2 ranged attack)
+	var tile_type = get_tile_type(coords)
+	return tile_type == TILE_HIGH_GROUND or tile_type == TILE_COVER_HIGH_GROUND
+
+func get_cover_bonus(coords: Vector2i) -> int:
+	## Get the cover defense bonus for a tile position
+	## Returns COVER_DEFENSE_BONUS (+2) if tile provides cover, 0 otherwise
+	if is_cover(coords):
+		return COVER_DEFENSE_BONUS
+	return 0
+
+func get_high_ground_bonus(coords: Vector2i) -> int:
+	## Get the high ground attack bonus for a tile position
+	## Returns HIGH_GROUND_ATTACK_BONUS (+2) if tile is high ground, 0 otherwise
+	if is_high_ground(coords):
+		return HIGH_GROUND_ATTACK_BONUS
+	return 0
+
+func get_terrain_info(coords: Vector2i) -> Dictionary:
+	## Get all terrain info for a tile (for tooltips)
+	return {
+		"has_cover": is_cover(coords),
+		"has_high_ground": is_high_ground(coords),
+		"cover_bonus": get_cover_bonus(coords),
+		"high_ground_bonus": get_high_ground_bonus(coords)
+	}
 
 func is_valid_position(coords: Vector2i) -> bool:
 	## Check if coordinates are within grid bounds (Task 2.5: Shadowstep)
@@ -216,6 +381,18 @@ func set_tile_walkable(coords: Vector2i) -> void:
 func set_tile_obstacle(coords: Vector2i) -> void:
 	## Set a tile as an obstacle
 	_set_tile(coords, TILE_OBSTACLE)
+
+func set_tile_cover(coords: Vector2i) -> void:
+	## Set a tile as cover (+2 Defense) - Task 2.12
+	_set_tile(coords, TILE_COVER)
+
+func set_tile_high_ground(coords: Vector2i) -> void:
+	## Set a tile as high ground (+2 ranged attack) - Task 2.12
+	_set_tile(coords, TILE_HIGH_GROUND)
+
+func set_tile_cover_high_ground(coords: Vector2i) -> void:
+	## Set a tile as both cover and high ground - Task 2.12
+	_set_tile(coords, TILE_COVER_HIGH_GROUND)
 
 func clear_grid() -> void:
 	## Clear all tiles to walkable

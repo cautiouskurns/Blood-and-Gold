@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://1bd0feo7xjmi"]
+[gd_scene load_steps=8 format=3 uid="uid://1bd0feo7xjmi"]
 
 [ext_resource type="PackedScene" uid="uid://c1combatgrid" path="res://scenes/combat/CombatGrid.tscn" id="1_combat_grid"]
 [ext_resource type="Script" path="res://scripts/main/main.gd" id="2_main"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://ability_bar_scene" path="res://scenes/UI/AbilityBar.tscn" id="4_ability_bar"]
 [ext_resource type="PackedScene" uid="uid://selection_panel_scene" path="res://scenes/UI/SelectionPanel.tscn" id="5_selection_panel"]
 [ext_resource type="PackedScene" uid="uid://combat_log_scene" path="res://scenes/UI/CombatLog.tscn" id="6_combat_log"]
+[ext_resource type="PackedScene" uid="uid://order_panel_scene" path="res://scenes/UI/OrderPanel.tscn" id="7_order_panel"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("2_main")
@@ -36,4 +37,7 @@ layout_mode = 1
 layout_mode = 1
 
 [node name="CombatLog" parent="UILayer" instance=ExtResource("6_combat_log")]
+layout_mode = 1
+
+[node name="OrderPanel" parent="UILayer" instance=ExtResource("7_order_panel")]
 layout_mode = 1

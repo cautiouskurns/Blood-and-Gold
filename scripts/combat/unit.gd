@@ -13,9 +13,10 @@ signal movement_started(unit: Unit)
 signal movement_finished(unit: Unit)
 signal attack_initiated(attacker: Unit, target: Unit)
 signal attack_received(attacker: Unit, damage: int)
+signal order_changed(unit: Unit, new_order: int)  # Task 2.8: Soldier order changed
 
 # ===== ENUMS =====
-enum UnitType { PLAYER, THORNE, LYRA, MATTHIAS, ENEMY, INFANTRY, ARCHER }
+enum UnitType { PLAYER, THORNE, LYRA, MATTHIAS, ENEMY, INFANTRY, ARCHER, BANDIT_ARCHER, BANDIT_LEADER, IRONMARK_SOLDIER, IRONMARK_KNIGHT }
 
 # ===== CONSTANTS =====
 const SPRITE_SIZE: int = 56
@@ -42,6 +43,19 @@ const HP_BAR_HEIGHT: int = 6
 const HP_BAR_OFFSET_Y: int = -40
 const LOW_HP_THRESHOLD: float = 0.25  # 25%
 
+# Order icon dimensions (Task 2.8)
+const ORDER_ICON_SIZE: int = 24
+const ORDER_ICON_OFFSET_Y: int = -55  # Above HP bar
+
+# Order icon colors (Task 2.8)
+const ORDER_COLORS: Dictionary = {
+	0: Color("#e74c3c"),  # HOLD - Red/defensive
+	1: Color("#2ecc71"),  # ADVANCE - Green/aggressive
+	2: Color("#f39c12"),  # FOCUS_FIRE - Orange/targeted
+	3: Color("#9b59b6"),  # RETREAT - Purple/withdraw
+	4: Color("#3498db"),  # PROTECT - Blue/guardian
+}
+
 # Unit colors from spec
 const UNIT_COLORS: Dictionary = {
 	UnitType.PLAYER: Color("#3498db"),    # Blue
@@ -51,6 +65,10 @@ const UNIT_COLORS: Dictionary = {
 	UnitType.ENEMY: Color("#e74c3c"),     # Red
 	UnitType.INFANTRY: Color("#1abc9c"),  # Teal (soldier)
 	UnitType.ARCHER: Color("#16a085"),    # Dark Teal (soldier)
+	UnitType.BANDIT_ARCHER: Color("#27ae60"),   # Forest Green (Task 2.15)
+	UnitType.BANDIT_LEADER: Color("#c0392b"),   # Crimson Red (Task 2.15)
+	UnitType.IRONMARK_SOLDIER: Color("#2980b9"),  # Royal Blue (Task 2.15)
+	UnitType.IRONMARK_KNIGHT: Color("#2980b9"),   # Royal Blue (Task 2.15)
 }
 
 const UNIT_BORDER_COLORS: Dictionary = {
@@ -61,6 +79,10 @@ const UNIT_BORDER_COLORS: Dictionary = {
 	UnitType.ENEMY: Color("#c0392b"),
 	UnitType.INFANTRY: Color("#17a589"),
 	UnitType.ARCHER: Color("#138d75"),
+	UnitType.BANDIT_ARCHER: Color("#1e8449"),     # Dark Green (Task 2.15)
+	UnitType.BANDIT_LEADER: Color("#922b21"),     # Dark Red (Task 2.15)
+	UnitType.IRONMARK_SOLDIER: Color("#1f618d"),  # Dark Blue (Task 2.15)
+	UnitType.IRONMARK_KNIGHT: Color("#1a5276"),   # Deep Blue (Task 2.15)
 }
 
 const UNIT_LETTERS: Dictionary = {
@@ -71,6 +93,10 @@ const UNIT_LETTERS: Dictionary = {
 	UnitType.ENEMY: "E",
 	UnitType.INFANTRY: "I",
 	UnitType.ARCHER: "A",
+	UnitType.BANDIT_ARCHER: "B",     # Task 2.15: B for Bowman (avoid conflict with friendly Archer)
+	UnitType.BANDIT_LEADER: "C",     # Task 2.15: C for Captain (avoid conflict with Lyra)
+	UnitType.IRONMARK_SOLDIER: "S",  # Task 2.15: S for Soldier
+	UnitType.IRONMARK_KNIGHT: "K",   # Task 2.15: K for Knight
 }
 
 # ===== EXPORTED PROPERTIES =====
@@ -78,6 +104,8 @@ const UNIT_LETTERS: Dictionary = {
 @export var unit_name: String = "Unit"
 @export var is_enemy: bool = false
 @export var is_soldier: bool = false  # Soldiers dying doesn't trigger defeat (Task 1.9)
+@export var is_bandit: bool = false   # Task 2.15: For Rally Bandits targeting
+@export var is_ironmark: bool = false # Task 2.15: For Shield Wall calculation
 @export var max_hp: int = 30
 @export var movement_range: int = 5  # Tiles per turn (Task 1.5)
 
@@ -94,6 +122,7 @@ const UNIT_LETTERS: Dictionary = {
 @export var armor_bonus: int = 0
 @export var skill_rank: int = 2  # Base skill rank for attacks
 @export var weapon_damage_die: int = 6  # e.g., 6 for 1d6
+@export var damage_bonus: int = 0  # Task 2.15: Additional flat damage bonus
 @export var uses_finesse: bool = false  # Uses DEX for attacks instead of STR
 @export var weapon_range: int = 1  # 1 = melee, 8 = shortbow, 10 = crossbow (Task 2.7)
 @export var is_ranged_weapon: bool = false  # True for bows, crossbows (Task 2.7)
@@ -117,9 +146,17 @@ var _nameplate: UnitNameplate = null  # Task 4.3: Floating nameplate
 # ===== FACING DIRECTION (Task 2.5) =====
 var facing_direction: Vector2i = Vector2i(0, 1)  # Default facing South (down)
 
+# ===== SOLDIER ORDER SYSTEM (Task 2.8) =====
+enum SoldierOrder { HOLD, ADVANCE, FOCUS_FIRE, RETREAT, PROTECT }
+var current_order: SoldierOrder = SoldierOrder.HOLD
+var _order_icon: Sprite2D = null  # Reference to order icon node
+
 # ===== POISON BLADE STATE (Task 2.5) =====
 var _poison_blade_charges: int = 0   # Number of attacks remaining with poison
 var _poison_blade_damage: int = 0    # Bonus damage per attack
+
+# ===== ATTACK OF OPPORTUNITY STATE (Task 2.13) =====
+var _opportunity_attack_used: bool = false  # True if this unit has used their AoO this turn
 
 # ===== ABILITY DATA (Task 2.2) =====
 var _abilities: Array[Dictionary] = []
@@ -153,8 +190,36 @@ func get_cha_mod() -> int:
 
 # ===== COMBAT CALCULATIONS (Task 2.1) =====
 func get_defense() -> int:
-	## Calculate defense value: 10 + DEX mod + armor bonus
-	return 10 + get_dex_mod() + armor_bonus
+	## Calculate defense value: 10 + DEX mod + armor bonus + Shield Wall if applicable
+	var base_defense = 10 + get_dex_mod() + armor_bonus
+
+	# Task 2.15: Shield Wall passive for Ironmark units
+	if is_ironmark and _has_adjacent_ironmark_ally():
+		base_defense += 2
+		# Note: Shield Wall bonus doesn't stack - just +2 total
+
+	return base_defense
+
+func _has_adjacent_ironmark_ally() -> bool:
+	## Task 2.15: Check if there's an adjacent Ironmark ally for Shield Wall
+	var adjacent_units = _get_adjacent_units()
+	for unit in adjacent_units:
+		if unit.is_ironmark and unit != self and unit.is_alive():
+			return true
+	return false
+
+func _get_adjacent_units() -> Array[Unit]:
+	## Get all units adjacent to this unit (8-directional)
+	var adjacent: Array[Unit] = []
+	var units = get_tree().get_nodes_in_group("units")
+
+	for node in units:
+		var unit = node as Unit
+		if unit and is_instance_valid(unit) and unit != self:
+			if is_adjacent_to(unit):
+				adjacent.append(unit)
+
+	return adjacent
 
 func get_melee_attack_bonus() -> int:
 	## Calculate melee attack bonus: STR mod + skill rank
@@ -178,10 +243,11 @@ func get_attack_bonus() -> int:
 	return base_bonus + buff_bonus
 
 func get_damage_modifier() -> int:
-	## Get damage modifier (STR or DEX for finesse weapons)
+	## Get damage modifier (STR or DEX for finesse weapons) + flat bonus
+	var stat_mod: int = get_str_mod()
 	if uses_finesse:
-		return get_dex_mod()
-	return get_str_mod()
+		stat_mod = get_dex_mod()
+	return stat_mod + damage_bonus
 
 func get_damage_die() -> int:
 	## Get weapon damage die
@@ -293,6 +359,78 @@ func _configure_stats_for_type() -> void:
 			is_ranged_weapon = true  # Task 2.7
 			skill_rank = 1
 
+		# ===== TASK 2.15: NEW ENEMY TYPES =====
+
+		UnitType.BANDIT_ARCHER:
+			# Role: Ranged threat, forces advancement
+			# Stats: HP 10, DEF 11, ATK 1d6 (range 8), Move 5
+			strength = 10
+			dexterity = 14  # +2 for ranged accuracy
+			constitution = 8
+			intelligence = 8
+			wisdom = 10
+			charisma = 8
+			max_hp = 10
+			armor_bonus = 1  # DEF 11: 10 + 2(DEX) - 1 offset = 11, so armor_bonus 1
+			movement_range = 5
+			weapon_damage_die = 6  # 1d6
+			damage_bonus = 0
+			uses_finesse = true
+			weapon_range = 8
+			is_ranged_weapon = true
+			skill_rank = 1
+
+		UnitType.BANDIT_LEADER:
+			# Role: Priority target, buff provider
+			# Stats: HP 30, DEF 14, ATK 1d8+3, Move 5
+			strength = 14  # +2 for melee
+			dexterity = 12  # +1 for DEF
+			constitution = 12
+			intelligence = 10
+			wisdom = 10
+			charisma = 14  # Leaders have charisma
+			max_hp = 30
+			armor_bonus = 3  # DEF 14: 10 + 1(DEX) + 3 = 14
+			movement_range = 5
+			weapon_damage_die = 8  # 1d8
+			damage_bonus = 1  # +3 total: +2 STR + 1 bonus = +3
+			uses_finesse = false
+			skill_rank = 2
+
+		UnitType.IRONMARK_SOLDIER:
+			# Role: Defensive formation unit, shield wall
+			# Stats: HP 25, DEF 15 (heavy armor), ATK 1d8+2, Move 4
+			strength = 14  # +2
+			dexterity = 10  # 0
+			constitution = 14
+			intelligence = 8
+			wisdom = 10
+			charisma = 8
+			max_hp = 25
+			armor_bonus = 5  # DEF 15: 10 + 0(DEX) + 5 = 15 (Shield Wall adds +2)
+			movement_range = 4  # Slower due to heavy armor
+			weapon_damage_die = 8  # 1d8 spear
+			damage_bonus = 0  # +2 total from STR
+			uses_finesse = false
+			skill_rank = 1
+
+		UnitType.IRONMARK_KNIGHT:
+			# Role: Elite mini-boss, aggressive threat
+			# Stats: HP 40, DEF 17 (full plate), ATK 1d10+4, Move 5
+			strength = 16  # +3
+			dexterity = 10  # 0
+			constitution = 16
+			intelligence = 10
+			wisdom = 12
+			charisma = 14
+			max_hp = 40
+			armor_bonus = 7  # DEF 17: 10 + 0(DEX) + 7 = 17
+			movement_range = 5
+			weapon_damage_die = 10  # 1d10 lance/sword
+			damage_bonus = 1  # +4 total: +3 STR + 1 bonus = +4
+			uses_finesse = false
+			skill_rank = 2
+
 # ===== ABILITY CONFIGURATION (Task 2.2) =====
 func _init_abilities() -> void:
 	## Initialize abilities based on unit type (from GDD)
@@ -340,8 +478,56 @@ func _init_abilities() -> void:
 				{"id": "none2", "name": "", "icon": ""},
 				{"id": "none3", "name": "", "icon": ""},
 			]
+		UnitType.INFANTRY:
+			# Task 2.8: Infantry use basic melee attack
+			_abilities = [
+				{"id": "basic_attack", "name": "Attack", "icon": ""},
+				{"id": "none1", "name": "", "icon": ""},
+				{"id": "none2", "name": "", "icon": ""},
+				{"id": "none3", "name": "", "icon": ""},
+			]
+
+		# ===== TASK 2.15: NEW ENEMY TYPE ABILITIES =====
+
+		UnitType.BANDIT_ARCHER:
+			# Ranged enemy - shoots from distance
+			_abilities = [
+				{"id": "ranged_attack", "name": "Shoot", "icon": ""},
+				{"id": "none1", "name": "", "icon": ""},
+				{"id": "none2", "name": "", "icon": ""},
+				{"id": "none3", "name": "", "icon": ""},
+			]
+
+		UnitType.BANDIT_LEADER:
+			# Leader with Rally and Power Attack
+			_abilities = [
+				{"id": "basic_attack", "name": "Attack", "icon": ""},
+				{"id": "rally_bandits", "name": "Rally Bandits", "icon": ""},
+				{"id": "power_attack", "name": "Power Attack", "icon": ""},
+				{"id": "none1", "name": "", "icon": ""},
+			]
+
+		UnitType.IRONMARK_SOLDIER:
+			# Defensive soldier with Shield Wall (passive)
+			_abilities = [
+				{"id": "basic_attack", "name": "Attack", "icon": ""},
+				{"id": "none1", "name": "", "icon": ""},
+				{"id": "none2", "name": "", "icon": ""},
+				{"id": "none3", "name": "", "icon": ""},
+			]
+			# Shield Wall is a passive - handled in get_defense()
+
+		UnitType.IRONMARK_KNIGHT:
+			# Elite with Charge and Intimidate
+			_abilities = [
+				{"id": "basic_attack", "name": "Attack", "icon": ""},
+				{"id": "charge", "name": "Charge", "icon": ""},
+				{"id": "intimidate", "name": "Intimidate", "icon": ""},
+				{"id": "none1", "name": "", "icon": ""},
+			]
+
 		_:
-			# Default basic attack only for soldiers/other units
+			# Default basic attack only for other units
 			_abilities = [
 				{"id": "basic_attack", "name": "Attack", "icon": ""},
 				{"id": "none1", "name": "", "icon": ""},
@@ -463,6 +649,152 @@ func is_behind(attacker: Unit) -> bool:
 	# attacker must be in exactly the opposite direction of facing
 	return attack_from == behind_direction
 
+# ===== SOLDIER ORDER API (Task 2.8) =====
+func set_order(order: SoldierOrder) -> void:
+	## Set the soldier's current order and update visual
+	if not is_soldier:
+		return
+	var old_order = current_order
+	current_order = order
+	_update_order_icon()
+	if old_order != order:
+		order_changed.emit(self, order)
+		print("[Unit] %s order changed: %s -> %s" % [
+			unit_name,
+			SoldierOrder.keys()[old_order],
+			SoldierOrder.keys()[order]
+		])
+
+func get_order() -> SoldierOrder:
+	## Get the soldier's current order
+	return current_order
+
+func get_order_name() -> String:
+	## Get the order name as string
+	return SoldierOrder.keys()[current_order]
+
+func _setup_order_icon() -> void:
+	## Create order icon sprite for soldiers (Task 2.8)
+	if not is_soldier:
+		return
+
+	# Create order icon sprite
+	_order_icon = Sprite2D.new()
+	_order_icon.name = "OrderIcon"
+	_order_icon.position = Vector2(0, ORDER_ICON_OFFSET_Y)
+	_order_icon.centered = true
+	add_child(_order_icon)
+
+	# Generate initial icon
+	_update_order_icon()
+	print("[Unit] Order icon created for %s (order: %s)" % [unit_name, get_order_name()])
+
+func _update_order_icon() -> void:
+	## Update order icon visual based on current order
+	if not _order_icon or not is_soldier:
+		return
+
+	var icon_color = ORDER_COLORS.get(current_order, Color.WHITE)
+	var texture = _generate_order_icon_texture(icon_color)
+	_order_icon.texture = texture
+
+func _generate_order_icon_texture(color: Color) -> ImageTexture:
+	## Generate a simple order icon texture
+	var size = ORDER_ICON_SIZE
+	var image = Image.create(size, size, false, Image.FORMAT_RGBA8)
+
+	# Draw icon based on order type
+	match current_order:
+		SoldierOrder.HOLD:
+			# Shield shape (defensive)
+			_draw_shield_icon(image, size, color)
+		SoldierOrder.ADVANCE:
+			# Sword/arrow shape (aggressive)
+			_draw_sword_icon(image, size, color)
+		SoldierOrder.FOCUS_FIRE:
+			# Crosshair shape (targeted)
+			_draw_crosshair_icon(image, size, color)
+		SoldierOrder.RETREAT:
+			# Arrow pointing back
+			_draw_retreat_icon(image, size, color)
+		SoldierOrder.PROTECT:
+			# Shield with plus
+			_draw_protect_icon(image, size, color)
+
+	return ImageTexture.create_from_image(image)
+
+func _draw_shield_icon(image: Image, size: int, color: Color) -> void:
+	## Draw a shield icon (HOLD order)
+	var center = size / 2
+	for x in range(size):
+		for y in range(size):
+			var dx = abs(x - center)
+			var dy = y - 2
+			# Shield shape: wider at top, narrows at bottom
+			var is_shield = dy >= 0 and dy < size - 4 and dx <= (size/2 - 2 - dy/3)
+			if is_shield:
+				image.set_pixel(x, y, color)
+
+func _draw_sword_icon(image: Image, size: int, color: Color) -> void:
+	## Draw a sword pointing up icon (ADVANCE order)
+	var center = size / 2
+	for x in range(size):
+		for y in range(size):
+			# Blade (vertical line)
+			var is_blade = abs(x - center) <= 1 and y >= 2 and y < size - 6
+			# Crossguard (horizontal line)
+			var is_guard = abs(y - (size - 6)) <= 1 and abs(x - center) <= 4
+			# Handle
+			var is_handle = abs(x - center) <= 1 and y >= size - 6 and y < size - 2
+			if is_blade or is_guard or is_handle:
+				image.set_pixel(x, y, color)
+
+func _draw_crosshair_icon(image: Image, size: int, color: Color) -> void:
+	## Draw a crosshair icon (FOCUS_FIRE order)
+	var center = size / 2
+	for x in range(size):
+		for y in range(size):
+			# Horizontal line
+			var is_h_line = abs(y - center) <= 1 and (x < center - 3 or x > center + 3)
+			# Vertical line
+			var is_v_line = abs(x - center) <= 1 and (y < center - 3 or y > center + 3)
+			# Center dot
+			var dist = sqrt(pow(x - center, 2) + pow(y - center, 2))
+			var is_center = dist <= 2
+			if is_h_line or is_v_line or is_center:
+				image.set_pixel(x, y, color)
+
+func _draw_retreat_icon(image: Image, size: int, color: Color) -> void:
+	## Draw an arrow pointing down-left (RETREAT order)
+	var center = size / 2
+	for x in range(size):
+		for y in range(size):
+			# Arrow shaft (diagonal)
+			var on_shaft = abs((x - 4) - (y - 4)) <= 1 and x >= 4 and x < size - 4 and y >= 4 and y < size - 4
+			# Arrow head
+			var head_x = 4
+			var head_y = size - 6
+			var is_head = (abs(x - head_x) <= 3 and abs(y - head_y) <= 1) or (abs(y - head_y) <= 3 and abs(x - head_x) <= 1)
+			if on_shaft or is_head:
+				image.set_pixel(x, y, color)
+
+func _draw_protect_icon(image: Image, size: int, color: Color) -> void:
+	## Draw a shield with plus (PROTECT order)
+	var center = size / 2
+	for x in range(size):
+		for y in range(size):
+			var dx = abs(x - center)
+			var dy = y - 2
+			# Shield shape
+			var is_shield = dy >= 0 and dy < size - 4 and dx <= (size/2 - 2 - dy/3)
+			# Plus sign inside
+			var is_plus = is_shield and ((abs(x - center) <= 1 and dy >= 4 and dy < size - 8) or (abs(dy - (size/2 - 2)) <= 1 and dx <= 4))
+			if is_shield:
+				# Outline only for shield, filled plus
+				var is_outline = dx >= (size/2 - 3 - dy/3) or dy <= 1 or dy >= size - 6
+				if is_outline or is_plus:
+					image.set_pixel(x, y, color)
+
 # ===== POISON BLADE API (Task 2.5) =====
 func apply_poison_blade(attacks: int, bonus_damage: int) -> void:
 	## Apply Poison Blade buff
@@ -497,6 +829,38 @@ func get_poison_blade_charges() -> int:
 	## Get remaining Poison Blade charges
 	return _poison_blade_charges
 
+# ===== ATTACK OF OPPORTUNITY API (Task 2.13) =====
+func can_perform_opportunity_attack() -> bool:
+	## Check if this unit can perform an attack of opportunity
+	## Only melee units can perform AoO, and only once per turn
+	if not is_alive():
+		return false
+	if is_ranged_weapon:
+		return false  # Ranged units cannot perform AoO
+	if _opportunity_attack_used:
+		return false  # Already used AoO this turn
+	return true
+
+func mark_opportunity_attack_used() -> void:
+	## Mark that this unit has used their opportunity attack this turn
+	_opportunity_attack_used = true
+	print("[Unit] %s used their opportunity attack this turn" % unit_name)
+
+func reset_opportunity_attack() -> void:
+	## Reset opportunity attack flag (called at start of unit's turn)
+	_opportunity_attack_used = false
+
+func has_used_opportunity_attack() -> bool:
+	## Check if unit has already used their AoO this turn
+	return _opportunity_attack_used
+
+func is_adjacent_to(other: Unit) -> bool:
+	## Check if this unit is adjacent to another unit (8-directional)
+	if not other or not is_instance_valid(other):
+		return false
+	var diff = other.grid_position - grid_position
+	return abs(diff.x) <= 1 and abs(diff.y) <= 1 and diff != Vector2i.ZERO
+
 # ===== TELEPORT API (Task 2.5) =====
 func teleport_to(destination: Vector2i) -> void:
 	## Instantly teleport to a grid position (for Shadowstep)
@@ -525,13 +889,26 @@ func _ready() -> void:
 	_setup_selection_indicator()
 	_setup_click_detection()
 	_spawn_nameplate()  # Task 4.3: Floating nameplate
+	_setup_order_icon()  # Task 2.8: Order icon for soldiers
 	add_to_group("units")
 
-	# Set enemy flag based on unit type
-	is_enemy = (unit_type == UnitType.ENEMY)
+	# Set enemy flag based on unit type (Task 2.15: includes all enemy types)
+	is_enemy = (unit_type == UnitType.ENEMY or
+		unit_type == UnitType.BANDIT_ARCHER or
+		unit_type == UnitType.BANDIT_LEADER or
+		unit_type == UnitType.IRONMARK_SOLDIER or
+		unit_type == UnitType.IRONMARK_KNIGHT)
 
 	# Set soldier flag based on unit type (Task 1.9)
 	is_soldier = (unit_type == UnitType.INFANTRY or unit_type == UnitType.ARCHER)
+
+	# Task 2.15: Set faction flags for ability targeting
+	is_bandit = (unit_type == UnitType.ENEMY or
+		unit_type == UnitType.BANDIT_ARCHER or
+		unit_type == UnitType.BANDIT_LEADER)
+
+	is_ironmark = (unit_type == UnitType.IRONMARK_SOLDIER or
+		unit_type == UnitType.IRONMARK_KNIGHT)
 
 	# Debug print stats
 	print("[Unit] %s stats: STR %d(%+d) DEX %d(%+d) HP %d DEF %d ATK %+d Move %d" % [
@@ -675,11 +1052,21 @@ func _handle_click() -> void:
 	## Process click on this unit
 	unit_clicked.emit(self)
 
-	print("[Unit] _handle_click on %s, is_targeting=%s, turn_state=%s" % [
+	print("[Unit] _handle_click on %s, is_targeting=%s, is_assigning_order=%s, turn_state=%s" % [
 		unit_name,
 		CombatManager.is_targeting_ability(),
+		CombatManager.is_assigning_order(),
 		CombatManager.get_turn_state()
 	])
+
+	# Check if we're in order assignment mode (Task 2.10)
+	if CombatManager.is_assigning_order():
+		print("[Unit] In order assignment mode, attempting to assign order to %s" % unit_name)
+		if CombatManager.try_assign_order(self):
+			print("[Unit] SUCCESS: Order assigned to: %s" % unit_name)
+		else:
+			print("[Unit] FAILED: Cannot assign order to: %s (not a soldier or invalid)" % unit_name)
+		return
 
 	# Check if we're in ability targeting mode (Task 2.3)
 	if CombatManager.is_targeting_ability():
@@ -902,17 +1289,35 @@ func perform_attack(target: Unit) -> void:
 
 	# Apply damage if hit
 	if result.hit:
-		target.take_damage(result.damage)
-		target.attack_received.emit(self, result.damage)
+		# Task 2.11: Check for PROTECT interception
+		var actual_target = target
+		var interception = CombatManager.try_intercept_attack(target, result.damage)
+		if interception.intercepted and interception.protector:
+			actual_target = interception.protector
+			print("[Unit] %s intercepts attack on %s!" % [actual_target.unit_name, target.unit_name])
+			# Spawn intercept indicator on protector
+			_spawn_intercept_indicator(actual_target)
 
-	# Log the attack
-	print("[Unit] %s attacks %s: Roll %d + %d = %d vs DEF %d -> %s for %d damage%s" % [
+		actual_target.take_damage(result.damage)
+		actual_target.attack_received.emit(self, result.damage)
+
+	# Log the attack (Task 2.12: include terrain bonus info)
+	var terrain_attack_str = ""
+	var terrain_defense_str = ""
+	if result.terrain_attack_bonus > 0:
+		terrain_attack_str = " (+%d high ground)" % result.terrain_attack_bonus
+	if result.terrain_defense_bonus > 0:
+		terrain_defense_str = " (+%d cover)" % result.terrain_defense_bonus
+
+	print("[Unit] %s attacks %s: Roll %d + %d%s = %d vs DEF %d%s -> %s for %d damage%s" % [
 		unit_name,
 		target.unit_name,
 		result.roll,
-		result.total_attack - result.roll,
+		result.total_attack - result.roll - result.terrain_attack_bonus,
+		terrain_attack_str,
 		result.total_attack,
 		result.target_defense,
+		terrain_defense_str,
 		"HIT" if result.hit else "MISS",
 		result.damage,
 		" (CRITICAL!)" if result.is_critical else ""
@@ -922,17 +1327,32 @@ func _spawn_damage_number(target: Unit, result: AttackResolver.AttackResult) -> 
 	## Create floating damage number at target
 	var damage_number = DamageNumberScene.instantiate() as DamageNumber
 
-	# Position above target
-	damage_number.global_position = target.global_position + Vector2(0, -30)
-
-	# Add to scene tree (use parent of target so it's in world space)
+	# Add to scene tree FIRST (required for global_position to work correctly)
 	target.get_parent().add_child(damage_number)
+
+	# Position above target (must be after adding to tree)
+	damage_number.global_position = target.global_position + Vector2(0, -30)
 
 	# Display appropriate text
 	if result.hit:
 		damage_number.show_damage(result.damage, result.is_critical)
 	else:
 		damage_number.show_miss()
+
+func _spawn_intercept_indicator(protector: Unit) -> void:
+	## Show visual feedback when a soldier intercepts an attack (Task 2.11: PROTECT)
+	# Create a damage number to show "BLOCKED!" text
+	var indicator = DamageNumberScene.instantiate() as DamageNumber
+	# Add to tree FIRST (required for global_position to work correctly)
+	protector.get_parent().add_child(indicator)
+	indicator.global_position = protector.global_position + Vector2(0, -50)
+	# Blue color for protection intercept
+	indicator.show_text("BLOCKED!", Color(0.2, 0.6, 1.0))
+
+	# Brief flash on protector
+	var tween = protector.create_tween()
+	tween.tween_property(protector, "modulate", Color(0.5, 0.5, 1.0), 0.1)
+	tween.tween_property(protector, "modulate", Color.WHITE, 0.2)
 
 # ===== STATIC HELPERS =====
 static func get_unit_display_name(type: UnitType) -> String:
@@ -942,7 +1362,11 @@ static func get_unit_display_name(type: UnitType) -> String:
 		UnitType.THORNE: return "Thorne"
 		UnitType.LYRA: return "Lyra"
 		UnitType.MATTHIAS: return "Matthias"
-		UnitType.ENEMY: return "Enemy"
+		UnitType.ENEMY: return "Bandit"
 		UnitType.INFANTRY: return "Infantry"
 		UnitType.ARCHER: return "Archer"
+		UnitType.BANDIT_ARCHER: return "Bandit Archer"
+		UnitType.BANDIT_LEADER: return "Bandit Leader"
+		UnitType.IRONMARK_SOLDIER: return "Ironmark Soldier"
+		UnitType.IRONMARK_KNIGHT: return "Ironmark Knight"
 		_: return "Unknown"

@@ -11,6 +11,14 @@ const ChoiceNodeScript = preload("res://addons/dialogue_editor/scripts/nodes/cho
 const BranchNodeScript = preload("res://addons/dialogue_editor/scripts/nodes/branch_node.gd")
 const EndNodeScript = preload("res://addons/dialogue_editor/scripts/nodes/end_node.gd")
 
+# Phase 2 Advanced Node Scripts
+const SkillCheckNodeScript = preload("res://addons/dialogue_editor/scripts/nodes/skill_check_node.gd")
+const FlagCheckNodeScript = preload("res://addons/dialogue_editor/scripts/nodes/flag_check_node.gd")
+const FlagSetNodeScript = preload("res://addons/dialogue_editor/scripts/nodes/flag_set_node.gd")
+const QuestNodeScript = preload("res://addons/dialogue_editor/scripts/nodes/quest_node.gd")
+const ReputationNodeScript = preload("res://addons/dialogue_editor/scripts/nodes/reputation_node.gd")
+const ItemNodeScript = preload("res://addons/dialogue_editor/scripts/nodes/item_node.gd")
+
 signal canvas_changed()  # Emitted when any change is made (for dirty tracking)
 signal zoom_changed(new_zoom: float)  # Emitted when zoom level changes
 signal dialogue_node_selected(node: GraphNode)  # Renamed to avoid conflict with GraphEdit
@@ -101,13 +109,23 @@ func _setup_context_menu() -> void:
 	_context_menu.name = "ContextMenu"
 	add_child(_context_menu)
 
-	# Add menu items (placeholders for Feature 1.3)
+	# Core node types
 	_context_menu.add_item("Add Start Node", 0)
 	_context_menu.add_item("Add Speaker Node", 1)
 	_context_menu.add_item("Add Choice Node", 2)
 	_context_menu.add_item("Add Branch Node", 3)
 	_context_menu.add_item("Add End Node", 4)
 	_context_menu.add_separator()
+
+	# Advanced node types (Phase 2)
+	_context_menu.add_item("Add Skill Check", 20)
+	_context_menu.add_item("Add Flag Check", 21)
+	_context_menu.add_item("Add Set Flag", 22)
+	_context_menu.add_item("Add Quest", 23)
+	_context_menu.add_item("Add Reputation", 24)
+	_context_menu.add_item("Add Item", 25)
+	_context_menu.add_separator()
+
 	_context_menu.add_item("Paste", 10)
 
 	_context_menu.id_pressed.connect(_on_context_menu_id_pressed)
@@ -358,6 +376,19 @@ func _on_context_menu_id_pressed(id: int) -> void:
 			_create_dialogue_node("End", local_pos)
 		10:  # Paste
 			print("DialogueCanvas: Paste (not implemented)")
+		# Phase 2 Advanced Nodes
+		20:  # Add Skill Check
+			_create_dialogue_node("SkillCheck", local_pos)
+		21:  # Add Flag Check
+			_create_dialogue_node("FlagCheck", local_pos)
+		22:  # Add Set Flag
+			_create_dialogue_node("FlagSet", local_pos)
+		23:  # Add Quest
+			_create_dialogue_node("Quest", local_pos)
+		24:  # Add Reputation
+			_create_dialogue_node("Reputation", local_pos)
+		25:  # Add Item
+			_create_dialogue_node("Item", local_pos)
 
 
 func _create_dialogue_node(type: String, position: Vector2, use_undo_redo: bool = true) -> GraphNode:
@@ -393,6 +424,19 @@ func _do_create_node_internal(type: String, node_name: String, position: Vector2
 			node = BranchNodeScript.new()
 		"End":
 			node = EndNodeScript.new()
+		# Phase 2 Advanced Nodes
+		"SkillCheck":
+			node = SkillCheckNodeScript.new()
+		"FlagCheck":
+			node = FlagCheckNodeScript.new()
+		"FlagSet":
+			node = FlagSetNodeScript.new()
+		"Quest":
+			node = QuestNodeScript.new()
+		"Reputation":
+			node = ReputationNodeScript.new()
+		"Item":
+			node = ItemNodeScript.new()
 		_:
 			push_error("DialogueCanvas: Unknown node type: %s" % type)
 			return null
@@ -841,3 +885,176 @@ func _do_set_property(node_name: String, property_name: String, value: Variant) 
 
 # Pending property change for undo/redo
 var _pending_property_change: Dictionary = {}
+
+
+# =============================================================================
+# AUTO-LAYOUT
+# =============================================================================
+
+## Auto-layout nodes in a readable left-to-right tree structure.
+## Dynamically calculates spacing based on actual node sizes to prevent overlap.
+func auto_layout() -> void:
+	var nodes = get_all_dialogue_nodes()
+	if nodes.is_empty():
+		return
+
+	# Padding between nodes
+	const HORIZONTAL_PADDING := 80  # Gap between layers
+	const VERTICAL_PADDING := 40    # Gap between nodes in same layer
+	const START_X := 100
+	const START_Y := 100
+
+	# Find start node
+	var start_node = get_start_node()
+	if not start_node:
+		# No start node - just arrange all nodes in a grid
+		_layout_as_grid(nodes)
+		return
+
+	# Assign nodes to layers using BFS
+	var layers: Dictionary = {}  # layer_index -> Array of nodes
+	var node_layers: Dictionary = {}  # node_name -> layer_index
+	var visited: Dictionary = {}
+	var queue: Array[Dictionary] = []
+
+	# Start from the start node at layer 0
+	queue.append({"node": start_node, "layer": 0})
+	visited[start_node.name] = true
+
+	while not queue.is_empty():
+		var current = queue.pop_front()
+		var node = current.node
+		var layer = current.layer
+
+		# Assign this node to its layer
+		node_layers[node.name] = layer
+		if not layers.has(layer):
+			layers[layer] = []
+		layers[layer].append(node)
+
+		# Get all nodes connected from this node's outputs
+		var connections = get_connections_from(node.name)
+		for conn in connections:
+			var target_name = conn.to_node
+			if not visited.has(target_name):
+				var target_node = get_node_or_null(NodePath(target_name))
+				if target_node and target_node is DialogueNodeScript:
+					visited[target_name] = true
+					queue.append({"node": target_node, "layer": layer + 1})
+
+	# Handle orphaned nodes (not connected to start) - put them in their own layers at the end
+	var max_layer = 0
+	for layer_idx in layers.keys():
+		max_layer = max(max_layer, layer_idx)
+
+	var orphans: Array[GraphNode] = []
+	for node in nodes:
+		if not visited.has(node.name):
+			orphans.append(node)
+
+	if not orphans.is_empty():
+		max_layer += 1
+		layers[max_layer] = orphans
+
+	# Store old positions for undo
+	var old_positions: Dictionary = {}
+	for node in nodes:
+		old_positions[node.name] = node.position_offset
+
+	# Calculate the maximum width for each layer and position accordingly
+	var layer_x_positions: Dictionary = {}  # layer_index -> x position
+	var current_x := START_X
+
+	# Get sorted layer indices
+	var sorted_layers = layers.keys()
+	sorted_layers.sort()
+
+	for layer_idx in sorted_layers:
+		layer_x_positions[layer_idx] = current_x
+
+		# Find max width in this layer
+		var max_width := 0.0
+		for node in layers[layer_idx]:
+			# Use node.size if available, otherwise use a default
+			var node_width = node.size.x if node.size.x > 0 else 280.0
+			max_width = max(max_width, node_width)
+
+		# Move x position for next layer
+		current_x += max_width + HORIZONTAL_PADDING
+
+	# Position nodes by layer with dynamic vertical spacing
+	for layer_idx in sorted_layers:
+		var layer_nodes: Array = layers[layer_idx]
+		var x = layer_x_positions[layer_idx]
+
+		# Calculate y positions based on actual node heights
+		var current_y := START_Y
+		for node in layer_nodes:
+			node.position_offset = Vector2(x, current_y)
+			# Get actual node height, use default if not available
+			var node_height = node.size.y if node.size.y > 0 else 150.0
+			current_y += node_height + VERTICAL_PADDING
+
+	# Create undo action for the layout change
+	_ensure_undo_redo()
+	_undo_redo.create_action("Auto Layout")
+
+	for node in nodes:
+		var old_pos = old_positions[node.name]
+		var new_pos = node.position_offset
+		if old_pos != new_pos:
+			_undo_redo.add_do_method(self._do_move_node.bind(node.name, new_pos))
+			_undo_redo.add_undo_method(self._do_move_node.bind(node.name, old_pos))
+
+	_undo_redo.commit_action(false)  # Nodes are already moved
+	undo_redo_changed.emit()
+	canvas_changed.emit()
+	print("DialogueCanvas: Auto-layout complete (%d layers, %d nodes)" % [layers.size(), nodes.size()])
+
+
+## Fallback grid layout when no start node exists.
+func _layout_as_grid(nodes: Array[GraphNode]) -> void:
+	const HORIZONTAL_PADDING := 80
+	const VERTICAL_PADDING := 40
+	const COLUMNS := 4
+	const START_X := 100
+	const START_Y := 100
+
+	var old_positions: Dictionary = {}
+	for node in nodes:
+		old_positions[node.name] = node.position_offset
+
+	# Find max node dimensions for uniform grid
+	var max_width := 280.0
+	var max_height := 150.0
+	for node in nodes:
+		if node.size.x > 0:
+			max_width = max(max_width, node.size.x)
+		if node.size.y > 0:
+			max_height = max(max_height, node.size.y)
+
+	var cell_width = max_width + HORIZONTAL_PADDING
+	var cell_height = max_height + VERTICAL_PADDING
+
+	for i in nodes.size():
+		var row = i / COLUMNS
+		var col = i % COLUMNS
+		nodes[i].position_offset = Vector2(
+			START_X + col * cell_width,
+			START_Y + row * cell_height
+		)
+
+	# Create undo action
+	_ensure_undo_redo()
+	_undo_redo.create_action("Auto Layout (Grid)")
+
+	for node in nodes:
+		var old_pos = old_positions[node.name]
+		var new_pos = node.position_offset
+		if old_pos != new_pos:
+			_undo_redo.add_do_method(self._do_move_node.bind(node.name, new_pos))
+			_undo_redo.add_undo_method(self._do_move_node.bind(node.name, old_pos))
+
+	_undo_redo.commit_action(false)
+	undo_redo_changed.emit()
+	canvas_changed.emit()

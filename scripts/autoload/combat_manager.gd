@@ -34,6 +34,8 @@ signal ability_targeting_cancelled()
 signal ability_executed(user: Unit, ability_id: String, result: Dictionary)
 signal unit_teleported(unit: Unit, from: Vector2i, to: Vector2i)  # Task 2.5: Shadowstep
 signal tile_targeting_started(ability_id: String, valid_tiles: Array[Vector2i])  # Task 2.5
+signal opportunity_attack_triggered(attacker: Unit, target: Unit)  # Task 2.13
+signal opportunity_attack_completed(attacker: Unit, target: Unit, damage: int)  # Task 2.13
 
 # ===== STATE =====
 var selected_unit: Unit = null
@@ -52,8 +54,16 @@ var _turn_state: TurnState = TurnState.INACTIVE
 var _current_turn_unit: Unit = null
 var _turn_manager: TurnManager = null
 
+# ===== SOLDIER ORDER STATE (Task 2.11) =====
+var _focus_fire_target: Unit = null           # Target for FOCUS_FIRE orders
+var _protected_allies: Dictionary = {}        # Mapping of soldier -> protected ally
+var _interception_used: Dictionary = {}       # Track which soldiers have intercepted this round
+
 # ===== GRID REFERENCE (Task 2.7) =====
 var _combat_grid: CombatGrid = null
+
+# ===== ORDER PANEL REFERENCE (Task 2.10) =====
+var _order_panel: OrderPanel = null
 
 # ===== LIFECYCLE =====
 func _ready() -> void:
@@ -123,6 +133,10 @@ func start_battle(units: Array[Unit]) -> void:
 	_turn_manager.battle_won.connect(_on_battle_won)    # Task 1.9
 	_turn_manager.battle_lost.connect(_on_battle_lost)  # Task 1.9
 
+	# Task 2.8: Pass combat grid reference for soldier AI
+	if _combat_grid:
+		_turn_manager.set_combat_grid(_combat_grid)
+
 	_turn_manager.start_battle(units)
 
 func end_battle() -> void:
@@ -177,6 +191,8 @@ func _on_turn_ended(unit: Unit) -> void:
 
 func _on_round_started(round_number: int) -> void:
 	print("[CombatManager] Round %d started" % round_number)
+	# Task 2.11: Reset PROTECT interception flags at the start of each round
+	reset_interception_flags()
 
 func _on_round_ended(round_number: int) -> void:
 	print("[CombatManager] Round %d ended" % round_number)
@@ -279,6 +295,18 @@ func start_unit_movement(unit: Unit, path: Array[Vector2i]) -> void:
 	if is_unit_moving():
 		print("[CombatManager] Cannot move - another unit is already moving")
 		return
+
+	# Task 2.13: Check for opportunity attacks before movement
+	var aoo_attackers = check_opportunity_attacks(unit, path)
+	if not aoo_attackers.is_empty():
+		print("[CombatManager] %d enemy units will get opportunity attacks" % aoo_attackers.size())
+		# Execute AoO - returns false if unit died
+		var unit_survived = execute_opportunity_attacks(aoo_attackers, unit)
+		if not unit_survived:
+			print("[CombatManager] %s killed by opportunity attack - movement cancelled" % unit.unit_name)
+			# Unit died, movement cancelled
+			# Don't change turn state - turn will end via unit death handling
+			return
 
 	# Set state to Moving
 	set_turn_state(TurnState.MOVING)
@@ -560,6 +588,26 @@ func set_combat_grid(grid: CombatGrid) -> void:
 	_combat_grid = grid
 	print("[CombatManager] Combat grid reference set")
 
+# ===== ORDER PANEL METHODS (Task 2.10) =====
+
+func set_order_panel(panel: OrderPanel) -> void:
+	## Set reference to order panel for order assignment
+	_order_panel = panel
+	print("[CombatManager] Order panel reference set")
+
+func is_assigning_order() -> bool:
+	## Check if currently in order assignment mode
+	if _order_panel:
+		return _order_panel.is_assigning()
+	return false
+
+func try_assign_order(unit: Unit) -> bool:
+	## Attempt to assign pending order to a unit
+	## Returns true if order was assigned, false otherwise
+	if _order_panel and _order_panel.is_assigning():
+		return _order_panel.try_assign_order_to_unit(unit)
+	return false
+
 func get_combat_grid() -> CombatGrid:
 	## Get the combat grid reference
 	# Try stored reference first
@@ -621,6 +669,258 @@ func teleport_unit(unit: Unit, destination: Vector2i) -> void:
 func get_valid_teleport_tiles_for_targeting() -> Array[Vector2i]:
 	## Get cached valid teleport tiles for current targeting
 	return _valid_teleport_tiles
+
+# ===== SOLDIER ORDER METHODS (Task 2.11) =====
+
+func set_focus_fire_target(target: Unit) -> void:
+	## Set the FOCUS_FIRE target for all soldiers with that order
+	_focus_fire_target = target
+	if target:
+		print("[CombatManager] FOCUS_FIRE target set: %s" % target.unit_name)
+	else:
+		print("[CombatManager] FOCUS_FIRE target cleared")
+
+func clear_focus_fire_target() -> void:
+	## Clear the FOCUS_FIRE target
+	_focus_fire_target = null
+	print("[CombatManager] FOCUS_FIRE target cleared")
+
+func get_focus_fire_target() -> Unit:
+	## Get the current FOCUS_FIRE target
+	if _focus_fire_target and is_instance_valid(_focus_fire_target) and _focus_fire_target.is_alive():
+		return _focus_fire_target
+	return null
+
+func set_protected_ally(soldier: Unit, ally: Unit) -> void:
+	## Set a PROTECT relationship between soldier and ally
+	if soldier and ally:
+		_protected_allies[soldier] = ally
+		print("[CombatManager] PROTECT set: %s protecting %s" % [soldier.unit_name, ally.unit_name])
+
+func clear_protected_ally(soldier: Unit) -> void:
+	## Clear a PROTECT relationship for a soldier
+	if soldier in _protected_allies:
+		var ally = _protected_allies[soldier]
+		_protected_allies.erase(soldier)
+		print("[CombatManager] PROTECT cleared: %s no longer protecting %s" % [
+			soldier.unit_name, ally.unit_name if ally else "unknown"
+		])
+
+func get_protected_ally(soldier: Unit) -> Unit:
+	## Get the ally a soldier is protecting (or null)
+	if soldier in _protected_allies:
+		var ally = _protected_allies[soldier]
+		if is_instance_valid(ally) and ally.is_alive():
+			return ally
+		else:
+			# Ally died, clear the relationship
+			_protected_allies.erase(soldier)
+	return null
+
+func get_protector_for_unit(unit: Unit) -> Unit:
+	## Get the soldier protecting a specific unit (if any)
+	for soldier in _protected_allies:
+		if is_instance_valid(soldier) and soldier.is_alive():
+			var protected = _protected_allies[soldier]
+			if protected == unit:
+				return soldier
+	return null
+
+func reset_interception_flags() -> void:
+	## Reset interception flags at the start of a new round
+	_interception_used.clear()
+	print("[CombatManager] Interception flags reset for new round")
+
+func can_soldier_intercept(soldier: Unit) -> bool:
+	## Check if a soldier can still intercept an attack this round
+	if not soldier or not is_instance_valid(soldier):
+		return false
+	return not (soldier in _interception_used)
+
+func mark_interception_used(soldier: Unit) -> void:
+	## Mark that a soldier has used their interception this round
+	if soldier:
+		_interception_used[soldier] = true
+		print("[CombatManager] %s has used interception this round" % soldier.unit_name)
+
+func try_intercept_attack(target: Unit, damage: int) -> Dictionary:
+	## Check if a PROTECT soldier can intercept an attack on target
+	## Returns {intercepted: bool, protector: Unit or null}
+	var protector = get_protector_for_unit(target)
+	if not protector:
+		return {"intercepted": false, "protector": null}
+
+	# Check if protector is adjacent to target
+	var dist = max(abs(protector.grid_position.x - target.grid_position.x),
+				   abs(protector.grid_position.y - target.grid_position.y))
+	if dist > 1:
+		print("[CombatManager] Protector %s not adjacent to %s (dist=%d)" % [
+			protector.unit_name, target.unit_name, dist
+		])
+		return {"intercepted": false, "protector": null}
+
+	# Check if protector can still intercept this round
+	if not can_soldier_intercept(protector):
+		print("[CombatManager] %s already used interception this round" % protector.unit_name)
+		return {"intercepted": false, "protector": null}
+
+	# Intercept!
+	mark_interception_used(protector)
+	print("[CombatManager] %s intercepts attack on %s!" % [protector.unit_name, target.unit_name])
+	return {"intercepted": true, "protector": protector}
+
+# ===== ATTACK OF OPPORTUNITY METHODS (Task 2.13) =====
+
+func check_opportunity_attacks(moving_unit: Unit, path: Array[Vector2i]) -> Array[Unit]:
+	## Check if moving along path triggers any opportunity attacks
+	## Returns array of enemies who will get AoO (each can only attack once)
+	var attackers: Array[Unit] = []
+	if not moving_unit or path.size() < 2:
+		return attackers
+
+	# Track which enemies we've already added (avoid duplicates)
+	var added_enemies: Dictionary = {}
+
+	# Get the first position in the path (starting position)
+	var current_pos = path[0]
+
+	# Check each step in the path
+	for i in range(1, path.size()):
+		var next_pos = path[i]
+
+		# Get all enemies adjacent to current position
+		var adjacent_enemies = _get_enemies_adjacent_to_position(moving_unit, current_pos)
+
+		for enemy in adjacent_enemies:
+			# Skip if already added this enemy
+			if enemy in added_enemies:
+				continue
+
+			# Check if moving to next_pos LEAVES this enemy's adjacency
+			if not _is_adjacent_to_position(next_pos, enemy.grid_position):
+				# This move triggers AoO from this enemy
+				if enemy.can_perform_opportunity_attack():
+					attackers.append(enemy)
+					added_enemies[enemy] = true
+					print("[CombatManager] %s leaving %s's threat zone triggers AoO" % [
+						moving_unit.unit_name, enemy.unit_name
+					])
+
+		current_pos = next_pos
+
+	return attackers
+
+func _get_enemies_adjacent_to_position(unit: Unit, pos: Vector2i) -> Array[Unit]:
+	## Get all enemy units adjacent to a specific grid position
+	var enemies: Array[Unit] = []
+	if not unit or not _turn_manager:
+		return enemies
+
+	var turn_order = _turn_manager.get_turn_order()
+	for other in turn_order:
+		if not is_instance_valid(other) or not other.is_alive():
+			continue
+		# Check if enemy (different faction)
+		if other.is_enemy != unit.is_enemy:
+			# Check if adjacent to position
+			if _is_adjacent_to_position(pos, other.grid_position):
+				enemies.append(other)
+
+	return enemies
+
+func _is_adjacent_to_position(pos1: Vector2i, pos2: Vector2i) -> bool:
+	## Check if two positions are adjacent (8-directional, Chebyshev distance = 1)
+	var diff = pos2 - pos1
+	return abs(diff.x) <= 1 and abs(diff.y) <= 1 and diff != Vector2i.ZERO
+
+func execute_opportunity_attacks(attackers: Array[Unit], target: Unit) -> bool:
+	## Execute all opportunity attacks against a target
+	## Returns true if target survives, false if target died
+	if attackers.is_empty() or not target:
+		return true
+
+	for attacker in attackers:
+		if not is_instance_valid(attacker) or not attacker.is_alive():
+			continue
+		if not is_instance_valid(target) or not target.is_alive():
+			# Target already dead
+			return false
+
+		# Emit signal before attack
+		opportunity_attack_triggered.emit(attacker, target)
+
+		# Spawn "OPPORTUNITY!" indicator
+		_spawn_opportunity_indicator(attacker)
+
+		# Perform the attack
+		print("[CombatManager] %s performs opportunity attack on %s!" % [
+			attacker.unit_name, target.unit_name
+		])
+
+		# Use the existing attack system
+		var result = AttackResolver.resolve_attack(attacker, target)
+
+		# Spawn damage number on target
+		_spawn_aoo_damage_number(target, result)
+
+		# Apply damage if hit
+		var damage_dealt = 0
+		if result.hit:
+			target.take_damage(result.damage)
+			damage_dealt = result.damage
+
+		# Mark that attacker used their AoO
+		attacker.mark_opportunity_attack_used()
+
+		# Emit completion signal
+		opportunity_attack_completed.emit(attacker, target, damage_dealt)
+
+		# Log the attack
+		print("[CombatManager] AoO: %s vs %s - Roll %d + %d = %d vs DEF %d -> %s for %d damage" % [
+			attacker.unit_name,
+			target.unit_name,
+			result.roll,
+			result.total_attack - result.roll,
+			result.total_attack,
+			result.target_defense,
+			"HIT" if result.hit else "MISS",
+			result.damage if result.hit else 0
+		])
+
+		# Check if target died
+		if not target.is_alive():
+			print("[CombatManager] %s killed by opportunity attack!" % target.unit_name)
+			return false
+
+	return true
+
+func _spawn_opportunity_indicator(attacker: Unit) -> void:
+	## Spawn "OPPORTUNITY!" floating text above attacker
+	var DamageNumberScene = preload("res://scenes/UI/DamageNumber.tscn")
+	var indicator = DamageNumberScene.instantiate() as DamageNumber
+	# Add to tree FIRST (required for global_position to work correctly)
+	attacker.get_parent().add_child(indicator)
+	indicator.global_position = attacker.global_position + Vector2(0, -50)
+	# Orange color for opportunity attack
+	indicator.show_text("OPPORTUNITY!", Color(1.0, 0.6, 0.0))
+
+	# Brief flash on attacker (orange)
+	var tween = attacker.create_tween()
+	tween.tween_property(attacker, "modulate", Color(1.0, 0.7, 0.3), 0.1)
+	tween.tween_property(attacker, "modulate", Color.WHITE, 0.2)
+
+func _spawn_aoo_damage_number(target: Unit, result: AttackResolver.AttackResult) -> void:
+	## Spawn damage number for AoO attack result
+	var DamageNumberScene = preload("res://scenes/UI/DamageNumber.tscn")
+	var damage_number = DamageNumberScene.instantiate() as DamageNumber
+	# Add to tree FIRST (required for global_position to work correctly)
+	target.get_parent().add_child(damage_number)
+	damage_number.global_position = target.global_position + Vector2(0, -30)
+
+	if result.hit:
+		damage_number.show_damage(result.damage, result.is_critical)
+	else:
+		damage_number.show_miss()
 
 # ===== ABILITY EXECUTION API (Task 2.3) =====
 func execute_ability(user: Unit, ability_id: String, target: Unit = null) -> bool:

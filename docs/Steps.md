@@ -42,12 +42,14 @@ Create a character using pixellab-create-character skill
 Create a tool spec using the tool-spec-generator skill
 Create roadmap using tool-roadmap-planner skill for editor 
 Implement [feature] from dialogue editor roadmap using tool-feature-implementer skill
+Implement [feature] from Procedural Character Assembler editor roadmap using tool-feature-implementer skill
+
 
 ## Notes
 - Create error analyser skill
 - For roadmap skill, ensure a lot more detial is provided for each feature. 
 - Create editors and tools for everything
-- 
+- Create map editor
 
 
 ## Known Issues

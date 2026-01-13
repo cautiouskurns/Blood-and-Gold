@@ -1,0 +1,994 @@
+{
+	"version": 1,
+	"metadata": {
+		"dialogue_id": "merchant_blackwood_demo",
+		"display_name": "Merchant Blackwood - Feature Demo",
+		"description": "A comprehensive sample dialogue showcasing all dialogue editor features including skill checks, flags, quests, reputation, and items.",
+		"author": "Dialogue Editor Demo",
+		"created_date": "2026-01-13T12:00:00",
+		"modified_date": "2026-01-13T12:00:00"
+	},
+	"canvas": {
+		"scroll_offset_x": 0,
+		"scroll_offset_y": 0,
+		"zoom": 0.8
+	},
+	"nodes": [
+		{
+			"id": "start_1",
+			"type": "Start",
+			"position_x": 0,
+			"position_y": 200
+		},
+		{
+			"id": "narrator_intro",
+			"type": "Speaker",
+			"position_x": 200,
+			"position_y": 200,
+			"speaker": "Narrator",
+			"text": "You approach a weathered merchant's stall tucked away in a shadowy corner of the market. The merchant, a thin man with calculating eyes, watches you with interest.",
+			"portrait": ""
+		},
+		{
+			"id": "flag_check_met_before",
+			"type": "FlagCheck",
+			"position_x": 500,
+			"position_y": 200,
+			"flag_name": "met_blackwood",
+			"operator": "==",
+			"flag_value": "true"
+		},
+		{
+			"id": "merchant_greeting_new",
+			"type": "Speaker",
+			"position_x": 800,
+			"position_y": 100,
+			"speaker": "Merchant",
+			"text": "Ah, a new face! Name's Blackwood. I deal in... information. Secrets that could make a person very wealthy, or very dead. Depends on how they use them.",
+			"portrait": ""
+		},
+		{
+			"id": "merchant_greeting_return",
+			"type": "Speaker",
+			"position_x": 800,
+			"position_y": 350,
+			"speaker": "Merchant",
+			"text": "Back again, friend? I knew you couldn't resist. Once you've tasted the thrill of forbidden knowledge, it never quite leaves you.",
+			"portrait": ""
+		},
+		{
+			"id": "flag_set_met",
+			"type": "FlagSet",
+			"position_x": 1100,
+			"position_y": 100,
+			"flag_name": "met_blackwood",
+			"flag_value": "true"
+		},
+		{
+			"id": "player_choice_initial",
+			"type": "Speaker",
+			"position_x": 1400,
+			"position_y": 200,
+			"speaker": "Merchant",
+			"text": "So, what brings you to my humble corner of the market? Looking for something specific, or just browsing the shadows?",
+			"portrait": ""
+		},
+		{
+			"id": "choice_ask_treasure",
+			"type": "Choice",
+			"position_x": 1700,
+			"position_y": 100,
+			"text": "I heard you know about a hidden treasure."
+		},
+		{
+			"id": "choice_ask_quest",
+			"type": "Choice",
+			"position_x": 1700,
+			"position_y": 170,
+			"text": "I'm looking for work. Got any jobs?"
+		},
+		{
+			"id": "choice_browse",
+			"type": "Choice",
+			"position_x": 1700,
+			"position_y": 240,
+			"text": "Just browsing. What do you have?"
+		},
+		{
+			"id": "choice_leave",
+			"type": "Choice",
+			"position_x": 1700,
+			"position_y": 310,
+			"text": "Never mind. I should go."
+		},
+		{
+			"id": "merchant_treasure_intro",
+			"type": "Speaker",
+			"position_x": 2000,
+			"position_y": 50,
+			"speaker": "Merchant",
+			"text": "Straight to the point! I like that. Yes, I know of the Blackwood Cache - ironic name, isn't it? Hidden by pirates a century ago. Worth a king's ransom.",
+			"portrait": ""
+		},
+		{
+			"id": "item_check_gold",
+			"type": "Item",
+			"position_x": 2300,
+			"position_y": 50,
+			"item_action": "Check",
+			"item_id": "gold_coins",
+			"quantity": 100
+		},
+		{
+			"id": "merchant_has_gold",
+			"type": "Speaker",
+			"position_x": 2600,
+			"position_y": -50,
+			"speaker": "Merchant",
+			"text": "I see you've got coin. 100 gold for the map, and I'll throw in some friendly advice about the traps. Deal?",
+			"portrait": ""
+		},
+		{
+			"id": "merchant_no_gold",
+			"type": "Speaker",
+			"position_x": 2600,
+			"position_y": 150,
+			"speaker": "Merchant",
+			"text": "Hmm, looks like your purse is a bit light. The map costs 100 gold. Come back when you've scraped together the coin... or prove you're worth investing in.",
+			"portrait": ""
+		},
+		{
+			"id": "choice_pay_gold",
+			"type": "Choice",
+			"position_x": 2900,
+			"position_y": -100,
+			"text": "Deal. Here's your gold. [Pay 100 gold]"
+		},
+		{
+			"id": "choice_haggle",
+			"type": "Choice",
+			"position_x": 2900,
+			"position_y": -30,
+			"text": "That's too much. How about 50 gold?"
+		},
+		{
+			"id": "choice_intimidate",
+			"type": "Choice",
+			"position_x": 2900,
+			"position_y": 40,
+			"text": "Maybe I'll just take it. [Intimidate]"
+		},
+		{
+			"id": "choice_persuade_poor",
+			"type": "Choice",
+			"position_x": 2900,
+			"position_y": 170,
+			"text": "I don't have the gold, but I could do a job for you instead. [Persuade]"
+		},
+		{
+			"id": "item_take_gold",
+			"type": "Item",
+			"position_x": 3200,
+			"position_y": -100,
+			"item_action": "Take",
+			"item_id": "gold_coins",
+			"quantity": 100
+		},
+		{
+			"id": "item_give_map",
+			"type": "Item",
+			"position_x": 3500,
+			"position_y": -100,
+			"item_action": "Give",
+			"item_id": "treasure_map_blackwood",
+			"quantity": 1
+		},
+		{
+			"id": "merchant_deal_done",
+			"type": "Speaker",
+			"position_x": 3800,
+			"position_y": -100,
+			"speaker": "Merchant",
+			"text": "Pleasure doing business! The map shows the cave entrance on Skull Point. Watch for the poison dart traps on the third corridor - step only on the darker stones.",
+			"portrait": ""
+		},
+		{
+			"id": "quest_start_treasure",
+			"type": "Quest",
+			"position_x": 4100,
+			"position_y": -100,
+			"quest_id": "blackwood_cache",
+			"quest_action": "Start"
+		},
+		{
+			"id": "reputation_merchant_good",
+			"type": "Reputation",
+			"position_x": 4400,
+			"position_y": -100,
+			"faction": "Merchants Guild",
+			"reputation_amount": 5
+		},
+		{
+			"id": "flag_set_bought_map",
+			"type": "FlagSet",
+			"position_x": 4700,
+			"position_y": -100,
+			"flag_name": "bought_blackwood_map",
+			"flag_value": "true"
+		},
+		{
+			"id": "end_deal_success",
+			"type": "End",
+			"position_x": 5000,
+			"position_y": -100,
+			"end_type": "normal"
+		},
+		{
+			"id": "skill_check_haggle",
+			"type": "SkillCheck",
+			"position_x": 3200,
+			"position_y": -30,
+			"skill": "Persuasion",
+			"difficulty": 12
+		},
+		{
+			"id": "merchant_haggle_success",
+			"type": "Speaker",
+			"position_x": 3500,
+			"position_y": -50,
+			"speaker": "Merchant",
+			"text": "*sighs* You drive a hard bargain. Fine, 50 gold. But you owe me a favor someday, and I always collect.",
+			"portrait": ""
+		},
+		{
+			"id": "item_take_gold_half",
+			"type": "Item",
+			"position_x": 3800,
+			"position_y": -50,
+			"item_action": "Take",
+			"item_id": "gold_coins",
+			"quantity": 50
+		},
+		{
+			"id": "flag_set_owes_favor",
+			"type": "FlagSet",
+			"position_x": 4100,
+			"position_y": -50,
+			"flag_name": "owes_blackwood_favor",
+			"flag_value": "true"
+		},
+		{
+			"id": "merchant_haggle_fail",
+			"type": "Speaker",
+			"position_x": 3500,
+			"position_y": 30,
+			"speaker": "Merchant",
+			"text": "*laughs* Nice try, friend, but I didn't survive this long by giving discounts. 100 gold, or find another way.",
+			"portrait": ""
+		},
+		{
+			"id": "skill_check_intimidate",
+			"type": "SkillCheck",
+			"position_x": 3200,
+			"position_y": 80,
+			"skill": "Intimidation",
+			"difficulty": 15
+		},
+		{
+			"id": "merchant_intimidate_success",
+			"type": "Speaker",
+			"position_x": 3500,
+			"position_y": 100,
+			"speaker": "Merchant",
+			"text": "*backs away nervously* A-alright! Take it! But you're making a powerful enemy today. The Guild doesn't forget...",
+			"portrait": ""
+		},
+		{
+			"id": "item_give_map_stolen",
+			"type": "Item",
+			"position_x": 3800,
+			"position_y": 100,
+			"item_action": "Give",
+			"item_id": "treasure_map_blackwood",
+			"quantity": 1
+		},
+		{
+			"id": "reputation_merchant_bad",
+			"type": "Reputation",
+			"position_x": 4100,
+			"position_y": 100,
+			"faction": "Merchants Guild",
+			"reputation_amount": -20
+		},
+		{
+			"id": "flag_set_stole_map",
+			"type": "FlagSet",
+			"position_x": 4400,
+			"position_y": 100,
+			"flag_name": "stole_blackwood_map",
+			"flag_value": "true"
+		},
+		{
+			"id": "quest_start_treasure_stolen",
+			"type": "Quest",
+			"position_x": 4700,
+			"position_y": 100,
+			"quest_id": "blackwood_cache",
+			"quest_action": "Start"
+		},
+		{
+			"id": "end_intimidate_success",
+			"type": "End",
+			"position_x": 5000,
+			"position_y": 100,
+			"end_type": "normal"
+		},
+		{
+			"id": "merchant_intimidate_fail",
+			"type": "Speaker",
+			"position_x": 3500,
+			"position_y": 200,
+			"speaker": "Merchant",
+			"text": "*whistles sharply* Guards! This one's trying to rob me!",
+			"portrait": ""
+		},
+		{
+			"id": "guard_arrives",
+			"type": "Speaker",
+			"position_x": 3800,
+			"position_y": 200,
+			"speaker": "Guard",
+			"text": "What's going on here? You! Step away from the merchant!",
+			"portrait": ""
+		},
+		{
+			"id": "reputation_guards_bad",
+			"type": "Reputation",
+			"position_x": 4100,
+			"position_y": 200,
+			"faction": "City Guard",
+			"reputation_amount": -10
+		},
+		{
+			"id": "end_combat",
+			"type": "End",
+			"position_x": 4400,
+			"position_y": 200,
+			"end_type": "combat"
+		},
+		{
+			"id": "skill_check_persuade_job",
+			"type": "SkillCheck",
+			"position_x": 3200,
+			"position_y": 250,
+			"skill": "Persuasion",
+			"difficulty": 10
+		},
+		{
+			"id": "merchant_job_offer",
+			"type": "Speaker",
+			"position_x": 3500,
+			"position_y": 280,
+			"speaker": "Merchant",
+			"text": "Hmm, you seem capable. Tell you what - there's a shipment coming in tonight at the docks. Help me 'acquire' it, and the map is yours. Plus a cut of the goods.",
+			"portrait": ""
+		},
+		{
+			"id": "quest_start_heist",
+			"type": "Quest",
+			"position_x": 3800,
+			"position_y": 280,
+			"quest_id": "dock_heist",
+			"quest_action": "Start"
+		},
+		{
+			"id": "flag_set_accepted_heist",
+			"type": "FlagSet",
+			"position_x": 4100,
+			"position_y": 280,
+			"flag_name": "accepted_dock_heist",
+			"flag_value": "true"
+		},
+		{
+			"id": "end_quest_accepted",
+			"type": "End",
+			"position_x": 4400,
+			"position_y": 280,
+			"end_type": "normal"
+		},
+		{
+			"id": "merchant_job_rejected",
+			"type": "Speaker",
+			"position_x": 3500,
+			"position_y": 380,
+			"speaker": "Merchant",
+			"text": "No? Suit yourself. Come back when you've got coin or a more... flexible moral compass.",
+			"portrait": ""
+		},
+		{
+			"id": "end_no_deal",
+			"type": "End",
+			"position_x": 3800,
+			"position_y": 380,
+			"end_type": "normal"
+		},
+		{
+			"id": "merchant_quest_offer",
+			"type": "Speaker",
+			"position_x": 2000,
+			"position_y": 170,
+			"speaker": "Merchant",
+			"text": "Work, you say? I might have something. There's a certain noble who owes me money. He's been... reluctant to pay. Perhaps you could persuade him?",
+			"portrait": ""
+		},
+		{
+			"id": "choice_accept_quest",
+			"type": "Choice",
+			"position_x": 2300,
+			"position_y": 140,
+			"text": "I'll collect your debt. Who's the mark?"
+		},
+		{
+			"id": "choice_reject_quest",
+			"type": "Choice",
+			"position_x": 2300,
+			"position_y": 210,
+			"text": "I'm not a debt collector. Got anything else?"
+		},
+		{
+			"id": "merchant_quest_details",
+			"type": "Speaker",
+			"position_x": 2600,
+			"position_y": 250,
+			"speaker": "Merchant",
+			"text": "Lord Harwick. You'll find him at the Gilded Stallion tavern most evenings, drinking away his fortune. He owes me 200 gold. Bring me 150, and keep 50 for yourself.",
+			"portrait": ""
+		},
+		{
+			"id": "quest_start_debt",
+			"type": "Quest",
+			"position_x": 2900,
+			"position_y": 250,
+			"quest_id": "harwick_debt",
+			"quest_action": "Start"
+		},
+		{
+			"id": "flag_set_debt_quest",
+			"type": "FlagSet",
+			"position_x": 3200,
+			"position_y": 250,
+			"flag_name": "harwick_debt_active",
+			"flag_value": "true"
+		},
+		{
+			"id": "end_debt_quest",
+			"type": "End",
+			"position_x": 3500,
+			"position_y": 250,
+			"end_type": "normal"
+		},
+		{
+			"id": "merchant_browse",
+			"type": "Speaker",
+			"position_x": 2000,
+			"position_y": 300,
+			"speaker": "Merchant",
+			"text": "I've got maps, rumors, secrets... even a few items that 'fell off' various merchant wagons. *winks* Take a look.",
+			"portrait": ""
+		},
+		{
+			"id": "branch_has_items",
+			"type": "Branch",
+			"position_x": 2300,
+			"position_y": 300,
+			"condition_key": "player_gold",
+			"condition_operator": ">",
+			"condition_value": "50"
+		},
+		{
+			"id": "merchant_can_afford",
+			"type": "Speaker",
+			"position_x": 2600,
+			"position_y": 350,
+			"speaker": "Merchant",
+			"text": "Ah, a customer with means! Let me show you my finest wares...",
+			"portrait": ""
+		},
+		{
+			"id": "end_trade",
+			"type": "End",
+			"position_x": 2900,
+			"position_y": 350,
+			"end_type": "trade"
+		},
+		{
+			"id": "merchant_poor",
+			"type": "Speaker",
+			"position_x": 2600,
+			"position_y": 450,
+			"speaker": "Merchant",
+			"text": "Hmm, your pockets seem rather empty. Perhaps just window shopping today? Come back when fortune smiles on you.",
+			"portrait": ""
+		},
+		{
+			"id": "end_browse_poor",
+			"type": "End",
+			"position_x": 2900,
+			"position_y": 450,
+			"end_type": "normal"
+		},
+		{
+			"id": "merchant_goodbye",
+			"type": "Speaker",
+			"position_x": 2000,
+			"position_y": 400,
+			"speaker": "Merchant",
+			"text": "Leaving so soon? Well, you know where to find me. In the shadows, where all the best deals are made.",
+			"portrait": ""
+		},
+		{
+			"id": "end_leave",
+			"type": "End",
+			"position_x": 2300,
+			"position_y": 400,
+			"end_type": "normal"
+		},
+		{
+			"id": "choice_accept_job",
+			"type": "Choice",
+			"position_x": 3800,
+			"position_y": 260,
+			"text": "I'm in. Where do I meet you?"
+		},
+		{
+			"id": "choice_reject_job",
+			"type": "Choice",
+			"position_x": 3800,
+			"position_y": 330,
+			"text": "That sounds illegal. I'll pass."
+		},
+		{
+			"id": "merchant_meeting_point",
+			"type": "Speaker",
+			"position_x": 4100,
+			"position_y": 340,
+			"speaker": "Merchant",
+			"text": "Midnight at the old warehouse by Pier 7. Don't be late, and come alone. Oh, and bring a weapon - the guards aren't known for their hospitality.",
+			"portrait": ""
+		}
+	],
+	"connections": [
+		{
+			"from_node": "start_1",
+			"from_port": 0,
+			"to_node": "narrator_intro",
+			"to_port": 0
+		},
+		{
+			"from_node": "narrator_intro",
+			"from_port": 0,
+			"to_node": "flag_check_met_before",
+			"to_port": 0
+		},
+		{
+			"from_node": "flag_check_met_before",
+			"from_port": 0,
+			"to_node": "merchant_greeting_return",
+			"to_port": 0
+		},
+		{
+			"from_node": "flag_check_met_before",
+			"from_port": 1,
+			"to_node": "merchant_greeting_new",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_greeting_new",
+			"from_port": 0,
+			"to_node": "flag_set_met",
+			"to_port": 0
+		},
+		{
+			"from_node": "flag_set_met",
+			"from_port": 0,
+			"to_node": "player_choice_initial",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_greeting_return",
+			"from_port": 0,
+			"to_node": "player_choice_initial",
+			"to_port": 0
+		},
+		{
+			"from_node": "player_choice_initial",
+			"from_port": 0,
+			"to_node": "choice_ask_treasure",
+			"to_port": 0
+		},
+		{
+			"from_node": "player_choice_initial",
+			"from_port": 0,
+			"to_node": "choice_ask_quest",
+			"to_port": 0
+		},
+		{
+			"from_node": "player_choice_initial",
+			"from_port": 0,
+			"to_node": "choice_browse",
+			"to_port": 0
+		},
+		{
+			"from_node": "player_choice_initial",
+			"from_port": 0,
+			"to_node": "choice_leave",
+			"to_port": 0
+		},
+		{
+			"from_node": "choice_ask_treasure",
+			"from_port": 0,
+			"to_node": "merchant_treasure_intro",
+			"to_port": 0
+		},
+		{
+			"from_node": "choice_ask_quest",
+			"from_port": 0,
+			"to_node": "merchant_quest_offer",
+			"to_port": 0
+		},
+		{
+			"from_node": "choice_browse",
+			"from_port": 0,
+			"to_node": "merchant_browse",
+			"to_port": 0
+		},
+		{
+			"from_node": "choice_leave",
+			"from_port": 0,
+			"to_node": "merchant_goodbye",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_treasure_intro",
+			"from_port": 0,
+			"to_node": "item_check_gold",
+			"to_port": 0
+		},
+		{
+			"from_node": "item_check_gold",
+			"from_port": 0,
+			"to_node": "merchant_has_gold",
+			"to_port": 0
+		},
+		{
+			"from_node": "item_check_gold",
+			"from_port": 1,
+			"to_node": "merchant_no_gold",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_has_gold",
+			"from_port": 0,
+			"to_node": "choice_pay_gold",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_has_gold",
+			"from_port": 0,
+			"to_node": "choice_haggle",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_has_gold",
+			"from_port": 0,
+			"to_node": "choice_intimidate",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_no_gold",
+			"from_port": 0,
+			"to_node": "choice_persuade_poor",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_no_gold",
+			"from_port": 0,
+			"to_node": "choice_intimidate",
+			"to_port": 0
+		},
+		{
+			"from_node": "choice_pay_gold",
+			"from_port": 0,
+			"to_node": "item_take_gold",
+			"to_port": 0
+		},
+		{
+			"from_node": "item_take_gold",
+			"from_port": 0,
+			"to_node": "item_give_map",
+			"to_port": 0
+		},
+		{
+			"from_node": "item_give_map",
+			"from_port": 0,
+			"to_node": "merchant_deal_done",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_deal_done",
+			"from_port": 0,
+			"to_node": "quest_start_treasure",
+			"to_port": 0
+		},
+		{
+			"from_node": "quest_start_treasure",
+			"from_port": 0,
+			"to_node": "reputation_merchant_good",
+			"to_port": 0
+		},
+		{
+			"from_node": "reputation_merchant_good",
+			"from_port": 0,
+			"to_node": "flag_set_bought_map",
+			"to_port": 0
+		},
+		{
+			"from_node": "flag_set_bought_map",
+			"from_port": 0,
+			"to_node": "end_deal_success",
+			"to_port": 0
+		},
+		{
+			"from_node": "choice_haggle",
+			"from_port": 0,
+			"to_node": "skill_check_haggle",
+			"to_port": 0
+		},
+		{
+			"from_node": "skill_check_haggle",
+			"from_port": 0,
+			"to_node": "merchant_haggle_success",
+			"to_port": 0
+		},
+		{
+			"from_node": "skill_check_haggle",
+			"from_port": 1,
+			"to_node": "merchant_haggle_fail",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_haggle_success",
+			"from_port": 0,
+			"to_node": "item_take_gold_half",
+			"to_port": 0
+		},
+		{
+			"from_node": "item_take_gold_half",
+			"from_port": 0,
+			"to_node": "flag_set_owes_favor",
+			"to_port": 0
+		},
+		{
+			"from_node": "flag_set_owes_favor",
+			"from_port": 0,
+			"to_node": "item_give_map",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_haggle_fail",
+			"from_port": 0,
+			"to_node": "merchant_has_gold",
+			"to_port": 0
+		},
+		{
+			"from_node": "choice_intimidate",
+			"from_port": 0,
+			"to_node": "skill_check_intimidate",
+			"to_port": 0
+		},
+		{
+			"from_node": "skill_check_intimidate",
+			"from_port": 0,
+			"to_node": "merchant_intimidate_success",
+			"to_port": 0
+		},
+		{
+			"from_node": "skill_check_intimidate",
+			"from_port": 1,
+			"to_node": "merchant_intimidate_fail",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_intimidate_success",
+			"from_port": 0,
+			"to_node": "item_give_map_stolen",
+			"to_port": 0
+		},
+		{
+			"from_node": "item_give_map_stolen",
+			"from_port": 0,
+			"to_node": "reputation_merchant_bad",
+			"to_port": 0
+		},
+		{
+			"from_node": "reputation_merchant_bad",
+			"from_port": 0,
+			"to_node": "flag_set_stole_map",
+			"to_port": 0
+		},
+		{
+			"from_node": "flag_set_stole_map",
+			"from_port": 0,
+			"to_node": "quest_start_treasure_stolen",
+			"to_port": 0
+		},
+		{
+			"from_node": "quest_start_treasure_stolen",
+			"from_port": 0,
+			"to_node": "end_intimidate_success",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_intimidate_fail",
+			"from_port": 0,
+			"to_node": "guard_arrives",
+			"to_port": 0
+		},
+		{
+			"from_node": "guard_arrives",
+			"from_port": 0,
+			"to_node": "reputation_guards_bad",
+			"to_port": 0
+		},
+		{
+			"from_node": "reputation_guards_bad",
+			"from_port": 0,
+			"to_node": "end_combat",
+			"to_port": 0
+		},
+		{
+			"from_node": "choice_persuade_poor",
+			"from_port": 0,
+			"to_node": "skill_check_persuade_job",
+			"to_port": 0
+		},
+		{
+			"from_node": "skill_check_persuade_job",
+			"from_port": 0,
+			"to_node": "merchant_job_offer",
+			"to_port": 0
+		},
+		{
+			"from_node": "skill_check_persuade_job",
+			"from_port": 1,
+			"to_node": "merchant_job_rejected",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_job_offer",
+			"from_port": 0,
+			"to_node": "choice_accept_job",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_job_offer",
+			"from_port": 0,
+			"to_node": "choice_reject_job",
+			"to_port": 0
+		},
+		{
+			"from_node": "choice_accept_job",
+			"from_port": 0,
+			"to_node": "merchant_meeting_point",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_meeting_point",
+			"from_port": 0,
+			"to_node": "quest_start_heist",
+			"to_port": 0
+		},
+		{
+			"from_node": "quest_start_heist",
+			"from_port": 0,
+			"to_node": "flag_set_accepted_heist",
+			"to_port": 0
+		},
+		{
+			"from_node": "flag_set_accepted_heist",
+			"from_port": 0,
+			"to_node": "end_quest_accepted",
+			"to_port": 0
+		},
+		{
+			"from_node": "choice_reject_job",
+			"from_port": 0,
+			"to_node": "merchant_job_rejected",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_job_rejected",
+			"from_port": 0,
+			"to_node": "end_no_deal",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_quest_offer",
+			"from_port": 0,
+			"to_node": "choice_accept_quest",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_quest_offer",
+			"from_port": 0,
+			"to_node": "choice_reject_quest",
+			"to_port": 0
+		},
+		{
+			"from_node": "choice_accept_quest",
+			"from_port": 0,
+			"to_node": "merchant_quest_details",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_quest_details",
+			"from_port": 0,
+			"to_node": "quest_start_debt",
+			"to_port": 0
+		},
+		{
+			"from_node": "quest_start_debt",
+			"from_port": 0,
+			"to_node": "flag_set_debt_quest",
+			"to_port": 0
+		},
+		{
+			"from_node": "flag_set_debt_quest",
+			"from_port": 0,
+			"to_node": "end_debt_quest",
+			"to_port": 0
+		},
+		{
+			"from_node": "choice_reject_quest",
+			"from_port": 0,
+			"to_node": "player_choice_initial",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_browse",
+			"from_port": 0,
+			"to_node": "branch_has_items",
+			"to_port": 0
+		},
+		{
+			"from_node": "branch_has_items",
+			"from_port": 0,
+			"to_node": "merchant_can_afford",
+			"to_port": 0
+		},
+		{
+			"from_node": "branch_has_items",
+			"from_port": 1,
+			"to_node": "merchant_poor",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_can_afford",
+			"from_port": 0,
+			"to_node": "end_trade",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_poor",
+			"from_port": 0,
+			"to_node": "end_browse_poor",
+			"to_port": 0
+		},
+		{
+			"from_node": "merchant_goodbye",
+			"from_port": 0,
+			"to_node": "end_leave",
+			"to_port": 0
+		}
+	]
+}

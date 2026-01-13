@@ -50,6 +50,32 @@ const ENEMY_SECONDARY: Color = Color("#c0392b")  # Crimson Red
 const ENEMY_RUST: Color = Color("#d35400")  # Rust Orange
 const ENEMY_SKIN: Color = Color("#b8a088")  # Sickly Tan
 
+# ===== TASK 2.15: NEW ENEMY TYPE PALETTES =====
+
+# Bandit Archer
+const BANDIT_ARCHER_PRIMARY: Color = Color("#27ae60")  # Forest Green
+const BANDIT_ARCHER_SECONDARY: Color = Color("#6d4c41")  # Brown Leather
+const BANDIT_ARCHER_ACCENT: Color = Color("#d4a574")  # Tan
+const BANDIT_ARCHER_HOOD: Color = Color("#1e8449")  # Dark Green
+
+# Bandit Leader
+const BANDIT_LEADER_PRIMARY: Color = Color("#c0392b")  # Crimson Red
+const BANDIT_LEADER_SECONDARY: Color = Color("#5d4e37")  # Dark Brown
+const BANDIT_LEADER_ACCENT: Color = Color("#f1c40f")  # Gold
+const BANDIT_LEADER_CAPE: Color = Color("#922b21")  # Dark Red
+
+# Ironmark Soldier
+const IRONMARK_SOLDIER_PRIMARY: Color = Color("#2980b9")  # Royal Blue
+const IRONMARK_SOLDIER_SECONDARY: Color = Color("#5d6d7e")  # Steel Gray
+const IRONMARK_SOLDIER_ACCENT: Color = Color("#bdc3c7")  # Silver
+const IRONMARK_SOLDIER_SHIELD: Color = Color("#1f618d")  # Dark Blue
+
+# Ironmark Knight
+const IRONMARK_KNIGHT_PRIMARY: Color = Color("#2980b9")  # Royal Blue
+const IRONMARK_KNIGHT_SECONDARY: Color = Color("#95a5a6")  # Polished Steel
+const IRONMARK_KNIGHT_ACCENT: Color = Color("#f1c40f")  # Gold
+const IRONMARK_KNIGHT_PLUME: Color = Color("#1a5276")  # Deep Blue
+
 # ===== STATIC GENERATION METHODS =====
 
 static func generate_sprite(unit_type: int) -> ImageTexture:
@@ -63,12 +89,20 @@ static func generate_sprite(unit_type: int) -> ImageTexture:
 			return generate_lyra_sprite()
 		3:  # MATTHIAS
 			return generate_matthias_sprite()
-		4:  # ENEMY
+		4:  # ENEMY (Bandit Melee)
 			return generate_enemy_sprite()
 		5:  # INFANTRY
 			return generate_infantry_sprite()
 		6:  # ARCHER
 			return generate_archer_sprite()
+		7:  # BANDIT_ARCHER (Task 2.15)
+			return generate_bandit_archer_sprite()
+		8:  # BANDIT_LEADER (Task 2.15)
+			return generate_bandit_leader_sprite()
+		9:  # IRONMARK_SOLDIER (Task 2.15)
+			return generate_ironmark_soldier_sprite()
+		10:  # IRONMARK_KNIGHT (Task 2.15)
+			return generate_ironmark_knight_sprite()
 		_:
 			return generate_player_sprite()  # Default
 
@@ -628,3 +662,204 @@ static func _draw_letter_e(image: Image, start: Vector2i, color: Color) -> void:
 	_draw_horizontal_line(image, start, 6, color, 2)
 	_draw_horizontal_line(image, Vector2i(start.x, start.y + 4), 5, color, 2)
 	_draw_horizontal_line(image, Vector2i(start.x, start.y + 8), 6, color, 2)
+
+# ===== TASK 2.15: NEW LETTER DRAWING METHODS =====
+
+static func _draw_letter_b(image: Image, start: Vector2i, color: Color) -> void:
+	## Draw letter B (for Bandit Archer/Bowman)
+	_draw_vertical_line(image, start, 10, color, 2)
+	_draw_horizontal_line(image, start, 5, color, 2)
+	_draw_horizontal_line(image, Vector2i(start.x, start.y + 4), 5, color, 2)
+	_draw_horizontal_line(image, Vector2i(start.x, start.y + 8), 5, color, 2)
+	_draw_vertical_line(image, Vector2i(start.x + 4, start.y), 5, color, 2)
+	_draw_vertical_line(image, Vector2i(start.x + 4, start.y + 4), 6, color, 2)
+
+static func _draw_letter_c(image: Image, start: Vector2i, color: Color) -> void:
+	## Draw letter C (for Captain/Chief - Bandit Leader)
+	_draw_vertical_line(image, start, 10, color, 2)
+	_draw_horizontal_line(image, start, 6, color, 2)
+	_draw_horizontal_line(image, Vector2i(start.x, start.y + 8), 6, color, 2)
+
+static func _draw_letter_s(image: Image, start: Vector2i, color: Color) -> void:
+	## Draw letter S (for Ironmark Soldier)
+	_draw_horizontal_line(image, start, 6, color, 2)
+	_draw_vertical_line(image, start, 5, color, 2)
+	_draw_horizontal_line(image, Vector2i(start.x, start.y + 4), 6, color, 2)
+	_draw_vertical_line(image, Vector2i(start.x + 4, start.y + 4), 6, color, 2)
+	_draw_horizontal_line(image, Vector2i(start.x, start.y + 8), 6, color, 2)
+
+static func _draw_letter_k(image: Image, start: Vector2i, color: Color) -> void:
+	## Draw letter K (for Ironmark Knight)
+	_draw_vertical_line(image, start, 10, color, 2)
+	_draw_line_diagonal(image, Vector2i(start.x + 2, start.y + 4), Vector2i(start.x + 6, start.y), color)
+	_draw_line_diagonal(image, Vector2i(start.x + 2, start.y + 4), Vector2i(start.x + 6, start.y + 8), color)
+
+# ===== TASK 2.15: NEW ENEMY SPRITE GENERATION =====
+
+static func generate_bandit_archer_sprite() -> ImageTexture:
+	## Creates Bandit Archer sprite
+	## Green hooded cloak, longbow, quiver - ranged threat
+	var image = Image.create(SPRITE_SIZE, SPRITE_SIZE, false, Image.FORMAT_RGBA8)
+	image.fill(Color.TRANSPARENT)
+
+	# Body - Leather brown (narrow archer build)
+	_draw_rounded_rect(image, Rect2i(14, 18, 20, 24), BANDIT_ARCHER_SECONDARY, 3)
+
+	# Green hooded cloak
+	_draw_hood(image, Vector2i(24, 4), BANDIT_ARCHER_PRIMARY)
+
+	# Face visible under hood
+	_draw_rect(image, Rect2i(18, 10, 12, 8), BANDIT_ARCHER_ACCENT)
+
+	# Longbow on right side (larger arc)
+	_draw_bow(image, Vector2i(38, 12), ARCHER_BOW)
+
+	# Arrow nocked
+	_draw_horizontal_line(image, Vector2i(26, 26), 14, ARCHER_BOW, 1)
+	_draw_arrow_point(image, Vector2i(40, 26), INFANTRY_STEEL)
+
+	# Quiver on back (arrows visible)
+	_draw_quiver(image, Vector2i(8, 18), BANDIT_ARCHER_SECONDARY)
+
+	# Legs
+	_draw_rect(image, Rect2i(16, 42, 5, 4), BANDIT_ARCHER_SECONDARY)
+	_draw_rect(image, Rect2i(26, 42, 5, 4), BANDIT_ARCHER_SECONDARY)
+
+	# Enemy outline (green tint)
+	_draw_enemy_outline(image, BANDIT_ARCHER_PRIMARY)
+
+	# Letter overlay "B"
+	_draw_letter_b(image, Vector2i(20, 28), BANDIT_ARCHER_PRIMARY)
+
+	return ImageTexture.create_from_image(image)
+
+static func generate_bandit_leader_sprite() -> ImageTexture:
+	## Creates Bandit Leader sprite
+	## Red cape, better armor, distinctive helm with plume - priority target
+	var image = Image.create(SPRITE_SIZE, SPRITE_SIZE, false, Image.FORMAT_RGBA8)
+	image.fill(Color.TRANSPARENT)
+
+	# Cape first (behind body)
+	_draw_cape(image, Vector2i(6, 18), BANDIT_LEADER_PRIMARY)
+
+	# Body - Better armor than common bandits
+	_draw_rounded_rect(image, Rect2i(10, 16, 28, 28), BANDIT_LEADER_SECONDARY, 3)
+
+	# Gold trim on armor
+	_draw_horizontal_line(image, Vector2i(12, 22), 24, BANDIT_LEADER_ACCENT, 2)
+	_draw_horizontal_line(image, Vector2i(12, 36), 24, BANDIT_LEADER_ACCENT, 2)
+
+	# Pauldrons
+	_draw_rounded_rect(image, Rect2i(6, 16, 8, 8), BANDIT_LEADER_SECONDARY, 2)
+	_draw_rounded_rect(image, Rect2i(34, 16, 8, 8), BANDIT_LEADER_SECONDARY, 2)
+
+	# Distinctive helm with plume
+	_draw_rounded_rect(image, Rect2i(16, 4, 16, 14), BANDIT_LEADER_SECONDARY, 2)
+	# Red plume on top
+	_draw_vertical_line(image, Vector2i(24, 0), 6, BANDIT_LEADER_PRIMARY, 4)
+
+	# Face showing through helm
+	_draw_rect(image, Rect2i(18, 8, 12, 6), ENEMY_SKIN)
+
+	# Sword at side
+	_draw_horizontal_line(image, Vector2i(38, 28), 8, BANDIT_LEADER_ACCENT, 2)
+	_draw_rect(image, Rect2i(36, 26, 4, 6), BANDIT_LEADER_SECONDARY)  # Handle
+
+	# Legs
+	_draw_rect(image, Rect2i(16, 44, 6, 4), BANDIT_LEADER_SECONDARY)
+	_draw_rect(image, Rect2i(26, 44, 6, 4), BANDIT_LEADER_SECONDARY)
+
+	# Red outline indicator (leader glow)
+	_draw_enemy_outline(image, BANDIT_LEADER_PRIMARY)
+
+	# Letter overlay "C" (Captain)
+	_draw_letter_c(image, Vector2i(20, 26), BANDIT_LEADER_ACCENT)
+
+	return ImageTexture.create_from_image(image)
+
+static func generate_ironmark_soldier_sprite() -> ImageTexture:
+	## Creates Ironmark Soldier sprite
+	## Blue and silver armor, tower shield with crest, spear - defensive formation
+	var image = Image.create(SPRITE_SIZE, SPRITE_SIZE, false, Image.FORMAT_RGBA8)
+	image.fill(Color.TRANSPARENT)
+
+	# Body - Heavy steel armor with blue tabard
+	_draw_rounded_rect(image, Rect2i(12, 16, 24, 26), IRONMARK_SOLDIER_SECONDARY, 3)
+
+	# Blue tabard overlay
+	_draw_rect(image, Rect2i(16, 18, 16, 22), IRONMARK_SOLDIER_PRIMARY)
+
+	# Large tower shield on left (taller than round shield)
+	_draw_kite_shield(image, Vector2i(2, 14), IRONMARK_SOLDIER_SHIELD, IRONMARK_SOLDIER_ACCENT)
+
+	# Spear extending above
+	_draw_vertical_line(image, Vector2i(38, 0), 24, ARCHER_BOW, 2)
+	_draw_spear_point(image, Vector2i(38, 0), IRONMARK_SOLDIER_ACCENT)
+
+	# Helm with nasal guard
+	_draw_rounded_rect(image, Rect2i(16, 4, 16, 14), IRONMARK_SOLDIER_SECONDARY, 2)
+	# Nasal guard
+	_draw_vertical_line(image, Vector2i(23, 8), 8, IRONMARK_SOLDIER_SECONDARY, 2)
+	# Eyes visible
+	_draw_rect(image, Rect2i(18, 8, 4, 3), Color(0.1, 0.1, 0.1))
+	_draw_rect(image, Rect2i(26, 8, 4, 3), Color(0.1, 0.1, 0.1))
+
+	# Legs
+	_draw_rect(image, Rect2i(16, 42, 6, 4), IRONMARK_SOLDIER_SECONDARY)
+	_draw_rect(image, Rect2i(26, 42, 6, 4), IRONMARK_SOLDIER_SECONDARY)
+
+	# Blue outline (Ironmark faction)
+	_draw_enemy_outline(image, IRONMARK_SOLDIER_PRIMARY)
+
+	# Letter overlay "S"
+	_draw_letter_s(image, Vector2i(20, 26), IRONMARK_SOLDIER_ACCENT)
+
+	return ImageTexture.create_from_image(image)
+
+static func generate_ironmark_knight_sprite() -> ImageTexture:
+	## Creates Ironmark Knight sprite
+	## Blue full plate, gold trim, plumed helm, lance - elite mini-boss
+	var image = Image.create(SPRITE_SIZE, SPRITE_SIZE, false, Image.FORMAT_RGBA8)
+	image.fill(Color.TRANSPARENT)
+
+	# Body - Massive full plate armor (widest of enemies)
+	_draw_rounded_rect(image, Rect2i(6, 14, 36, 30), IRONMARK_KNIGHT_SECONDARY, 4)
+
+	# Blue tabard over armor
+	_draw_rect(image, Rect2i(12, 18, 24, 24), IRONMARK_KNIGHT_PRIMARY)
+
+	# Gold trim on armor
+	_draw_horizontal_line(image, Vector2i(8, 20), 32, IRONMARK_KNIGHT_ACCENT, 2)
+	_draw_horizontal_line(image, Vector2i(8, 36), 32, IRONMARK_KNIGHT_ACCENT, 2)
+
+	# Massive pauldrons
+	_draw_rounded_rect(image, Rect2i(2, 12, 12, 12), IRONMARK_KNIGHT_SECONDARY, 2)
+	_draw_rounded_rect(image, Rect2i(34, 12, 12, 12), IRONMARK_KNIGHT_SECONDARY, 2)
+	# Gold trim on pauldrons
+	_draw_horizontal_line(image, Vector2i(4, 14), 8, IRONMARK_KNIGHT_ACCENT, 1)
+	_draw_horizontal_line(image, Vector2i(36, 14), 8, IRONMARK_KNIGHT_ACCENT, 1)
+
+	# Great helm with plume
+	_draw_rounded_rect(image, Rect2i(14, 2, 20, 16), IRONMARK_KNIGHT_SECONDARY, 3)
+	# Gold plume
+	_draw_vertical_line(image, Vector2i(24, -2), 6, IRONMARK_KNIGHT_ACCENT, 4)
+	# Eye slit
+	_draw_horizontal_line(image, Vector2i(18, 10), 12, Color(0.1, 0.1, 0.1), 2)
+	# Gold crown band
+	_draw_horizontal_line(image, Vector2i(16, 6), 16, IRONMARK_KNIGHT_ACCENT, 2)
+
+	# Lance/sword extending from right
+	_draw_horizontal_line(image, Vector2i(40, 24), 8, IRONMARK_KNIGHT_SECONDARY, 3)
+	_draw_rect(image, Rect2i(38, 22, 4, 6), IRONMARK_KNIGHT_ACCENT)  # Gold handle
+
+	# Legs (armored)
+	_draw_rect(image, Rect2i(14, 44, 8, 4), IRONMARK_KNIGHT_SECONDARY)
+	_draw_rect(image, Rect2i(26, 44, 8, 4), IRONMARK_KNIGHT_SECONDARY)
+
+	# Blue/gold outline (elite Ironmark)
+	_draw_enemy_outline(image, IRONMARK_KNIGHT_ACCENT)
+
+	# Letter overlay "K"
+	_draw_letter_k(image, Vector2i(20, 26), IRONMARK_KNIGHT_ACCENT)
+
+	return ImageTexture.create_from_image(image)

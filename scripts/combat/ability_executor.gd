@@ -212,11 +212,11 @@ static func _spawn_damage_number(target: Unit, damage: int, is_critical: bool) -
 	## Create floating damage number at target
 	var damage_number = DamageNumberScene.instantiate() as DamageNumber
 
+	# Add to scene tree FIRST (required for global_position to work correctly)
+	target.get_parent().add_child(damage_number)
+
 	# Position above target
 	damage_number.global_position = target.global_position + Vector2(0, -30)
-
-	# Add to scene tree
-	target.get_parent().add_child(damage_number)
 
 	# Display damage
 	damage_number.show_damage(damage, is_critical)
@@ -225,11 +225,11 @@ static func _spawn_miss_number(target: Unit) -> void:
 	## Create floating miss indicator at target
 	var damage_number = DamageNumberScene.instantiate() as DamageNumber
 
+	# Add to scene tree FIRST (required for global_position to work correctly)
+	target.get_parent().add_child(damage_number)
+
 	# Position above target
 	damage_number.global_position = target.global_position + Vector2(0, -30)
-
-	# Add to scene tree
-	target.get_parent().add_child(damage_number)
 
 	# Display miss
 	damage_number.show_miss()
@@ -575,11 +575,11 @@ static func _spawn_damage_number_colored(target: Unit, damage: int, is_critical:
 	## Create floating damage number at target with optional backstab color (Task 2.5)
 	var damage_number = DamageNumberScene.instantiate() as DamageNumber
 
+	# Add to scene tree FIRST (required for global_position to work correctly)
+	target.get_parent().add_child(damage_number)
+
 	# Position above target
 	damage_number.global_position = target.global_position + Vector2(0, -30)
-
-	# Add to scene tree
-	target.get_parent().add_child(damage_number)
 
 	# Display damage with color based on backstab
 	if is_backstab:
@@ -801,11 +801,11 @@ static func _spawn_heal_number(target: Unit, amount: int) -> void:
 	## Create floating heal number at target (Task 2.6)
 	var damage_number = DamageNumberScene.instantiate() as DamageNumber
 
+	# Add to scene tree FIRST (required for global_position to work correctly)
+	target.get_parent().add_child(damage_number)
+
 	# Position above target
 	damage_number.global_position = target.global_position + Vector2(0, -30)
-
-	# Add to scene tree
-	target.get_parent().add_child(damage_number)
 
 	# Display heal
 	damage_number.show_heal(amount)
@@ -814,11 +814,11 @@ static func _spawn_holy_damage_number(target: Unit, amount: int) -> void:
 	## Create floating holy damage number at target (Task 2.6: Smite)
 	var damage_number = DamageNumberScene.instantiate() as DamageNumber
 
+	# Add to scene tree FIRST (required for global_position to work correctly)
+	target.get_parent().add_child(damage_number)
+
 	# Position above target
 	damage_number.global_position = target.global_position + Vector2(0, -30)
-
-	# Add to scene tree
-	target.get_parent().add_child(damage_number)
 
 	# Display holy damage
 	damage_number.show_holy_damage(amount)
@@ -827,11 +827,11 @@ static func _spawn_full_hp_indicator(target: Unit) -> void:
 	## Create floating "Full HP" indicator at target (Task 2.6)
 	var damage_number = DamageNumberScene.instantiate() as DamageNumber
 
+	# Add to scene tree FIRST (required for global_position to work correctly)
+	target.get_parent().add_child(damage_number)
+
 	# Position above target
 	damage_number.global_position = target.global_position + Vector2(0, -30)
-
-	# Add to scene tree
-	target.get_parent().add_child(damage_number)
 
 	# Display "Full HP" in green
 	damage_number.show_text("Full HP", Color("#27ae60"))

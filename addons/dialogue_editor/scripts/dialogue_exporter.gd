@@ -59,11 +59,21 @@ static func export_from_canvas(canvas: GraphEdit, dialogue_id: String) -> Dictio
 		if node_map.has(from_node):
 			var next_entry := {"target": to_node}
 
-			# For Branch nodes, include the port (true=0, false=1 for branch outputs)
+			# Handle conditional outputs for branching nodes
 			var from_type = _get_node_type(canvas_data.get("nodes", []), from_node)
-			if from_type == "Branch":
-				# Port 3 is True, Port 4 is False (based on branch_node.gd setup)
-				next_entry["condition"] = "true" if from_port == 3 else "false"
+			match from_type:
+				"Branch", "FlagCheck":
+					# Port 3 is True, Port 4 is False
+					next_entry["condition"] = "true" if from_port == 3 else "false"
+				"SkillCheck":
+					# Port 3 is Success, Port 4 is Fail
+					next_entry["condition"] = "success" if from_port == 3 else "fail"
+				"Item":
+					# Check if Item node is in "Check" mode (has conditional outputs)
+					var item_data = _get_node_data(canvas_data.get("nodes", []), from_node)
+					if item_data.get("item_action", "") == "Check":
+						# Port 3 is Has Item, Port 4 is Missing
+						next_entry["condition"] = "has_item" if from_port == 3 else "missing"
 
 			node_map[from_node]["next"].append(next_entry)
 
@@ -104,6 +114,39 @@ static func _convert_node_to_runtime(node_data: Dictionary) -> Dictionary:
 			if node_data.has("custom_action") and not node_data.custom_action.is_empty():
 				runtime["custom_action"] = node_data.custom_action
 
+		# Phase 2 Advanced Nodes
+		"SkillCheck":
+			runtime["skill"] = node_data.get("skill", "Persuasion")
+			runtime["difficulty_class"] = node_data.get("difficulty_class", 10)
+			if node_data.get("skill") == "Custom":
+				runtime["custom_skill"] = node_data.get("custom_skill", "")
+
+		"FlagCheck":
+			runtime["flag_name"] = node_data.get("flag_name", "")
+			runtime["operator"] = node_data.get("operator", "==")
+			runtime["flag_value"] = node_data.get("flag_value", "true")
+
+		"FlagSet":
+			runtime["flag_name"] = node_data.get("flag_name", "")
+			runtime["flag_value"] = node_data.get("flag_value", "true")
+
+		"Quest":
+			runtime["quest_id"] = node_data.get("quest_id", "")
+			runtime["action"] = node_data.get("quest_action", "Start").to_lower()
+			if node_data.get("quest_action") == "Update":
+				runtime["update_text"] = node_data.get("update_text", "")
+
+		"Reputation":
+			runtime["faction"] = node_data.get("faction", "Player Faction")
+			runtime["amount"] = node_data.get("amount", 0)
+			if node_data.get("faction") == "Custom":
+				runtime["custom_faction"] = node_data.get("custom_faction", "")
+
+		"Item":
+			runtime["action"] = node_data.get("item_action", "Give").to_lower()
+			runtime["item_id"] = node_data.get("item_id", "")
+			runtime["quantity"] = node_data.get("quantity", 1)
+
 	return runtime
 
 
@@ -113,6 +156,14 @@ static func _get_node_type(nodes: Array, node_id: String) -> String:
 		if node.get("id", "") == node_id:
 			return node.get("type", "")
 	return ""
+
+
+## Get full node data by its ID from the nodes array.
+static func _get_node_data(nodes: Array, node_id: String) -> Dictionary:
+	for node in nodes:
+		if node.get("id", "") == node_id:
+			return node
+	return {}
 
 
 ## Convert condition type enum to string.
@@ -191,9 +242,46 @@ static func validate_export(export_data: Dictionary) -> Array[String]:
 			errors.append("start_node '%s' does not exist in nodes" % export_data.start_node)
 
 	# Check for dead ends (non-End nodes with no next)
+	# Note: Action nodes (flagset, quest, reputation, item with give/take) should have connections
 	for node_id in export_data.get("nodes", {}):
 		var node = export_data.nodes[node_id]
-		if node.get("type", "") != "end" and node.get("next", []).is_empty():
-			errors.append("Node '%s' has no outgoing connections (dead end)" % node_id)
+		var node_type = node.get("type", "")
+
+		# End nodes don't need outgoing connections
+		if node_type == "end":
+			continue
+
+		# Check if node has any outgoing connections
+		if node.get("next", []).is_empty():
+			errors.append("Node '%s' (%s) has no outgoing connections (dead end)" % [node_id, node_type])
+
+		# For branching nodes, check both branches are connected
+		if node_type in ["branch", "flagcheck", "skillcheck"]:
+			var next_conditions = []
+			for next_node in node.get("next", []):
+				if next_node.has("condition"):
+					next_conditions.append(next_node.condition)
+
+			if node_type in ["branch", "flagcheck"]:
+				if "true" not in next_conditions:
+					errors.append("Node '%s' (%s) missing 'true' branch connection" % [node_id, node_type])
+				if "false" not in next_conditions:
+					errors.append("Node '%s' (%s) missing 'false' branch connection" % [node_id, node_type])
+			elif node_type == "skillcheck":
+				if "success" not in next_conditions:
+					errors.append("Node '%s' (skill check) missing 'success' branch connection" % node_id)
+				if "fail" not in next_conditions:
+					errors.append("Node '%s' (skill check) missing 'fail' branch connection" % node_id)
+
+		# For Item check action, verify both outputs
+		if node_type == "item" and node.get("action", "") == "check":
+			var next_conditions = []
+			for next_node in node.get("next", []):
+				if next_node.has("condition"):
+					next_conditions.append(next_node.condition)
+			if "has_item" not in next_conditions:
+				errors.append("Node '%s' (item check) missing 'has_item' branch connection" % node_id)
+			if "missing" not in next_conditions:
+				errors.append("Node '%s' (item check) missing 'missing' branch connection" % node_id)
 
 	return errors

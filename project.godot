@@ -29,4 +29,4 @@ window/stretch/mode="canvas_items"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/dialogue_editor/plugin.cfg")
+enabled=PackedStringArray("res://addons/character_assembler/plugin.cfg", "res://addons/dialogue_editor/plugin.cfg")
