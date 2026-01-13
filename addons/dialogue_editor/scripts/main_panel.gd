@@ -11,6 +11,7 @@ const ValidationPanelScript = preload("res://addons/dialogue_editor/scripts/vali
 const DialogueValidatorScript = preload("res://addons/dialogue_editor/scripts/dialogue_validator.gd")
 const AutoSaveManagerScript = preload("res://addons/dialogue_editor/scripts/auto_save_manager.gd")
 const PropertyPanelScript = preload("res://addons/dialogue_editor/scripts/property_panel.gd")
+const ErrorHandlerScript = preload("res://addons/dialogue_editor/scripts/error_handler.gd")
 
 # Default save directory
 const DEFAULT_DIALOGUE_DIR := "res://data/dialogue/"
@@ -31,6 +32,7 @@ const DEFAULT_DIALOGUE_DIR := "res://data/dialogue/"
 @onready var validate_btn: Button = $Margin/HSplit/RightPanel/Toolbar/ValidateBtn
 @onready var reset_view_btn: Button = $Margin/HSplit/RightPanel/Toolbar/ResetViewBtn
 @onready var auto_layout_btn: Button = $Margin/HSplit/RightPanel/Toolbar/AutoLayoutBtn
+@onready var help_btn: Button = $Margin/HSplit/RightPanel/Toolbar/HelpBtn
 
 # Search UI
 @onready var search_field: OptionButton = $Margin/HSplit/RightPanel/Toolbar/SearchField
@@ -87,6 +89,7 @@ func _ready() -> void:
 	_setup_search_manager()
 	_setup_auto_save()
 	_setup_property_panel()
+	_setup_notifications()
 	_connect_toolbar_signals()
 	_connect_canvas_signals()
 	_connect_palette_signals()
@@ -121,6 +124,40 @@ func _input(event: InputEvent) -> void:
 				_on_find_next()
 			handled = true
 
+		# F1 - Show Help
+		if event.keycode == KEY_F1 and not event.ctrl_pressed:
+			_show_help_dialog()
+			handled = true
+
+		# Delete - Delete selected nodes
+		if event.keycode == KEY_DELETE and not event.ctrl_pressed:
+			_delete_selected_nodes()
+			handled = true
+
+		# Escape - Deselect all
+		if event.keycode == KEY_ESCAPE and not event.ctrl_pressed:
+			_deselect_all_nodes()
+			handled = true
+
+		# 1-5 - Quick add node types (when not in text field)
+		if not _is_text_field_focused():
+			match event.keycode:
+				KEY_1:  # 1 - Add Start node
+					_quick_add_node("Start")
+					handled = true
+				KEY_2:  # 2 - Add Speaker node
+					_quick_add_node("Speaker")
+					handled = true
+				KEY_3:  # 3 - Add Choice node
+					_quick_add_node("Choice")
+					handled = true
+				KEY_4:  # 4 - Add Branch node
+					_quick_add_node("Branch")
+					handled = true
+				KEY_5:  # 5 - Add End node
+					_quick_add_node("End")
+					handled = true
+
 		if event.ctrl_pressed:
 			match event.keycode:
 				KEY_N:  # Ctrl+N - New
@@ -146,6 +183,12 @@ func _input(event: InputEvent) -> void:
 					handled = true
 				KEY_Y:  # Ctrl+Y - Redo (alternative)
 					_on_redo_pressed()
+					handled = true
+				KEY_D:  # Ctrl+D - Duplicate selected
+					_duplicate_selected_nodes()
+					handled = true
+				KEY_A:  # Ctrl+A - Select all
+					_select_all_nodes()
 					handled = true
 
 		if handled:
@@ -425,29 +468,63 @@ func _connect_palette_signals() -> void:
 
 
 func _connect_toolbar_signals() -> void:
+	# File operations
 	if new_btn:
 		new_btn.pressed.connect(_on_new_pressed)
-		new_btn.tooltip_text = "New Dialogue (Ctrl+N)"
+		new_btn.tooltip_text = "New Dialogue\nCreate a new empty dialogue tree.\nShortcut: Ctrl+N"
 	if open_btn:
 		open_btn.pressed.connect(_on_open_pressed)
-		open_btn.tooltip_text = "Open Dialogue (Ctrl+O)"
+		open_btn.tooltip_text = "Open Dialogue\nOpen an existing .dtree file.\nShortcut: Ctrl+O"
 	if save_btn:
 		save_btn.pressed.connect(_on_save_pressed)
-		save_btn.tooltip_text = "Save Dialogue (Ctrl+S)"
+		save_btn.tooltip_text = "Save Dialogue\nSave the current dialogue tree to .dtree file.\nShortcut: Ctrl+S (Save), Ctrl+Shift+S (Save As)"
 	if export_btn:
 		export_btn.pressed.connect(_on_export_pressed)
-		export_btn.tooltip_text = "Export to JSON (Ctrl+E)"
+		export_btn.tooltip_text = "Export to JSON\nExport dialogue to JSON format for game use.\nShortcut: Ctrl+E"
+
+	# Testing and validation
 	if test_btn:
 		test_btn.pressed.connect(_toggle_test_mode)
-		test_btn.tooltip_text = "Test Dialogue (F5)"
+		test_btn.tooltip_text = "Test Dialogue\nPlay through the dialogue in the editor.\nShortcut: F5"
 	if validate_btn:
 		validate_btn.pressed.connect(_on_validate_pressed)
-		validate_btn.tooltip_text = "Validate Tree"
+		validate_btn.tooltip_text = "Validate Tree\nCheck for structural issues like orphan nodes,\ndead ends, and missing connections."
+
+	# View controls
 	if reset_view_btn:
 		reset_view_btn.pressed.connect(_on_reset_view_pressed)
-		reset_view_btn.tooltip_text = "Reset View"
+		reset_view_btn.tooltip_text = "Reset View\nReset canvas zoom to 100% and center position."
 	if auto_layout_btn:
 		auto_layout_btn.pressed.connect(_on_auto_layout_pressed)
+		auto_layout_btn.tooltip_text = "Auto Layout\nAutomatically arrange nodes in a tree layout\nstarting from the Start node."
+
+	# Help
+	if help_btn:
+		help_btn.pressed.connect(_show_help_dialog.bind(0))
+		help_btn.tooltip_text = "Help & Documentation\nOpen comprehensive help with Quick Start,\nKeyboard Shortcuts, and Node Reference.\nShortcut: F1"
+
+	# Setup search field tooltips
+	_setup_search_tooltips()
+
+
+func _setup_search_tooltips() -> void:
+	if search_field:
+		search_field.tooltip_text = "Search Field\nSelect which field to search in:\n- All: Search all text fields\n- Node ID: Search by node identifier\n- Speaker: Search by speaker name\n- Text: Search dialogue text only\n- Type: Search by node type"
+
+	if search_edit:
+		search_edit.tooltip_text = "Search Box\nType to search for nodes.\nShortcut: F3 (next), Shift+F3 (previous)"
+
+	if find_prev_btn:
+		find_prev_btn.tooltip_text = "Find Previous\nJump to the previous search result.\nShortcut: Shift+F3"
+
+	if find_next_btn:
+		find_next_btn.tooltip_text = "Find Next\nJump to the next search result.\nShortcut: F3"
+
+	if search_result_label:
+		search_result_label.tooltip_text = "Search Results\nShows current result position out of total matches."
+
+	if filter_dropdown:
+		filter_dropdown.tooltip_text = "Type Filter\nShow only specific node types on the canvas.\nSelect 'All Types' to show everything."
 
 
 func _connect_canvas_signals() -> void:
@@ -583,6 +660,552 @@ func _on_auto_layout_pressed() -> void:
 		if dialogue_canvas.has_method("auto_layout"):
 			dialogue_canvas.auto_layout()
 			print("DialogueEditor: Auto layout applied")
+
+
+# =============================================================================
+# NODE OPERATIONS (KEYBOARD SHORTCUTS)
+# =============================================================================
+
+func _delete_selected_nodes() -> void:
+	if dialogue_canvas and dialogue_canvas.is_inside_tree():
+		if dialogue_canvas.has_method("delete_selected_nodes"):
+			dialogue_canvas.delete_selected_nodes()
+
+
+func _select_all_nodes() -> void:
+	if dialogue_canvas and dialogue_canvas.is_inside_tree():
+		if dialogue_canvas.has_method("select_all_nodes"):
+			dialogue_canvas.select_all_nodes()
+
+
+func _deselect_all_nodes() -> void:
+	if dialogue_canvas and dialogue_canvas.is_inside_tree():
+		if dialogue_canvas.has_method("deselect_all_nodes"):
+			dialogue_canvas.deselect_all_nodes()
+	# Also hide property panel
+	if _property_panel:
+		_property_panel.hide_panel()
+
+
+func _duplicate_selected_nodes() -> void:
+	if dialogue_canvas and dialogue_canvas.is_inside_tree():
+		if dialogue_canvas.has_method("duplicate_selected_nodes"):
+			dialogue_canvas.duplicate_selected_nodes()
+
+
+func _quick_add_node(node_type: String) -> void:
+	if dialogue_canvas and dialogue_canvas.is_inside_tree():
+		if dialogue_canvas.has_method("add_dialogue_node_at_center"):
+			dialogue_canvas.add_dialogue_node_at_center(node_type)
+			print("DialogueEditor: Quick added %s node" % node_type)
+
+
+func _is_text_field_focused() -> bool:
+	var focused = get_viewport().gui_get_focus_owner()
+	if focused:
+		return focused is LineEdit or focused is TextEdit
+	return false
+
+
+# =============================================================================
+# HELP SYSTEM
+# =============================================================================
+
+var _help_dialog: AcceptDialog = null
+var _whats_this_mode: bool = false
+var _whats_this_btn: Button = null
+
+func _show_help_dialog(tab_index: int = 0) -> void:
+	if not _help_dialog:
+		_create_help_dialog()
+	var tabs = _help_dialog.get_node_or_null("TabContainer")
+	if tabs:
+		tabs.current_tab = tab_index
+	_help_dialog.popup_centered()
+
+
+func _create_help_dialog() -> void:
+	_help_dialog = AcceptDialog.new()
+	_help_dialog.name = "HelpDialog"
+	_help_dialog.title = "Dialogue Editor - Help"
+	_help_dialog.dialog_text = ""
+	_help_dialog.min_size = Vector2(800, 700)
+
+	# Create tab container
+	var tabs = TabContainer.new()
+	tabs.name = "TabContainer"
+	tabs.custom_minimum_size = Vector2(780, 600)
+
+	# Tab 1: Quick Start
+	var quick_start = _create_quick_start_tab()
+	quick_start.name = "Quick Start"
+	tabs.add_child(quick_start)
+
+	# Tab 2: Keyboard Shortcuts
+	var shortcuts = _create_shortcuts_tab()
+	shortcuts.name = "Shortcuts"
+	tabs.add_child(shortcuts)
+
+	# Tab 3: Node Reference
+	var node_ref = _create_node_reference_tab()
+	node_ref.name = "Node Types"
+	tabs.add_child(node_ref)
+
+	# Tab 4: Troubleshooting
+	var troubleshoot = _create_troubleshooting_tab()
+	troubleshoot.name = "Troubleshooting"
+	tabs.add_child(troubleshoot)
+
+	_help_dialog.add_child(tabs)
+	add_child(_help_dialog)
+
+
+func _create_quick_start_tab() -> ScrollContainer:
+	var scroll = ScrollContainer.new()
+	var vbox = VBoxContainer.new()
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	_add_help_title(vbox, "Quick Start Guide")
+
+	_add_help_paragraph(vbox, """Welcome to the Dialogue Tree Editor! This tool lets you create branching conversations visually.
+
+1. CREATE A NEW DIALOGUE
+   Click 'New' or press Ctrl+N to start fresh.
+
+2. ADD A START NODE
+   Every dialogue needs exactly one Start node. Right-click the canvas or press '1' to add one.
+
+3. ADD SPEAKER NODES
+   Press '2' or drag 'Speaker' from the palette. Connect it to the Start node by dragging from the output (right) to the input (left).
+
+4. ADD PLAYER CHOICES
+   Use Choice nodes (press '3') for player dialogue options. Connect multiple choices from a single Speaker node.
+
+5. END THE CONVERSATION
+   Add End nodes (press '5') at the end of each dialogue path.
+
+6. SAVE AND EXPORT
+   - Ctrl+S saves as .dtree (editor format)
+   - Ctrl+E exports as .json (game format)""")
+
+	_add_help_section(vbox, "Canvas Controls")
+	_add_help_paragraph(vbox, """- Pan: Middle mouse button or right-click drag
+- Zoom: Scroll wheel
+- Select: Left-click on node
+- Multi-select: Ctrl+click or drag selection box
+- Connect: Drag from output to input slot
+- Delete connection: Right-click on connection line""")
+
+	_add_help_section(vbox, "Testing Your Dialogue")
+	_add_help_paragraph(vbox, """Press F5 to test your dialogue in the editor. The test panel lets you:
+- Play through dialogue making choices
+- See current node highlighted
+- Track simulated game state changes
+- Jump to any node for testing""")
+
+	scroll.add_child(vbox)
+	return scroll
+
+
+func _create_shortcuts_tab() -> ScrollContainer:
+	var scroll = ScrollContainer.new()
+	var vbox = VBoxContainer.new()
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	_add_help_title(vbox, "Keyboard Shortcuts")
+
+	_add_shortcut_section(vbox, "File Operations")
+	_add_shortcut_row(vbox, "Ctrl+N", "New dialogue")
+	_add_shortcut_row(vbox, "Ctrl+O", "Open dialogue")
+	_add_shortcut_row(vbox, "Ctrl+S", "Save dialogue")
+	_add_shortcut_row(vbox, "Ctrl+Shift+S", "Save As...")
+	_add_shortcut_row(vbox, "Ctrl+E", "Export to JSON")
+
+	_add_shortcut_section(vbox, "Edit Operations")
+	_add_shortcut_row(vbox, "Ctrl+Z", "Undo")
+	_add_shortcut_row(vbox, "Ctrl+Shift+Z", "Redo")
+	_add_shortcut_row(vbox, "Ctrl+Y", "Redo (alternative)")
+	_add_shortcut_row(vbox, "Delete", "Delete selected nodes")
+	_add_shortcut_row(vbox, "Ctrl+D", "Duplicate selected nodes")
+	_add_shortcut_row(vbox, "Ctrl+A", "Select all nodes")
+	_add_shortcut_row(vbox, "Escape", "Deselect all nodes")
+
+	_add_shortcut_section(vbox, "Quick Add Nodes")
+	_add_shortcut_row(vbox, "1", "Add Start node")
+	_add_shortcut_row(vbox, "2", "Add Speaker node")
+	_add_shortcut_row(vbox, "3", "Add Choice node")
+	_add_shortcut_row(vbox, "4", "Add Branch node")
+	_add_shortcut_row(vbox, "5", "Add End node")
+
+	_add_shortcut_section(vbox, "Navigation & Testing")
+	_add_shortcut_row(vbox, "F1", "Show this help")
+	_add_shortcut_row(vbox, "F3", "Find next search result")
+	_add_shortcut_row(vbox, "Shift+F3", "Find previous search result")
+	_add_shortcut_row(vbox, "F5", "Toggle test mode")
+
+	scroll.add_child(vbox)
+	return scroll
+
+
+func _create_node_reference_tab() -> ScrollContainer:
+	var scroll = ScrollContainer.new()
+	var vbox = VBoxContainer.new()
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	_add_help_title(vbox, "Node Types Reference")
+
+	_add_help_section(vbox, "Core Nodes")
+
+	_add_node_description(vbox, "Start (Green)", """Entry point for dialogue. Every tree needs exactly one.
+- Outputs: 1 (flow)
+- No inputs or fields""")
+
+	_add_node_description(vbox, "Speaker (Colored by speaker)", """NPC dialogue line shown to player.
+- Inputs: 1 | Outputs: 1
+- Fields: Speaker dropdown, Text (500 char max), Portrait (optional)""")
+
+	_add_node_description(vbox, "Choice (Blue)", """Player dialogue option.
+- Inputs: 1 | Outputs: 1
+- Fields: Choice text
+- Connect multiple from one Speaker for branching""")
+
+	_add_node_description(vbox, "Branch (Yellow)", """Conditional branching based on game state.
+- Inputs: 1 | Outputs: 2 (True/False)
+- Fields: Condition key, Operator, Value""")
+
+	_add_node_description(vbox, "End (Red)", """Terminates dialogue.
+- Inputs: 1 | No outputs
+- Fields: End type (normal, combat, trade, exit)""")
+
+	_add_help_section(vbox, "Advanced Nodes")
+
+	_add_node_description(vbox, "Skill Check (Purple)", """Test player skill vs difficulty.
+- Inputs: 1 | Outputs: 2 (Success/Fail)
+- Fields: Skill type, DC (difficulty class)""")
+
+	_add_node_description(vbox, "Flag Check (Cyan)", """Check game flag/variable.
+- Inputs: 1 | Outputs: 2 (True/False)
+- Fields: Flag name, Operator, Value""")
+
+	_add_node_description(vbox, "Flag Set (Cyan)", """Set game flag/variable.
+- Inputs: 1 | Outputs: 1
+- Fields: Flag name, Value""")
+
+	_add_node_description(vbox, "Quest (Gold)", """Quest state manipulation.
+- Inputs: 1 | Outputs: 1
+- Fields: Quest ID, Action (start/complete/fail/update)""")
+
+	_add_node_description(vbox, "Reputation (Magenta)", """Modify faction reputation.
+- Inputs: 1 | Outputs: 1
+- Fields: Faction, Amount (+/-)""")
+
+	_add_node_description(vbox, "Item (Brown)", """Give, take, or check items.
+- Inputs: 1 | Outputs: 1-2
+- Fields: Action (give/take/check), Item ID, Quantity""")
+
+	scroll.add_child(vbox)
+	return scroll
+
+
+func _create_troubleshooting_tab() -> ScrollContainer:
+	var scroll = ScrollContainer.new()
+	var vbox = VBoxContainer.new()
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	_add_help_title(vbox, "Troubleshooting")
+
+	_add_help_section(vbox, "Validation Errors")
+
+	_add_help_paragraph(vbox, """'No Start node found'
+- Every dialogue needs exactly one Start node
+- Add a Start node and connect it to your dialogue
+
+'Dead end detected'
+- A non-End node has no outgoing connections
+- Connect it to another node or an End node
+
+'Orphan node detected'
+- A node has no incoming connections
+- Either connect it to the dialogue flow or delete it
+
+'Circular reference warning'
+- Nodes form a loop (may be intentional for repeating options)
+- Check connections if this is unexpected""")
+
+	_add_help_section(vbox, "Common Issues")
+
+	_add_help_paragraph(vbox, """Portrait not showing
+- Check the file path is correct
+- Ensure the image file exists
+- Use supported formats: PNG, JPG, WebP
+
+Large dialogue trees are slow
+- Minimap auto-disables for 1000+ nodes
+- Consider splitting very large dialogues
+- Use search (Ctrl+F) to navigate instead of scrolling
+
+File won't load
+- File may be corrupted - check for backup
+- Ensure file is valid JSON format
+- Check auto-save folder for recovery""")
+
+	_add_help_section(vbox, "Recovery")
+
+	_add_help_paragraph(vbox, """Auto-save Recovery
+- On crash, recovery dialog appears on next launch
+- Choose 'Recover' to restore work
+- Auto-save location: user://dialogue_editor_autosave/
+
+Manual Backup
+- .dtree files are JSON - can be edited manually
+- Keep backups of important dialogue files""")
+
+	_add_help_section(vbox, "Getting More Help")
+
+	_add_help_paragraph(vbox, """Full Documentation
+See: docs/tools/dialogue-tree-editor-guide.md
+
+Export Format Reference
+See the documentation for complete JSON export format specification.""")
+
+	scroll.add_child(vbox)
+	return scroll
+
+
+func _add_help_title(parent: VBoxContainer, title: String) -> void:
+	var label = Label.new()
+	label.text = title
+	label.add_theme_font_size_override("font_size", 24)
+	label.modulate = Color(1.0, 0.9, 0.5)
+	parent.add_child(label)
+	var sep = HSeparator.new()
+	parent.add_child(sep)
+
+
+func _add_help_section(parent: VBoxContainer, title: String) -> void:
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(0, 10)
+	parent.add_child(spacer)
+
+	var label = Label.new()
+	label.text = title
+	label.add_theme_font_size_override("font_size", 18)
+	label.modulate = Color(0.7, 0.9, 1.0)
+	parent.add_child(label)
+
+
+func _add_help_paragraph(parent: VBoxContainer, text: String) -> void:
+	var label = Label.new()
+	label.text = text
+	label.add_theme_font_size_override("font_size", 14)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.custom_minimum_size = Vector2(750, 0)
+	parent.add_child(label)
+
+
+func _add_node_description(parent: VBoxContainer, node_name: String, description: String) -> void:
+	var hbox = HBoxContainer.new()
+
+	var name_label = Label.new()
+	name_label.text = node_name
+	name_label.add_theme_font_size_override("font_size", 14)
+	name_label.modulate = Color(0.9, 0.9, 0.6)
+	name_label.custom_minimum_size = Vector2(200, 0)
+	hbox.add_child(name_label)
+
+	var desc_label = Label.new()
+	desc_label.text = description
+	desc_label.add_theme_font_size_override("font_size", 13)
+	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc_label.custom_minimum_size = Vector2(530, 0)
+	hbox.add_child(desc_label)
+
+	parent.add_child(hbox)
+
+
+func _add_shortcut_section(parent: VBoxContainer, title: String) -> void:
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(0, 8)
+	parent.add_child(spacer)
+
+	var label = Label.new()
+	label.text = title
+	label.add_theme_font_size_override("font_size", 18)
+	label.modulate = Color(1.0, 0.9, 0.5)
+	parent.add_child(label)
+
+
+func _add_shortcut_row(parent: VBoxContainer, shortcut: String, description: String) -> void:
+	var row = HBoxContainer.new()
+
+	var key_label = Label.new()
+	key_label.text = shortcut
+	key_label.custom_minimum_size = Vector2(180, 0)
+	key_label.add_theme_font_size_override("font_size", 14)
+	key_label.modulate = Color(0.7, 0.9, 1.0)
+	row.add_child(key_label)
+
+	var desc_label = Label.new()
+	desc_label.text = description
+	desc_label.add_theme_font_size_override("font_size", 14)
+	row.add_child(desc_label)
+
+	parent.add_child(row)
+
+
+# =============================================================================
+# WHAT'S THIS? MODE
+# =============================================================================
+
+func _toggle_whats_this_mode() -> void:
+	_whats_this_mode = not _whats_this_mode
+	if _whats_this_btn:
+		_whats_this_btn.button_pressed = _whats_this_mode
+	if _whats_this_mode:
+		Input.set_default_cursor_shape(Input.CURSOR_HELP)
+		show_notification("What's This? mode: Click on any element for help", 0, 3.0)
+	else:
+		Input.set_default_cursor_shape(Input.CURSOR_ARROW)
+
+
+func _handle_whats_this_click(control: Control) -> bool:
+	"""Handle click in What's This? mode. Returns true if handled."""
+	if not _whats_this_mode:
+		return false
+
+	# Exit What's This mode
+	_toggle_whats_this_mode()
+
+	# Show help based on what was clicked
+	var help_text = _get_whats_this_help(control)
+	if not help_text.is_empty():
+		_show_whats_this_popup(help_text)
+
+	return true
+
+
+func _get_whats_this_help(control: Control) -> String:
+	if not control:
+		return ""
+
+	# Check by node name or type
+	var name = control.name.to_lower()
+
+	if "new" in name:
+		return "New Button\nCreate a new empty dialogue tree.\nShortcut: Ctrl+N"
+	elif "open" in name:
+		return "Open Button\nOpen an existing .dtree file.\nShortcut: Ctrl+O"
+	elif "save" in name:
+		return "Save Button\nSave the current dialogue tree.\nShortcut: Ctrl+S (Save) or Ctrl+Shift+S (Save As)"
+	elif "export" in name:
+		return "Export Button\nExport dialogue to JSON for game use.\nShortcut: Ctrl+E"
+	elif "test" in name:
+		return "Test Button\nPlay through dialogue in the editor.\nShortcut: F5"
+	elif "validate" in name:
+		return "Validate Button\nCheck for structural issues in the dialogue tree."
+	elif "reset" in name and "view" in name:
+		return "Reset View\nReset canvas zoom and scroll position."
+	elif "auto" in name and "layout" in name:
+		return "Auto Layout\nAutomatically arrange nodes in a tree layout."
+	elif "help" in name:
+		return "Help Button\nOpen help documentation.\nShortcut: F1"
+	elif "search" in name:
+		return "Search\nFind nodes by text content, speaker, or ID.\nShortcut: F3 (next), Shift+F3 (previous)"
+	elif "filter" in name:
+		return "Filter\nShow only specific node types on the canvas."
+	elif control is GraphEdit:
+		return "Canvas\nVisual workspace for building dialogue trees.\n- Pan: Middle mouse or right-click drag\n- Zoom: Scroll wheel\n- Connect: Drag from output to input"
+	elif control is GraphNode:
+		return "Dialogue Node\nPart of the dialogue tree.\n- Click to select\n- Drag connections between nodes\n- Delete: Select and press Delete"
+
+	return ""
+
+
+func _show_whats_this_popup(text: String) -> void:
+	var dialog = AcceptDialog.new()
+	dialog.title = "What's This?"
+	dialog.dialog_text = text
+	dialog.min_size = Vector2(400, 150)
+	add_child(dialog)
+	dialog.popup_centered()
+	dialog.confirmed.connect(dialog.queue_free)
+
+
+# =============================================================================
+# NOTIFICATION SYSTEM
+# =============================================================================
+
+var _notification_container: VBoxContainer = null
+const NOTIFICATION_COLORS = {
+	0: Color(0.3, 0.5, 0.8, 0.95),   # INFO - Blue
+	1: Color(0.3, 0.7, 0.4, 0.95),   # SUCCESS - Green
+	2: Color(0.8, 0.6, 0.2, 0.95),   # WARNING - Orange
+	3: Color(0.8, 0.3, 0.3, 0.95),   # ERROR - Red
+}
+
+func _setup_notifications() -> void:
+	# Create notification container at bottom of screen
+	_notification_container = VBoxContainer.new()
+	_notification_container.name = "NotificationContainer"
+	_notification_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	# Position at bottom-right
+	_notification_container.anchor_left = 1.0
+	_notification_container.anchor_right = 1.0
+	_notification_container.anchor_top = 1.0
+	_notification_container.anchor_bottom = 1.0
+	_notification_container.offset_left = -420
+	_notification_container.offset_right = -20
+	_notification_container.offset_top = -200
+	_notification_container.offset_bottom = -20
+
+	_notification_container.alignment = BoxContainer.ALIGNMENT_END
+	add_child(_notification_container)
+
+	# Connect to error handler
+	var handler = ErrorHandlerScript.get_instance()
+	handler.notification_requested.connect(_on_notification_requested)
+
+
+func _on_notification_requested(message: String, type: int, duration: float) -> void:
+	if not _notification_container:
+		return
+
+	# Create notification panel
+	var panel = PanelContainer.new()
+	panel.custom_minimum_size = Vector2(380, 0)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	# Style based on type
+	var style = StyleBoxFlat.new()
+	style.bg_color = NOTIFICATION_COLORS.get(type, NOTIFICATION_COLORS[0])
+	style.set_corner_radius_all(6)
+	style.content_margin_left = 12
+	style.content_margin_right = 12
+	style.content_margin_top = 8
+	style.content_margin_bottom = 8
+	panel.add_theme_stylebox_override("panel", style)
+
+	# Add message label
+	var label = Label.new()
+	label.text = message
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.add_theme_font_size_override("font_size", 14)
+	label.add_theme_color_override("font_color", Color.WHITE)
+	panel.add_child(label)
+
+	_notification_container.add_child(panel)
+
+	# Fade out and remove after duration
+	var tween = create_tween()
+	tween.tween_interval(duration)
+	tween.tween_property(panel, "modulate:a", 0.0, 0.5)
+	tween.tween_callback(panel.queue_free)
+
+
+## Show a notification (convenience method).
+func show_notification(message: String, type: int = 0, duration: float = 3.0) -> void:
+	_on_notification_requested(message, type, duration)
 
 
 # =============================================================================
@@ -1119,21 +1742,41 @@ func _save_to_file(path: String) -> void:
 
 
 func _load_from_file(path: String) -> void:
+	# Validate file exists
+	if not FileAccess.file_exists(path):
+		ErrorHandlerScript.error("File not found: %s" % path.get_file())
+		return
+
 	var tree_data = DialogueTreeDataScript.load_from_file(path)
 	if tree_data == null:
-		push_error("DialogueEditor: Failed to load: %s" % path)
+		ErrorHandlerScript.error("Failed to load file: %s\nThe file may be corrupted or in an invalid format." % path.get_file())
 		return
 
 	if not dialogue_canvas or not dialogue_canvas.is_inside_tree():
-		push_error("DialogueEditor: Canvas not available for loading")
+		ErrorHandlerScript.error("Canvas not available for loading")
 		return
 
 	if not dialogue_canvas.has_method("deserialize"):
-		push_error("DialogueEditor: Canvas does not have deserialize method")
+		ErrorHandlerScript.error("Canvas does not have deserialize method")
 		return
 
-	# Load into canvas
+	# Validate structure before loading
 	var canvas_data = tree_data.to_canvas_data()
+	var validation = ErrorHandlerScript.validate_dtree_structure(canvas_data)
+	if not validation.valid:
+		ErrorHandlerScript.error("Invalid file structure:\n" + "\n".join(validation.errors))
+		return
+
+	# Show warnings but continue loading
+	for warning_msg in validation.warnings:
+		ErrorHandlerScript.warning(warning_msg)
+
+	# Check for circular references
+	var cycles = ErrorHandlerScript.detect_circular_references(canvas_data.nodes, canvas_data.connections)
+	if not cycles.is_empty():
+		ErrorHandlerScript.warning("Circular references detected:\n" + "\n".join(cycles))
+
+	# Load into canvas
 	dialogue_canvas.deserialize(canvas_data)
 
 	# Update state
@@ -1146,7 +1789,10 @@ func _load_from_file(path: String) -> void:
 	_update_status_bar()
 	_clear_search()
 	_update_filter_dropdown()
-	print("DialogueEditor: Loaded from %s" % path)
+
+	# Show success notification
+	var node_count = canvas_data.nodes.size() if canvas_data.has("nodes") else 0
+	ErrorHandlerScript.success("Loaded %s (%d nodes)" % [path.get_file(), node_count])
 
 
 # =============================================================================

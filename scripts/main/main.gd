@@ -5,6 +5,13 @@ extends Node2D
 # ===== NODE REFERENCES =====
 @onready var combat_grid: CombatGrid = $CombatGrid
 @onready var turn_order_panel = $UILayer/TurnOrderPanel
+@onready var map_selector = $UILayer/MapSelector
+
+# ===== MAP CONSTANTS (Task 2.16) =====
+const MAP_DEFAULT: String = "default"
+const MAP_FOREST_CLEARING: String = "forest_clearing"
+const MAP_RUINED_FORT: String = "ruined_fort"
+const MAP_OPEN_FIELD: String = "open_field"
 
 # Preload scenes
 const UnitScene = preload("res://scenes/combat/Unit.tscn")
@@ -22,9 +29,14 @@ var _battle_result_popup: BattleResultPopup = null
 # Initial spawn data for retry (Task 1.9)
 var _initial_spawn_data: Array[Dictionary] = []
 
+# Current map tracking (Task 2.16)
+var _current_map_id: String = MAP_DEFAULT
+
 # ===== LIFECYCLE =====
 func _ready() -> void:
 	_setup_battle_result_popup()
+	_setup_map_selector()  # Task 2.16
+	_load_current_map()    # Task 2.16: Load map before spawning units
 	_spawn_test_units()
 	_connect_combat_signals()
 	_connect_turn_signals()
@@ -336,8 +348,8 @@ func _on_retry_pressed() -> void:
 	_restart_battle()
 
 func _restart_battle() -> void:
-	## Restart the battle from scratch
-	print("[Main] Restarting battle...")
+	## Restart the battle from scratch (uses current map)
+	print("[Main] Restarting battle on map: %s" % _current_map_id)
 
 	# Clear existing units
 	for unit in _units.duplicate():
@@ -347,6 +359,10 @@ func _restart_battle() -> void:
 
 	# Wait a frame for cleanup
 	await get_tree().process_frame
+
+	# Reload map terrain
+	_load_current_map()
+	combat_grid._setup_pathfinding()
 
 	# Respawn units from initial data
 	for data in _initial_spawn_data:
@@ -359,6 +375,7 @@ func _restart_battle() -> void:
 	combat_grid.update_occupied_tiles(_units)
 
 	# Start new battle
+	CombatManager.set_combat_grid(combat_grid)
 	CombatManager.start_battle(_units)
 	print("[Main] Battle restarted with %d units" % _units.size())
 
@@ -418,3 +435,252 @@ func _debug_end_turn() -> void:
 			CombatManager.end_current_turn()
 		else:
 			print("[Debug] Cannot end turn - not a friendly unit's turn")
+
+# ===== MAP SELECTION (Task 2.16) =====
+func _setup_map_selector() -> void:
+	## Connect map selector signals
+	if map_selector:
+		map_selector.map_changed.connect(_on_map_changed)
+		print("[Main] Map selector connected")
+
+func _load_current_map() -> void:
+	## Load the current map terrain into the combat grid
+	match _current_map_id:
+		MAP_FOREST_CLEARING:
+			var map_data = ForestClearingMap.get_map_data()
+			combat_grid.load_map(map_data)
+			print("[Main] Loaded Forest Clearing map")
+		MAP_RUINED_FORT:
+			var map_data = combat_grid.get_ruined_fort_data()
+			combat_grid.load_map(map_data)
+			print("[Main] Loaded Ruined Fort map")
+		MAP_OPEN_FIELD:
+			var map_data = combat_grid.get_open_field_data()
+			combat_grid.load_map(map_data)
+			print("[Main] Loaded Open Field map")
+		_:
+			# Default map - use procedural generation (already done in CombatGrid._ready)
+			combat_grid.clear_grid()
+			combat_grid._generate_default_grid()
+			print("[Main] Loaded default test grid")
+
+func _on_map_changed(map_id: String) -> void:
+	## Handle map change - reset combat with new map
+	print("[Main] Map changed to: %s" % map_id)
+	_current_map_id = map_id
+	_change_map(map_id)
+
+func _change_map(map_id: String) -> void:
+	## Change to a new map and restart combat
+	print("[Main] Changing map to: %s" % map_id)
+
+	# End current battle
+	CombatManager.end_battle()
+
+	# Clear movement/attack overlays
+	combat_grid.clear_movement_overlay()
+	combat_grid.clear_attack_range_overlay()
+
+	# Clear existing units
+	for unit in _units.duplicate():
+		if is_instance_valid(unit):
+			unit.queue_free()
+	_units.clear()
+
+	# Wait for cleanup (queue_free is deferred, need extra frame)
+	await get_tree().process_frame
+	await get_tree().process_frame
+
+	# Load the new map
+	_load_current_map()
+
+	# Update pathfinding for new terrain
+	combat_grid._setup_pathfinding()
+
+	# Spawn units based on map
+	_spawn_units_for_map(map_id)
+
+	# Update pathfinding with unit positions
+	combat_grid.update_occupied_tiles(_units)
+
+	# Start new battle
+	CombatManager.set_combat_grid(combat_grid)
+	CombatManager.start_battle(_units)
+	print("[Main] Battle started on %s with %d units" % [map_id, _units.size()])
+
+func _spawn_units_for_map(map_id: String) -> void:
+	## Spawn units based on map spawn points
+	match map_id:
+		MAP_FOREST_CLEARING:
+			_spawn_units_for_forest_clearing()
+		MAP_RUINED_FORT:
+			_spawn_units_for_ruined_fort()
+		MAP_OPEN_FIELD:
+			_spawn_units_for_open_field()
+		_:
+			_spawn_default_units()
+
+func _spawn_units_for_forest_clearing() -> void:
+	## Spawn units using Forest Clearing map spawn points
+	var map_data = ForestClearingMap.get_map_data()
+	var party_spawns = combat_grid.get_spawn_points_party(map_data)
+	var enemy_spawns = combat_grid.get_spawn_points_enemy(map_data)
+
+	# Party units (use available spawn points)
+	var party_types = [
+		{"type": Unit.UnitType.PLAYER, "name": "Player"},
+		{"type": Unit.UnitType.THORNE, "name": "Thorne"},
+		{"type": Unit.UnitType.LYRA, "name": "Lyra"},
+		{"type": Unit.UnitType.MATTHIAS, "name": "Matthias"},
+		{"type": Unit.UnitType.INFANTRY, "name": "Soldier 1", "order": Unit.SoldierOrder.ADVANCE},
+		{"type": Unit.UnitType.INFANTRY, "name": "Soldier 2", "order": Unit.SoldierOrder.HOLD},
+	]
+
+	for i in range(min(party_types.size(), party_spawns.size())):
+		var data = party_types[i]
+		var unit = _spawn_unit(data["type"], party_spawns[i], data["name"])
+		if data.has("order") and unit.is_soldier:
+			unit.set_order(data["order"])
+
+	# Enemy units (use available spawn points)
+	var enemy_types = [
+		{"type": Unit.UnitType.ENEMY, "name": "Bandit 1"},
+		{"type": Unit.UnitType.BANDIT_ARCHER, "name": "Bandit Archer"},
+		{"type": Unit.UnitType.ENEMY, "name": "Bandit 3"},
+	]
+
+	for i in range(min(enemy_types.size(), enemy_spawns.size())):
+		var data = enemy_types[i]
+		_spawn_unit(data["type"], enemy_spawns[i], data["name"])
+
+	# Update initial spawn data for retry
+	_initial_spawn_data.clear()
+	for i in range(min(party_types.size(), party_spawns.size())):
+		var data = party_types[i].duplicate()
+		data["pos"] = party_spawns[i]
+		_initial_spawn_data.append(data)
+	for i in range(min(enemy_types.size(), enemy_spawns.size())):
+		var data = enemy_types[i].duplicate()
+		data["pos"] = enemy_spawns[i]
+		_initial_spawn_data.append(data)
+
+	print("[Main] Spawned %d units for Forest Clearing" % _units.size())
+
+func _spawn_units_for_ruined_fort() -> void:
+	## Spawn units using Ruined Fort map spawn points
+	var map_data = combat_grid.get_ruined_fort_data()
+	var party_spawns = combat_grid.get_spawn_points_party(map_data)
+	var enemy_spawns = combat_grid.get_spawn_points_enemy(map_data)
+
+	# Party units (use available spawn points)
+	var party_types = [
+		{"type": Unit.UnitType.PLAYER, "name": "Player"},
+		{"type": Unit.UnitType.THORNE, "name": "Thorne"},
+		{"type": Unit.UnitType.LYRA, "name": "Lyra"},
+		{"type": Unit.UnitType.MATTHIAS, "name": "Matthias"},
+		{"type": Unit.UnitType.INFANTRY, "name": "Soldier 1", "order": Unit.SoldierOrder.ADVANCE},
+		{"type": Unit.UnitType.INFANTRY, "name": "Soldier 2", "order": Unit.SoldierOrder.HOLD},
+	]
+
+	for i in range(min(party_types.size(), party_spawns.size())):
+		var data = party_types[i]
+		var unit = _spawn_unit(data["type"], party_spawns[i], data["name"])
+		if data.has("order") and unit.is_soldier:
+			unit.set_order(data["order"])
+
+	# Enemy units - defenders in the fort
+	var enemy_types = [
+		{"type": Unit.UnitType.ENEMY, "name": "Bandit 1"},
+		{"type": Unit.UnitType.ENEMY, "name": "Bandit 2"},
+		{"type": Unit.UnitType.BANDIT_ARCHER, "name": "Bandit Archer 1"},
+		{"type": Unit.UnitType.BANDIT_ARCHER, "name": "Bandit Archer 2"},
+		{"type": Unit.UnitType.BANDIT_LEADER, "name": "Bandit Leader"},
+	]
+
+	for i in range(min(enemy_types.size(), enemy_spawns.size())):
+		var data = enemy_types[i]
+		_spawn_unit(data["type"], enemy_spawns[i], data["name"])
+
+	# Update initial spawn data for retry
+	_initial_spawn_data.clear()
+	for i in range(min(party_types.size(), party_spawns.size())):
+		var data = party_types[i].duplicate()
+		data["pos"] = party_spawns[i]
+		_initial_spawn_data.append(data)
+	for i in range(min(enemy_types.size(), enemy_spawns.size())):
+		var data = enemy_types[i].duplicate()
+		data["pos"] = enemy_spawns[i]
+		_initial_spawn_data.append(data)
+
+	print("[Main] Spawned %d units for Ruined Fort" % _units.size())
+
+func _spawn_units_for_open_field() -> void:
+	## Spawn units using Open Field map spawn points (Task 2.18)
+	## Contract 3 "Ironmark Patrol" - fight professional soldiers in open terrain
+	var map_data = combat_grid.get_open_field_data()
+	var party_spawns = combat_grid.get_spawn_points_party(map_data)
+	var enemy_spawns = combat_grid.get_spawn_points_enemy(map_data)
+
+	# Party units (use available spawn points)
+	var party_types = [
+		{"type": Unit.UnitType.PLAYER, "name": "Player"},
+		{"type": Unit.UnitType.THORNE, "name": "Thorne"},
+		{"type": Unit.UnitType.LYRA, "name": "Lyra"},
+		{"type": Unit.UnitType.MATTHIAS, "name": "Matthias"},
+		{"type": Unit.UnitType.INFANTRY, "name": "Soldier 1", "order": Unit.SoldierOrder.ADVANCE},
+		{"type": Unit.UnitType.INFANTRY, "name": "Soldier 2", "order": Unit.SoldierOrder.HOLD},
+	]
+
+	for i in range(min(party_types.size(), party_spawns.size())):
+		var data = party_types[i]
+		var unit = _spawn_unit(data["type"], party_spawns[i], data["name"])
+		if data.has("order") and unit.is_soldier:
+			unit.set_order(data["order"])
+
+	# Enemy units - Ironmark patrol (professional soldiers with Shield Wall)
+	var enemy_types = [
+		{"type": Unit.UnitType.IRONMARK_SOLDIER, "name": "Ironmark Soldier 1"},
+		{"type": Unit.UnitType.IRONMARK_SOLDIER, "name": "Ironmark Soldier 2"},
+		{"type": Unit.UnitType.IRONMARK_SOLDIER, "name": "Ironmark Soldier 3"},
+		{"type": Unit.UnitType.IRONMARK_SOLDIER, "name": "Ironmark Soldier 4"},
+		{"type": Unit.UnitType.IRONMARK_KNIGHT, "name": "Ironmark Knight 1"},
+		{"type": Unit.UnitType.IRONMARK_KNIGHT, "name": "Ironmark Knight 2"},
+	]
+
+	for i in range(min(enemy_types.size(), enemy_spawns.size())):
+		var data = enemy_types[i]
+		_spawn_unit(data["type"], enemy_spawns[i], data["name"])
+
+	# Update initial spawn data for retry
+	_initial_spawn_data.clear()
+	for i in range(min(party_types.size(), party_spawns.size())):
+		var data = party_types[i].duplicate()
+		data["pos"] = party_spawns[i]
+		_initial_spawn_data.append(data)
+	for i in range(min(enemy_types.size(), enemy_spawns.size())):
+		var data = enemy_types[i].duplicate()
+		data["pos"] = enemy_spawns[i]
+		_initial_spawn_data.append(data)
+
+	print("[Main] Spawned %d units for Open Field" % _units.size())
+
+func _spawn_default_units() -> void:
+	## Spawn units for the default test grid
+	_initial_spawn_data = [
+		{"type": Unit.UnitType.PLAYER, "pos": Vector2i(1, 5), "name": "Player"},
+		{"type": Unit.UnitType.THORNE, "pos": Vector2i(1, 3), "name": "Thorne"},
+		{"type": Unit.UnitType.LYRA, "pos": Vector2i(1, 7), "name": "Lyra"},
+		{"type": Unit.UnitType.MATTHIAS, "pos": Vector2i(2, 5), "name": "Matthias"},
+		{"type": Unit.UnitType.INFANTRY, "pos": Vector2i(2, 3), "name": "Soldier 1", "order": Unit.SoldierOrder.ADVANCE},
+		{"type": Unit.UnitType.INFANTRY, "pos": Vector2i(2, 7), "name": "Soldier 2", "order": Unit.SoldierOrder.HOLD},
+		{"type": Unit.UnitType.ENEMY, "pos": Vector2i(10, 4), "name": "Bandit 1"},
+		{"type": Unit.UnitType.ENEMY, "pos": Vector2i(10, 6), "name": "Bandit 2"},
+		{"type": Unit.UnitType.ENEMY, "pos": Vector2i(9, 5), "name": "Bandit 3"},
+	]
+
+	for data in _initial_spawn_data:
+		var unit = _spawn_unit(data["type"], data["pos"], data["name"])
+		if data.has("order") and unit.is_soldier:
+			unit.set_order(data["order"])
+
+	print("[Main] Spawned %d units for default test grid" % _units.size())

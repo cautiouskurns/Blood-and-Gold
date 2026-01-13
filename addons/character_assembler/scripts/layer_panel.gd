@@ -28,7 +28,7 @@ func _setup_ui() -> void:
 	# Header
 	var header = Label.new()
 	header.text = "LAYERS"
-	header.add_theme_font_size_override("font_size", 14)
+	header.add_theme_font_size_override("font_size", 32)
 	add_child(header)
 
 	add_child(HSeparator.new())
@@ -38,6 +38,7 @@ func _setup_ui() -> void:
 	_layer_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_layer_list.custom_minimum_size = Vector2(0, 150)
 	_layer_list.select_mode = ItemList.SELECT_MULTI
+	_layer_list.add_theme_font_size_override("font_size", 28)
 	add_child(_layer_list)
 
 	# Buttons

@@ -1,0 +1,302 @@
+{
+	"file_version": 1,
+	"character_id": "mage",
+	"version": "1.0",
+	"canvas_size": 128,
+	"reference_image_path": "",
+	"reference_opacity": 0.5,
+	"shapes": [
+		{
+			"type": "ellipse",
+			"position": [48, 12],
+			"size": [32, 28],
+			"color": [0.85, 0.75, 0.65, 1.0],
+			"rotation": 0.0,
+			"layer": 10
+		},
+		{
+			"type": "triangle",
+			"position": [44, 2],
+			"size": [40, 20],
+			"color": [0.3, 0.2, 0.5, 1.0],
+			"rotation": 0.0,
+			"layer": 11
+		},
+		{
+			"type": "ellipse",
+			"position": [60, 0],
+			"size": [8, 8],
+			"color": [0.9, 0.8, 0.2, 1.0],
+			"rotation": 0.0,
+			"layer": 12
+		},
+		{
+			"type": "rectangle",
+			"position": [40, 36],
+			"size": [48, 52],
+			"color": [0.4, 0.25, 0.6, 1.0],
+			"rotation": 0.0,
+			"layer": 5
+		},
+		{
+			"type": "rectangle",
+			"position": [44, 40],
+			"size": [40, 12],
+			"color": [0.9, 0.75, 0.3, 1.0],
+			"rotation": 0.0,
+			"layer": 6
+		},
+		{
+			"type": "rectangle",
+			"position": [24, 40],
+			"size": [18, 28],
+			"color": [0.4, 0.25, 0.6, 1.0],
+			"rotation": 0.0,
+			"layer": 4
+		},
+		{
+			"type": "rectangle",
+			"position": [20, 64],
+			"size": [16, 28],
+			"color": [0.35, 0.2, 0.55, 1.0],
+			"rotation": 0.0,
+			"layer": 3
+		},
+		{
+			"type": "ellipse",
+			"position": [16, 88],
+			"size": [16, 16],
+			"color": [0.85, 0.75, 0.65, 1.0],
+			"rotation": 0.0,
+			"layer": 2
+		},
+		{
+			"type": "rectangle",
+			"position": [86, 40],
+			"size": [18, 28],
+			"color": [0.4, 0.25, 0.6, 1.0],
+			"rotation": 0.0,
+			"layer": 4
+		},
+		{
+			"type": "rectangle",
+			"position": [90, 64],
+			"size": [16, 28],
+			"color": [0.35, 0.2, 0.55, 1.0],
+			"rotation": 0.0,
+			"layer": 3
+		},
+		{
+			"type": "ellipse",
+			"position": [92, 88],
+			"size": [16, 16],
+			"color": [0.85, 0.75, 0.65, 1.0],
+			"rotation": 0.0,
+			"layer": 2
+		},
+		{
+			"type": "rectangle",
+			"position": [46, 84],
+			"size": [16, 24],
+			"color": [0.35, 0.2, 0.55, 1.0],
+			"rotation": 0.0,
+			"layer": 1
+		},
+		{
+			"type": "rectangle",
+			"position": [44, 104],
+			"size": [14, 20],
+			"color": [0.3, 0.15, 0.5, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		},
+		{
+			"type": "ellipse",
+			"position": [40, 120],
+			"size": [20, 10],
+			"color": [0.25, 0.15, 0.15, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		},
+		{
+			"type": "rectangle",
+			"position": [66, 84],
+			"size": [16, 24],
+			"color": [0.35, 0.2, 0.55, 1.0],
+			"rotation": 0.0,
+			"layer": 1
+		},
+		{
+			"type": "rectangle",
+			"position": [68, 104],
+			"size": [14, 20],
+			"color": [0.3, 0.15, 0.5, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		},
+		{
+			"type": "ellipse",
+			"position": [66, 120],
+			"size": [20, 10],
+			"color": [0.25, 0.15, 0.15, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		}
+	],
+	"body_parts": {
+		"Head": {
+			"name": "Head",
+			"shapes": [0, 1, 2],
+			"pivot": [64, 40],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"Torso": {
+			"name": "Torso",
+			"shapes": [3, 4],
+			"pivot": [64, 60],
+			"pivot_set": true,
+			"parent": ""
+		},
+		"L Upper Arm": {
+			"name": "L Upper Arm",
+			"shapes": [5],
+			"pivot": [33, 44],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"L Lower Arm": {
+			"name": "L Lower Arm",
+			"shapes": [6],
+			"pivot": [28, 68],
+			"pivot_set": true,
+			"parent": "L Upper Arm"
+		},
+		"L Hand": {
+			"name": "L Hand",
+			"shapes": [7],
+			"pivot": [24, 92],
+			"pivot_set": true,
+			"parent": "L Lower Arm"
+		},
+		"R Upper Arm": {
+			"name": "R Upper Arm",
+			"shapes": [8],
+			"pivot": [95, 44],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"R Lower Arm": {
+			"name": "R Lower Arm",
+			"shapes": [9],
+			"pivot": [98, 68],
+			"pivot_set": true,
+			"parent": "R Upper Arm"
+		},
+		"R Hand": {
+			"name": "R Hand",
+			"shapes": [10],
+			"pivot": [100, 92],
+			"pivot_set": true,
+			"parent": "R Lower Arm"
+		},
+		"L Upper Leg": {
+			"name": "L Upper Leg",
+			"shapes": [11],
+			"pivot": [54, 88],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"L Lower Leg": {
+			"name": "L Lower Leg",
+			"shapes": [12],
+			"pivot": [51, 108],
+			"pivot_set": true,
+			"parent": "L Upper Leg"
+		},
+		"L Foot": {
+			"name": "L Foot",
+			"shapes": [13],
+			"pivot": [50, 124],
+			"pivot_set": true,
+			"parent": "L Lower Leg"
+		},
+		"R Upper Leg": {
+			"name": "R Upper Leg",
+			"shapes": [14],
+			"pivot": [74, 88],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"R Lower Leg": {
+			"name": "R Lower Leg",
+			"shapes": [15],
+			"pivot": [75, 108],
+			"pivot_set": true,
+			"parent": "R Upper Leg"
+		},
+		"R Foot": {
+			"name": "R Foot",
+			"shapes": [16],
+			"pivot": [76, 124],
+			"pivot_set": true,
+			"parent": "R Lower Leg"
+		}
+	},
+	"poses": [
+		{
+			"pose_name": "Idle",
+			"rotations": {},
+			"description": "Standing"
+		},
+		{
+			"pose_name": "Cast_Prepare",
+			"rotations": {
+				"L Upper Arm": -60.0,
+				"L Lower Arm": -40.0,
+				"R Upper Arm": -60.0,
+				"R Lower Arm": -40.0,
+				"Torso": -5.0
+			},
+			"description": "Arms raised for spell"
+		},
+		{
+			"pose_name": "Cast_Release",
+			"rotations": {
+				"L Upper Arm": 30.0,
+				"L Lower Arm": 15.0,
+				"R Upper Arm": 30.0,
+				"R Lower Arm": 15.0,
+				"Torso": 10.0
+			},
+			"description": "Spell released"
+		},
+		{
+			"pose_name": "Staff_Walk_L",
+			"rotations": {
+				"R Upper Arm": -30.0,
+				"R Lower Arm": -60.0,
+				"L Upper Arm": 15.0,
+				"L Upper Leg": 20.0,
+				"R Upper Leg": -15.0
+			},
+			"description": "Walking with staff"
+		},
+		{
+			"pose_name": "Meditate",
+			"rotations": {
+				"L Upper Arm": -45.0,
+				"L Lower Arm": 90.0,
+				"R Upper Arm": -45.0,
+				"R Lower Arm": 90.0,
+				"L Upper Leg": -90.0,
+				"L Lower Leg": 90.0,
+				"R Upper Leg": -90.0,
+				"R Lower Leg": 90.0
+			},
+			"description": "Sitting cross-legged"
+		}
+	],
+	"animations": {},
+	"directions": ["south"]
+}

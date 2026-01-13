@@ -17,9 +17,12 @@ func _ready() -> void:
 	set_column_title(1, "Status")
 	set_column_expand(0, true)
 	set_column_expand(1, false)
-	set_column_custom_minimum_width(1, 80)
+	set_column_custom_minimum_width(1, 100)
 	hide_root = false
 	allow_rmb_select = true
+
+	# Larger font for readability
+	add_theme_font_size_override("font_size", 28)
 
 	item_selected.connect(_on_item_selected)
 	item_activated.connect(_on_item_activated)

@@ -1,0 +1,62 @@
+[gd_scene load_steps=2 format=3 uid="uid://camp_screen"]
+
+[ext_resource type="Script" path="res://scripts/hub/screens/camp_screen.gd" id="1_script"]
+
+[node name="CampScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="TopBar" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 60.0
+grow_horizontal = 2
+
+[node name="BackButton" type="Button" parent="TopBar"]
+custom_minimum_size = Vector2(120, 50)
+layout_mode = 2
+text = "< BACK"
+
+[node name="TitleLabel" type="Label" parent="TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "CAMP"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Spacer" type="Control" parent="TopBar"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+
+[node name="ContentPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 70.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PlaceholderLabel" type="Label" parent="ContentPanel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -30.0
+offset_right = 200.0
+offset_bottom = 30.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Camp and companion interaction coming in Task 3.4"
+horizontal_alignment = 1
+vertical_alignment = 1

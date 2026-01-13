@@ -36,8 +36,15 @@ const ZOOM_STEP := 0.1
 # Snapping configuration
 const SNAP_DISTANCE := 20
 
+# Performance thresholds
+const LARGE_TREE_THRESHOLD := 500  # Node count above which performance optimizations kick in
+const VERY_LARGE_TREE_THRESHOLD := 1000  # Node count above which warnings are shown
+
 # Node ID counter for generating unique IDs
 var _next_node_id: int = 1
+
+# Performance state
+var _is_large_tree: bool = false
 
 # Context menu
 var _context_menu: PopupMenu
@@ -625,6 +632,26 @@ func clear_canvas(clear_undo_history: bool = true) -> void:
 	canvas_changed.emit()
 
 
+func _sync_next_node_id() -> void:
+	"""Update _next_node_id to be higher than any existing node IDs to prevent collisions."""
+	var max_id := 0
+
+	for child in get_children():
+		if child is DialogueNodeScript:
+			# Extract numeric ID from node name (e.g., "Speaker_42" -> 42)
+			var node_name = child.name
+			var underscore_pos = node_name.rfind("_")
+			if underscore_pos > 0:
+				var id_str = node_name.substr(underscore_pos + 1)
+				if id_str.is_valid_int():
+					var id_num = id_str.to_int()
+					if id_num > max_id:
+						max_id = id_num
+
+	# Set _next_node_id to one higher than the max found
+	_next_node_id = max_id + 1
+
+
 func get_node_count() -> int:
 	"""Return the number of dialogue nodes on the canvas."""
 	var count = 0
@@ -674,6 +701,15 @@ func deserialize(data: Dictionary) -> void:
 	# Clear existing content (without undo tracking)
 	clear_canvas(false)
 
+	# Check tree size for performance handling
+	var node_count = data.nodes.size() if data.has("nodes") else 0
+	_is_large_tree = node_count >= LARGE_TREE_THRESHOLD
+
+	# Disable minimap for very large trees (performance optimization)
+	if node_count >= VERY_LARGE_TREE_THRESHOLD:
+		minimap_enabled = false
+		push_warning("DialogueEditor: Very large dialogue tree (%d nodes). Minimap disabled for performance." % node_count)
+
 	# Restore view settings
 	if data.has("scroll_offset"):
 		scroll_offset = Vector2(data.scroll_offset.x, data.scroll_offset.y)
@@ -703,10 +739,29 @@ func deserialize(data: Dictionary) -> void:
 			connect_node(from_name, conn.from_port, to_name, conn.to_port)
 			_track_connection_added(from_name, conn.from_port, to_name, conn.to_port)
 
+	# Update _next_node_id to avoid collisions with existing nodes
+	_sync_next_node_id()
+
 	# Clear undo history after loading a file
 	_undo_redo.clear_history()
 	undo_redo_changed.emit()
 	canvas_changed.emit()
+
+
+## Check if current tree is considered large (for performance decisions).
+func is_large_tree() -> bool:
+	return _is_large_tree
+
+
+## Get performance status for UI display.
+func get_performance_status() -> Dictionary:
+	var count = get_node_count()
+	return {
+		"node_count": count,
+		"is_large": count >= LARGE_TREE_THRESHOLD,
+		"is_very_large": count >= VERY_LARGE_TREE_THRESHOLD,
+		"minimap_enabled": minimap_enabled
+	}
 
 
 func get_zoom_percent() -> int:
@@ -1058,3 +1113,91 @@ func _layout_as_grid(nodes: Array[GraphNode]) -> void:
 	_undo_redo.commit_action(false)
 	undo_redo_changed.emit()
 	canvas_changed.emit()
+
+
+# =============================================================================
+# SELECTION OPERATIONS
+# =============================================================================
+
+## Get all currently selected nodes.
+func get_selected_nodes() -> Array[GraphNode]:
+	var selected: Array[GraphNode] = []
+	for child in get_children():
+		if child is DialogueNodeScript and child.selected:
+			selected.append(child)
+	return selected
+
+
+## Select all dialogue nodes on the canvas.
+func select_all_nodes() -> void:
+	for child in get_children():
+		if child is DialogueNodeScript:
+			child.selected = true
+
+
+## Deselect all dialogue nodes on the canvas.
+func deselect_all_nodes() -> void:
+	for child in get_children():
+		if child is DialogueNodeScript:
+			child.selected = false
+	dialogue_node_deselected.emit()
+
+
+## Delete all selected nodes.
+func delete_selected_nodes() -> void:
+	var selected = get_selected_nodes()
+	if selected.is_empty():
+		return
+
+	var node_names: Array[StringName] = []
+	for node in selected:
+		node_names.append(StringName(node.name))
+
+	# Trigger the delete request handler
+	_on_delete_nodes_request(node_names)
+
+
+## Duplicate all selected nodes with offset.
+func duplicate_selected_nodes() -> void:
+	var selected = get_selected_nodes()
+	if selected.is_empty():
+		return
+
+	_ensure_undo_redo()
+	_undo_redo.create_action("Duplicate %d Node(s)" % selected.size() if selected.size() > 1 else "Duplicate Node")
+
+	var new_nodes: Array[GraphNode] = []
+	var offset := Vector2(50, 50)  # Offset for duplicated nodes
+
+	# First, create all duplicated nodes
+	for node in selected:
+		var node_type = node.node_type
+		var new_position = node.position_offset + offset
+		var node_data = node.serialize()
+
+		# Create new node (internal, no undo tracking)
+		var new_node = _create_dialogue_node(node_type, new_position, false)
+		if new_node:
+			# Copy properties from original (except ID and position)
+			var original_id = node_data.get("id", "")
+			node_data["id"] = new_node.name  # Use new ID
+			node_data["position_x"] = new_position.x
+			node_data["position_y"] = new_position.y
+			new_node.deserialize(node_data)
+			new_nodes.append(new_node)
+
+			# Add undo/redo actions
+			_undo_redo.add_do_reference(new_node)
+			_undo_redo.add_undo_method(self._do_delete_node.bind(new_node.name))
+
+	_undo_redo.commit_action(false)  # Nodes already created
+	undo_redo_changed.emit()
+
+	# Deselect originals, select duplicates
+	for node in selected:
+		node.selected = false
+	for node in new_nodes:
+		node.selected = true
+
+	canvas_changed.emit()
+	print("DialogueCanvas: Duplicated %d node(s)" % new_nodes.size())

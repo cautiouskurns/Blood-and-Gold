@@ -599,69 +599,73 @@ graph LR
 
 ---
 
-### Feature 3.2: Keyboard Shortcuts
+### Feature 3.2: Keyboard Shortcuts ✅
 
 **Description:** Comprehensive keyboard shortcuts for power users.
 
 **Dependencies:** Phase 2 complete
 
 **Implementation Tasks:**
-- [ ] Implement all shortcuts from spec:
-  - [ ] Ctrl+N - New
-  - [ ] Ctrl+O - Open
-  - [ ] Ctrl+S - Save
-  - [ ] Ctrl+Shift+S - Save As
-  - [ ] Ctrl+E - Export
-  - [ ] Ctrl+Z - Undo
-  - [ ] Ctrl+Shift+Z - Redo
-  - [ ] F5 - Test dialogue
-  - [ ] Delete - Delete selected nodes
-  - [ ] Ctrl+D - Duplicate selected
-  - [ ] Ctrl+A - Select all
-  - [ ] Escape - Deselect all
-  - [ ] F3 - Find next
-  - [ ] 1-5 - Quick add node types
-- [ ] Add Help menu with shortcut reference
-- [ ] Allow shortcut customization (future)
+- [x] Implement all shortcuts from spec:
+  - [x] Ctrl+N - New
+  - [x] Ctrl+O - Open
+  - [x] Ctrl+S - Save
+  - [x] Ctrl+Shift+S - Save As
+  - [x] Ctrl+E - Export
+  - [x] Ctrl+Z - Undo
+  - [x] Ctrl+Shift+Z - Redo
+  - [x] F5 - Test dialogue
+  - [x] Delete - Delete selected nodes
+  - [x] Ctrl+D - Duplicate selected
+  - [x] Ctrl+A - Select all
+  - [x] Escape - Deselect all
+  - [x] F3 - Find next
+  - [x] 1-5 - Quick add node types
+- [x] Add Help dialog with shortcut reference (F1 or Help button)
+- [ ] Allow shortcut customization (future - backlog)
 
 **Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/main_panel.gd`
-- `addons/dialogue_editor/scripts/shortcut_manager.gd`
+- `addons/dialogue_editor/scripts/main_panel.gd` ✓
+- `addons/dialogue_editor/scripts/dialogue_canvas.gd` ✓ (selection/duplication methods)
+- `addons/dialogue_editor/scenes/main_panel.tscn` ✓ (Help button)
 
 **Success Criteria:**
-- [ ] All listed shortcuts work
-- [ ] No conflicts with Godot shortcuts
-- [ ] Help menu shows shortcut list
+- [x] All listed shortcuts work
+- [x] No conflicts with Godot shortcuts
+- [x] Help dialog shows shortcut list
 
 ---
 
-### Feature 3.3: Error Handling & Edge Cases
+### Feature 3.3: Error Handling & Edge Cases ✅
 
 **Description:** Graceful handling of errors and edge cases.
 
 **Dependencies:** Phase 2 complete
 
 **Implementation Tasks:**
-- [ ] Handle corrupted .dtree files (show error, don't crash)
-- [ ] Handle missing referenced files (portraits, audio)
-- [ ] Handle very long dialogue text (truncate display, not data)
-- [ ] Handle 500+ node trees (performance)
-- [ ] Handle circular references in Branch nodes
-- [ ] Empty tree handling (new file state)
-- [ ] Handle special characters in text
-- [ ] Handle node ID collisions on paste
-- [ ] Add error notification system
+- [x] Handle corrupted .dtree files (show error, don't crash)
+- [x] Handle missing referenced files (portraits, audio)
+- [x] Handle very long dialogue text (truncate display, not data)
+- [x] Handle 500+ node trees (performance)
+- [x] Handle circular references in Branch nodes
+- [x] Empty tree handling (new file state)
+- [x] Handle special characters in text
+- [x] Handle node ID collisions on paste
+- [x] Add error notification system
 
 **Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/error_handler.gd`
-- Various existing scripts (add try/catch, validation)
+- `addons/dialogue_editor/scripts/error_handler.gd` ✓
+- `addons/dialogue_editor/scripts/main_panel.gd` ✓ (notifications, file loading validation)
+- `addons/dialogue_editor/scripts/dialogue_validator.gd` ✓ (circular reference detection)
+- `addons/dialogue_editor/scripts/dialogue_canvas.gd` ✓ (ID collision handling, performance)
+- `addons/dialogue_editor/scripts/nodes/speaker_node.gd` ✓ (portrait placeholders)
 
 **Success Criteria:**
-- [ ] Corrupted files show error message
-- [ ] Missing files show placeholder
-- [ ] 500+ nodes perform smoothly
-- [ ] No crashes from user input
-- [ ] Circular references detected
+- [x] Corrupted files show error message
+- [x] Missing files show placeholder
+- [x] 500+ nodes perform smoothly
+- [x] No crashes from user input
+- [x] Circular references detected
 
 ---
 
@@ -757,8 +761,8 @@ Ideas that might be valuable but aren't committed:
 
 ### Phase 3 Progress
 - [x] Feature 3.1: Property Panel ✅
-- [ ] Feature 3.2: Keyboard Shortcuts
-- [ ] Feature 3.3: Error Handling
+- [x] Feature 3.2: Keyboard Shortcuts ✅
+- [x] Feature 3.3: Error Handling ✅
 - [ ] Feature 3.4: Documentation
 
 ---

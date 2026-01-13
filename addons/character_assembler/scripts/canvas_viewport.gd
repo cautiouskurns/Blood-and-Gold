@@ -57,6 +57,12 @@ var pivot_points: Dictionary = {}  # part_name -> Vector2
 var highlighted_part: String = ""  # Body part to highlight shapes for
 var highlighted_shapes: Array[int] = []  # Shape indices to highlight
 
+# Pose preview state
+var _pose_preview_enabled: bool = false
+var _pose_preview_shapes: Array = []  # Transformed shapes for pose preview
+var _current_preview_pose: Pose = null
+var _current_preview_body_parts: Dictionary = {}
+
 # Interaction state
 var _is_drawing: bool = false
 var _is_dragging: bool = false
@@ -79,6 +85,7 @@ const HANDLE_BORDER := Color(0.0, 0.0, 0.0, 1.0)
 const PIVOT_COLOR := Color(1.0, 0.3, 0.3, 1.0)
 const PIVOT_SIZE := 8.0
 const HIGHLIGHT_COLOR := Color(1.0, 0.8, 0.2, 0.6)
+const POSE_PREVIEW_TINT := Color(0.9, 0.95, 1.0, 1.0)  # Slight blue tint for pose preview
 
 
 func _ready() -> void:
@@ -108,10 +115,15 @@ func _draw() -> void:
 	if not highlighted_part.is_empty():
 		_draw_highlighted_shapes(canvas_rect)
 
-	# Shapes (sorted by layer)
-	var sorted_shapes = _get_sorted_shapes()
-	for shape_data in sorted_shapes:
-		_draw_shape(shape_data.shape, shape_data.index, canvas_rect)
+	# Shapes (sorted by layer) - use pose preview shapes if enabled
+	if _pose_preview_enabled and not _pose_preview_shapes.is_empty():
+		var sorted_preview = _get_sorted_preview_shapes()
+		for shape_data in sorted_preview:
+			_draw_shape(shape_data.shape, shape_data.index, canvas_rect, true)
+	else:
+		var sorted_shapes = _get_sorted_shapes()
+		for shape_data in sorted_shapes:
+			_draw_shape(shape_data.shape, shape_data.index, canvas_rect, false)
 
 	# Drawing preview
 	if _is_drawing:
@@ -153,13 +165,17 @@ func _draw_grid(canvas_rect: Rect2) -> void:
 			draw_line(Vector2(canvas_rect.position.x, y), Vector2(canvas_rect.end.x, y), GRID_COLOR_MAJOR)
 
 
-func _draw_shape(shape: Dictionary, index: int, canvas_rect: Rect2) -> void:
+func _draw_shape(shape: Dictionary, index: int, canvas_rect: Rect2, is_pose_preview: bool = false) -> void:
 	var pos = _canvas_to_screen(Vector2(shape.position[0], shape.position[1]), canvas_rect)
 	var shape_size = Vector2(shape.size[0], shape.size[1]) * (canvas_rect.size.x / canvas_size)
 	var color = Color(shape.color[0], shape.color[1], shape.color[2], shape.color[3])
 	var rotation = shape.get("rotation", 0.0)
 
-	var is_selected = index in selected_indices
+	# Apply pose preview tint if in preview mode
+	if is_pose_preview:
+		color = color * POSE_PREVIEW_TINT
+
+	var is_selected = index in selected_indices and not is_pose_preview
 
 	match shape.type:
 		"rectangle":
@@ -491,15 +507,21 @@ func _finish_drawing(canvas_pos: Vector2) -> void:
 
 
 func _update_dragging(canvas_pos: Vector2) -> void:
-	var delta = _snap_position(canvas_pos) - _snap_position(_drag_start)
+	var snapped_pos = _snap_position(canvas_pos)
+	var snapped_start = _snap_position(_drag_start)
+	var delta = snapped_pos - snapped_start
+
+	# Only move if there's actual movement
+	if delta == Vector2.ZERO:
+		return
 
 	for index in selected_indices:
 		if index >= 0 and index < shapes.size():
 			var shape = shapes[index]
-			var new_pos = Vector2(shape.position[0], shape.position[1]) + delta - _drag_offset
+			var old_pos = Vector2(shape.position[0], shape.position[1])
+			var new_pos = old_pos + delta
 			shape.position = [new_pos.x, new_pos.y]
 
-	_drag_offset = delta - _drag_offset
 	_drag_start = canvas_pos
 	canvas_changed.emit()
 
@@ -589,6 +611,14 @@ func _get_sorted_shapes() -> Array:
 	var result = []
 	for i in range(shapes.size()):
 		result.append({"shape": shapes[i], "index": i})
+	result.sort_custom(func(a, b): return a.shape.get("layer", 0) < b.shape.get("layer", 0))
+	return result
+
+
+func _get_sorted_preview_shapes() -> Array:
+	var result = []
+	for i in range(_pose_preview_shapes.size()):
+		result.append({"shape": _pose_preview_shapes[i], "index": i})
 	result.sort_custom(func(a, b): return a.shape.get("layer", 0) < b.shape.get("layer", 0))
 	return result
 
@@ -838,3 +868,46 @@ func get_shapes_at_indices(indices: Array[int]) -> Array:
 		if idx >= 0 and idx < shapes.size():
 			result.append(shapes[idx])
 	return result
+
+
+# =============================================================================
+# POSE PREVIEW API
+# =============================================================================
+
+## Set pose preview mode - transforms shapes based on pose rotations.
+## pose: The Pose resource containing rotation data for body parts.
+## body_parts: Dictionary of body part name -> BodyPart objects.
+func set_pose_preview(pose: Pose, body_parts: Dictionary) -> void:
+	if pose == null:
+		clear_pose_preview()
+		return
+
+	_current_preview_pose = pose
+	_current_preview_body_parts = body_parts
+
+	# PoseRenderer expects BodyPart objects directly
+	# Use PoseRenderer to transform shapes
+	_pose_preview_shapes = PoseRenderer.apply_pose(shapes, body_parts, pose, canvas_size)
+	_pose_preview_enabled = true
+
+	queue_redraw()
+
+
+## Clear pose preview and return to normal shape display.
+func clear_pose_preview() -> void:
+	_pose_preview_enabled = false
+	_pose_preview_shapes.clear()
+	_current_preview_pose = null
+	_current_preview_body_parts.clear()
+	queue_redraw()
+
+
+## Check if pose preview is currently active.
+func is_pose_preview_active() -> bool:
+	return _pose_preview_enabled
+
+
+## Update pose preview with current pose (call when pose rotations change).
+func update_pose_preview() -> void:
+	if _pose_preview_enabled and _current_preview_pose:
+		set_pose_preview(_current_preview_pose, _current_preview_body_parts)

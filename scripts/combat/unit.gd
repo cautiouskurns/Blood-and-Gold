@@ -916,6 +916,13 @@ func _ready() -> void:
 		max_hp, get_defense(), get_attack_bonus(), movement_range
 	])
 
+func _exit_tree() -> void:
+	## Cleanup when unit is removed from scene tree (e.g., map change)
+	# Clean up nameplate which is parented to root
+	if _nameplate and is_instance_valid(_nameplate):
+		_nameplate.queue_free()
+		_nameplate = null
+
 func _update_visual() -> void:
 	## Update sprite and label based on unit type
 	_generate_sprite_texture()

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="Pose" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/character_assembler/scripts/pose.gd" id="1_pose"]
+
+[resource]
+script = ExtResource("1_pose")
+pose_name = "Death"
+rotations = {
+"Torso": 90.0,
+"Head": 45.0,
+"L Upper Arm": 60.0,
+"L Lower Arm": 30.0,
+"R Upper Arm": 45.0,
+"R Lower Arm": 20.0,
+"L Upper Leg": 30.0,
+"R Upper Leg": 15.0
+}
+description = "Death/fallen pose"

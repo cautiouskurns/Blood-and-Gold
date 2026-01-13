@@ -1,0 +1,141 @@
+[gd_scene load_steps=2 format=3 uid="uid://hub_scene"]
+
+[ext_resource type="Script" path="res://scripts/hub/hub.gd" id="1_hub"]
+
+[node name="Hub" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_hub")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.12, 0.14, 0.18, 1)
+
+[node name="TopBar" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 70.0
+grow_horizontal = 2
+
+[node name="CompanyName" type="Label" parent="TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "The Iron Company"
+horizontal_alignment = 0
+vertical_alignment = 1
+
+[node name="GoldDisplay" type="HBoxContainer" parent="TopBar"]
+layout_mode = 2
+
+[node name="GoldIcon" type="Label" parent="TopBar/GoldDisplay"]
+layout_mode = 2
+text = "GOLD:"
+vertical_alignment = 1
+
+[node name="GoldAmount" type="Label" parent="TopBar/GoldDisplay"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "500"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="MainHubView" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CenterContent" type="VBoxContainer" parent="MainHubView"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleLabel" type="Label" parent="MainHubView/CenterContent"]
+layout_mode = 2
+text = "COMPANY HEADQUARTERS"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="MainHubView/CenterContent"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+
+[node name="SubtitleLabel" type="Label" parent="MainHubView/CenterContent"]
+layout_mode = 2
+text = "Select a destination"
+horizontal_alignment = 1
+
+[node name="NavigationPanel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_top = -280.0
+offset_right = 300.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="NavigationPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ContractsButton" type="Button" parent="NavigationPanel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "CONTRACTS"
+
+[node name="BarracksButton" type="Button" parent="NavigationPanel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "BARRACKS"
+
+[node name="MerchantButton" type="Button" parent="NavigationPanel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "MERCHANT"
+
+[node name="CampButton" type="Button" parent="NavigationPanel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "CAMP"
+
+[node name="CombatButton" type="Button" parent="NavigationPanel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "ENTER COMBAT (Test)"
+
+[node name="SubScreenContainer" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2

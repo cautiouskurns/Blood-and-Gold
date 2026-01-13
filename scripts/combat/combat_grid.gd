@@ -9,8 +9,8 @@ signal tile_clicked(coords: Vector2i)
 signal tile_hovered(coords: Vector2i)
 
 # ===== CONSTANTS =====
-const GRID_WIDTH: int = 12
-const GRID_HEIGHT: int = 12
+const GRID_WIDTH: int = 14  # Task 2.17: Increased from 12 to support Ruined Fort map
+const GRID_HEIGHT: int = 14  # Task 2.17: Increased from 12 to support Ruined Fort map
 const TILE_SIZE: int = 64
 
 # Tile type identifiers
@@ -19,10 +19,15 @@ const TILE_OBSTACLE: int = 1
 const TILE_COVER: int = 2           # Task 2.12: Cover tiles (+2 Defense)
 const TILE_HIGH_GROUND: int = 3     # Task 2.12: High ground tiles (+2 ranged attack)
 const TILE_COVER_HIGH_GROUND: int = 4  # Task 2.12: Combined (both bonuses)
+const TILE_DIFFICULT: int = 5       # Task 2.16: Difficult terrain (stream, mud - double movement cost)
+const TILE_WALL: int = 6            # Task 2.17: Wall (blocks movement AND line of sight)
 
 # Terrain bonus constants (Task 2.12)
 const COVER_DEFENSE_BONUS: int = 2
 const HIGH_GROUND_ATTACK_BONUS: int = 2
+
+# Difficult terrain constants (Task 2.16)
+const DIFFICULT_TERRAIN_COST: int = 2  # Movement cost multiplier
 
 # Colors from spec
 const COLOR_WALKABLE: Color = Color("#4a6741")
@@ -38,6 +43,14 @@ const COLOR_HIGH_GROUND: Color = Color("#8b7355")     # Tan/brown
 const COLOR_HIGH_GROUND_BORDER: Color = Color("#6b5345")
 const COLOR_COVER_HIGH_GROUND: Color = Color("#5d6355")  # Mixed green-brown
 const COLOR_COVER_HIGH_GROUND_BORDER: Color = Color("#4d5345")
+
+# Difficult terrain colors (Task 2.16: stream/water)
+const COLOR_DIFFICULT: Color = Color("#3498db")       # Blue for water
+const COLOR_DIFFICULT_BORDER: Color = Color("#2980b9") # Darker blue border
+
+# Wall colors (Task 2.17: blocks movement and LoS)
+const COLOR_WALL: Color = Color("#4a4a4a")            # Dark gray stone
+const COLOR_WALL_BORDER: Color = Color("#333333")     # Very dark gray border
 
 # Movement overlay colors (Task 1.5)
 const COLOR_VALID_MOVE: Color = Color("#27ae60", 0.4)  # 40% opacity green
@@ -95,12 +108,14 @@ func _create_tileset() -> void:
 	source.texture = _create_tile_atlas_texture()
 	source.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
 
-	# Add tiles to source (Task 2.12: expanded to 5 tile types)
+	# Add tiles to source (Task 2.17: expanded to 7 tile types)
 	source.create_tile(Vector2i(0, 0))  # Walkable
 	source.create_tile(Vector2i(1, 0))  # Obstacle
 	source.create_tile(Vector2i(2, 0))  # Cover
 	source.create_tile(Vector2i(3, 0))  # High Ground
 	source.create_tile(Vector2i(4, 0))  # Cover + High Ground
+	source.create_tile(Vector2i(5, 0))  # Difficult terrain (stream)
+	source.create_tile(Vector2i(6, 0))  # Wall (blocks movement and LoS)
 
 	# Add source to tileset
 	_tile_set.add_source(source, 0)
@@ -109,8 +124,8 @@ func _create_tileset() -> void:
 	tile_map.tile_set = _tile_set
 
 func _create_tile_atlas_texture() -> ImageTexture:
-	## Create an atlas texture containing all tile types (Task 2.12: expanded to 5)
-	var atlas_width = TILE_SIZE * 5  # 5 tiles wide
+	## Create an atlas texture containing all tile types (Task 2.17: expanded to 7)
+	var atlas_width = TILE_SIZE * 7  # 7 tiles wide
 	var atlas_height = TILE_SIZE
 
 	var image = Image.create(atlas_width, atlas_height, false, Image.FORMAT_RGBA8)
@@ -129,6 +144,12 @@ func _create_tile_atlas_texture() -> ImageTexture:
 
 	# Draw cover + high ground tile (4) - Task 2.12
 	_draw_tile_with_icon(image, TILE_SIZE * 4, COLOR_COVER_HIGH_GROUND, COLOR_COVER_HIGH_GROUND_BORDER, "both")
+
+	# Draw difficult terrain tile (5) - Task 2.16: stream/water
+	_draw_tile_with_icon(image, TILE_SIZE * 5, COLOR_DIFFICULT, COLOR_DIFFICULT_BORDER, "water")
+
+	# Draw wall tile (6) - Task 2.17: blocks movement and LoS
+	_draw_tile_with_icon(image, TILE_SIZE * 6, COLOR_WALL, COLOR_WALL_BORDER, "wall")
 
 	var texture = ImageTexture.create_from_image(image)
 	return texture
@@ -162,6 +183,12 @@ func _draw_tile_with_icon(image: Image, x_offset: int, fill_color: Color, border
 			# Draw both icons (shield smaller, arrow smaller)
 			_draw_shield_icon(image, x_offset, center_x - 10, center_y, icon_color, 0.7)
 			_draw_arrow_icon(image, x_offset, center_x + 10, center_y, icon_color, 0.7)
+		"water":
+			# Draw wave icon for difficult terrain (Task 2.16)
+			_draw_wave_icon(image, x_offset, center_x, center_y, icon_color)
+		"wall":
+			# Draw brick pattern icon for walls (Task 2.17)
+			_draw_brick_icon(image, x_offset, center_x, center_y, icon_color)
 
 func _draw_shield_icon(image: Image, x_offset: int, cx: int, cy: int, color: Color, scale: float = 1.0) -> void:
 	## Draw a simple shield icon (rounded top, pointed bottom)
@@ -223,6 +250,54 @@ func _draw_arrow_icon(image: Image, x_offset: int, cx: int, cy: int, color: Colo
 
 			if in_arrow:
 				image.set_pixel(px, py, color)
+
+func _draw_wave_icon(image: Image, x_offset: int, cx: int, cy: int, color: Color) -> void:
+	## Draw a wave/water icon (Task 2.16: difficult terrain indicator)
+	# Draw three wave lines
+	for wave in range(3):
+		var wave_y = cy - 8 + wave * 8
+		for x in range(-16, 17):
+			var px = x_offset + cx + x
+			if px < x_offset or px >= x_offset + TILE_SIZE:
+				continue
+
+			# Create sine wave pattern
+			var wave_offset = sin((x + wave * 10) * 0.4) * 3
+			var py = int(wave_y + wave_offset)
+
+			if py >= 0 and py < TILE_SIZE:
+				image.set_pixel(px, py, color)
+				# Make lines thicker
+				if py + 1 < TILE_SIZE:
+					image.set_pixel(px, py + 1, color)
+
+func _draw_brick_icon(image: Image, x_offset: int, cx: int, cy: int, color: Color) -> void:
+	## Draw a brick pattern icon (Task 2.17: wall indicator)
+	# Draw 3 rows of bricks
+	var brick_width = 12
+	var brick_height = 6
+	var mortar_width = 2
+
+	for row in range(3):
+		var row_y = cy - 10 + row * (brick_height + mortar_width)
+		# Offset alternate rows
+		var row_offset = 0 if row % 2 == 0 else brick_width / 2 + mortar_width / 2
+
+		for brick in range(3):
+			var brick_x = cx - brick_width - mortar_width + brick * (brick_width + mortar_width) + row_offset
+
+			# Draw brick rectangle
+			for bx in range(brick_width):
+				for by in range(brick_height):
+					var px = x_offset + brick_x + bx
+					var py = row_y + by
+
+					if px >= x_offset and px < x_offset + TILE_SIZE:
+						if py >= 0 and py < TILE_SIZE:
+							# Draw outline
+							var is_outline = (bx == 0 or bx == brick_width - 1 or by == 0 or by == brick_height - 1)
+							if is_outline:
+								image.set_pixel(px, py, color)
 
 func _center_grid() -> void:
 	## Center the grid in the viewport
@@ -298,13 +373,22 @@ func get_tile_type(coords: Vector2i) -> int:
 	return _grid_data[coords.x][coords.y]
 
 func is_walkable(coords: Vector2i) -> bool:
-	## Check if a tile is walkable (includes cover and high ground - Task 2.12)
+	## Check if a tile is walkable (includes cover, high ground, and difficult terrain)
 	var tile_type = get_tile_type(coords)
-	return tile_type == TILE_WALKABLE or tile_type == TILE_COVER or tile_type == TILE_HIGH_GROUND or tile_type == TILE_COVER_HIGH_GROUND
+	return tile_type == TILE_WALKABLE or tile_type == TILE_COVER or tile_type == TILE_HIGH_GROUND or tile_type == TILE_COVER_HIGH_GROUND or tile_type == TILE_DIFFICULT
 
 func is_obstacle(coords: Vector2i) -> bool:
 	## Check if a tile is an obstacle
 	return get_tile_type(coords) == TILE_OBSTACLE
+
+func is_wall(coords: Vector2i) -> bool:
+	## Check if a tile is a wall (blocks movement AND line of sight) - Task 2.17
+	return get_tile_type(coords) == TILE_WALL
+
+func blocks_los(coords: Vector2i) -> bool:
+	## Check if a tile blocks line of sight (obstacles and walls) - Task 2.17
+	var tile_type = get_tile_type(coords)
+	return tile_type == TILE_OBSTACLE or tile_type == TILE_WALL
 
 # ===== TERRAIN BONUS METHODS (Task 2.12) =====
 func is_cover(coords: Vector2i) -> bool:
@@ -336,9 +420,26 @@ func get_terrain_info(coords: Vector2i) -> Dictionary:
 	return {
 		"has_cover": is_cover(coords),
 		"has_high_ground": is_high_ground(coords),
+		"has_difficult_terrain": is_difficult_terrain(coords),
+		"has_wall": is_wall(coords),  # Task 2.17
 		"cover_bonus": get_cover_bonus(coords),
-		"high_ground_bonus": get_high_ground_bonus(coords)
+		"high_ground_bonus": get_high_ground_bonus(coords),
+		"movement_cost": get_movement_cost(coords),
+		"blocks_los": blocks_los(coords)  # Task 2.17
 	}
+
+# ===== DIFFICULT TERRAIN METHODS (Task 2.16) =====
+func is_difficult_terrain(coords: Vector2i) -> bool:
+	## Check if a tile is difficult terrain (stream, mud - costs double movement)
+	var tile_type = get_tile_type(coords)
+	return tile_type == TILE_DIFFICULT
+
+func get_movement_cost(coords: Vector2i) -> int:
+	## Get the movement cost for entering a tile
+	## Returns DIFFICULT_TERRAIN_COST (2) for difficult terrain, 1 otherwise
+	if is_difficult_terrain(coords):
+		return DIFFICULT_TERRAIN_COST
+	return 1
 
 func is_valid_position(coords: Vector2i) -> bool:
 	## Check if coordinates are within grid bounds (Task 2.5: Shadowstep)
@@ -394,11 +495,63 @@ func set_tile_cover_high_ground(coords: Vector2i) -> void:
 	## Set a tile as both cover and high ground - Task 2.12
 	_set_tile(coords, TILE_COVER_HIGH_GROUND)
 
+func set_tile_difficult(coords: Vector2i) -> void:
+	## Set a tile as difficult terrain (stream, mud) - Task 2.16
+	_set_tile(coords, TILE_DIFFICULT)
+
+func set_tile_wall(coords: Vector2i) -> void:
+	## Set a tile as a wall (blocks movement and LoS) - Task 2.17
+	_set_tile(coords, TILE_WALL)
+
 func clear_grid() -> void:
 	## Clear all tiles to walkable
 	for x in range(GRID_WIDTH):
 		for y in range(GRID_HEIGHT):
 			_set_tile(Vector2i(x, y), TILE_WALKABLE)
+
+# ===== MAP LOADING (Task 2.16) =====
+func load_map(map_data: Dictionary) -> void:
+	## Load terrain from a map data dictionary
+	## Expected format: { "name": String, "width": int, "height": int, "tiles": Array[Array[int]] }
+	clear_grid()
+
+	var map_name = map_data.get("name", "Unknown Map")
+	var tiles = map_data.get("tiles", [])
+
+	# Load tiles from map data (y = row index, x = column index)
+	for y in range(tiles.size()):
+		var row = tiles[y]
+		for x in range(row.size()):
+			if x < GRID_WIDTH and y < GRID_HEIGHT:
+				var tile_type = row[x]
+				_set_tile(Vector2i(x, y), tile_type)
+
+	# Update pathfinding with new terrain
+	if pathfinding:
+		for x in range(GRID_WIDTH):
+			for y in range(GRID_HEIGHT):
+				var coords = Vector2i(x, y)
+				pathfinding.set_tile_walkable(coords, is_walkable(coords))
+
+	print("[CombatGrid] Loaded map: %s" % map_name)
+
+func get_spawn_points_party(map_data: Dictionary) -> Array[Vector2i]:
+	## Get party spawn points from map data
+	var spawns: Array[Vector2i] = []
+	var raw_spawns = map_data.get("party_spawns", [])
+	for spawn in raw_spawns:
+		if spawn is Vector2i:
+			spawns.append(spawn)
+	return spawns
+
+func get_spawn_points_enemy(map_data: Dictionary) -> Array[Vector2i]:
+	## Get enemy spawn points from map data
+	var spawns: Array[Vector2i] = []
+	var raw_spawns = map_data.get("enemy_spawns", [])
+	for spawn in raw_spawns:
+		if spawn is Vector2i:
+			spawns.append(spawn)
+	return spawns
 
 # ===== MOVEMENT OVERLAY (Task 1.5) =====
 func _setup_movement_overlay() -> void:
@@ -421,6 +574,9 @@ func _setup_pathfinding() -> void:
 	## Initialize pathfinding with grid data
 	pathfinding = Pathfinding.new()
 	pathfinding.initialize(GRID_WIDTH, GRID_HEIGHT)
+
+	# Task 2.16: Set combat grid reference for terrain cost queries
+	pathfinding.set_combat_grid(self)
 
 	# Mark obstacles as non-walkable
 	for x in range(GRID_WIDTH):
@@ -557,3 +713,102 @@ func is_in_attack_range(coords: Vector2i) -> bool:
 func get_attack_range_tiles() -> Array[Vector2i]:
 	## Get the current set of valid attack range tiles
 	return _attack_range_tiles
+
+# ===== MAP DATA (Task 2.17) =====
+# Ruined Fort map - 14x14, walls block movement and LoS, rubble is difficult terrain
+# Tile types: 0=walkable, 2=cover, 3=high_ground, 5=difficult, 6=wall
+const RUINED_FORT_DATA: Dictionary = {
+	"name": "Ruined Fort",
+	"width": 14,
+	"height": 14,
+	"tiles": [
+		# Row 0 (north - outside fort, enemy spawn area)
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		# Row 1 (north wall with gaps)
+		[0, 0, 0, 6, 6, 6, 0, 0, 6, 6, 6, 0, 0, 0],
+		# Row 2 (rubble in gaps)
+		[0, 0, 6, 0, 0, 0, 5, 5, 0, 0, 0, 6, 0, 0],
+		# Row 3
+		[0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0],
+		# Row 4 (tower row 1 - high ground, and cover)
+		[0, 6, 0, 0, 3, 3, 0, 0, 0, 2, 2, 0, 6, 0],
+		# Row 5 (tower row 2)
+		[0, 6, 0, 0, 3, 3, 0, 0, 0, 2, 0, 0, 6, 0],
+		# Row 6
+		[0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0],
+		# Row 7
+		[0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0],
+		# Row 8 (interior cover and rubble)
+		[0, 6, 0, 0, 2, 0, 0, 0, 0, 5, 0, 0, 6, 0],
+		# Row 9
+		[0, 6, 0, 0, 2, 2, 0, 0, 5, 5, 0, 0, 6, 0],
+		# Row 10 (rubble in south gap)
+		[0, 0, 6, 0, 0, 0, 5, 5, 0, 0, 0, 6, 0, 0],
+		# Row 11 (south wall with gaps)
+		[0, 0, 0, 6, 6, 6, 0, 0, 6, 6, 6, 0, 0, 0],
+		# Row 12 (south - outside fort)
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		# Row 13 (party spawn area)
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	],
+	"party_spawns": [
+		Vector2i(0, 13), Vector2i(1, 13), Vector2i(2, 13),
+		Vector2i(11, 13), Vector2i(12, 13), Vector2i(13, 13)
+	],
+	"enemy_spawns": [
+		Vector2i(0, 0), Vector2i(1, 0),    # Outside north-west
+		Vector2i(12, 0), Vector2i(13, 0),  # Outside north-east
+		Vector2i(4, 4), Vector2i(5, 5),    # On tower (high ground)
+	]
+}
+
+func get_ruined_fort_data() -> Dictionary:
+	## Get the Ruined Fort map data for loading
+	return RUINED_FORT_DATA
+
+# Open Field map - 12x12, minimal cover, wide open for flanking (Task 2.18)
+# Tile types: 0=walkable, 2=cover
+# Design intent: Sparse terrain IS the design - forces mobility-focused tactics
+const OPEN_FIELD_DATA: Dictionary = {
+	"name": "Open Field",
+	"width": 12,
+	"height": 12,
+	"tiles": [
+		# Row 0 (north - enemy spawn area)
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		# Row 1
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		# Row 2
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		# Row 3 (rock at 2,3)
+		[0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		# Row 4
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		# Row 5 (rock at 9,5)
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0],
+		# Row 6
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		# Row 7 (rock at 1,7)
+		[0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		# Row 8
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		# Row 9 (rock at 8,9)
+		[0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0],
+		# Row 10
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		# Row 11 (south - party spawn area)
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	],
+	"party_spawns": [
+		Vector2i(0, 11), Vector2i(1, 11), Vector2i(2, 11),
+		Vector2i(8, 11), Vector2i(9, 11), Vector2i(10, 11)
+	],
+	"enemy_spawns": [
+		Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0),
+		Vector2i(8, 0), Vector2i(9, 0), Vector2i(10, 0)
+	]
+}
+
+func get_open_field_data() -> Dictionary:
+	## Get the Open Field map data for loading
+	return OPEN_FIELD_DATA

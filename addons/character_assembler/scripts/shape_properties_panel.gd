@@ -28,7 +28,7 @@ func _setup_ui() -> void:
 	# Header
 	var header = Label.new()
 	header.text = "SHAPE PROPERTIES"
-	header.add_theme_font_size_override("font_size", 14)
+	header.add_theme_font_size_override("font_size", 32)
 	add_child(header)
 
 	add_child(HSeparator.new())
@@ -36,6 +36,7 @@ func _setup_ui() -> void:
 	# Position
 	var pos_label = Label.new()
 	pos_label.text = "Position"
+	pos_label.add_theme_font_size_override("font_size", 28)
 	add_child(pos_label)
 
 	var pos_container = HBoxContainer.new()
@@ -43,6 +44,7 @@ func _setup_ui() -> void:
 
 	var x_label = Label.new()
 	x_label.text = "X:"
+	x_label.add_theme_font_size_override("font_size", 28)
 	pos_container.add_child(x_label)
 
 	_pos_x_spin = SpinBox.new()
@@ -54,6 +56,7 @@ func _setup_ui() -> void:
 
 	var y_label = Label.new()
 	y_label.text = "Y:"
+	y_label.add_theme_font_size_override("font_size", 28)
 	pos_container.add_child(y_label)
 
 	_pos_y_spin = SpinBox.new()
@@ -66,6 +69,7 @@ func _setup_ui() -> void:
 	# Size
 	var size_label = Label.new()
 	size_label.text = "Size"
+	size_label.add_theme_font_size_override("font_size", 28)
 	add_child(size_label)
 
 	var size_container = HBoxContainer.new()
@@ -73,6 +77,7 @@ func _setup_ui() -> void:
 
 	var w_label = Label.new()
 	w_label.text = "W:"
+	w_label.add_theme_font_size_override("font_size", 28)
 	size_container.add_child(w_label)
 
 	_width_spin = SpinBox.new()
@@ -84,6 +89,7 @@ func _setup_ui() -> void:
 
 	var h_label = Label.new()
 	h_label.text = "H:"
+	h_label.add_theme_font_size_override("font_size", 28)
 	size_container.add_child(h_label)
 
 	_height_spin = SpinBox.new()
@@ -99,6 +105,7 @@ func _setup_ui() -> void:
 
 	var rot_label = Label.new()
 	rot_label.text = "Rotation:"
+	rot_label.add_theme_font_size_override("font_size", 28)
 	rot_container.add_child(rot_label)
 
 	_rotation_spin = SpinBox.new()
@@ -115,6 +122,7 @@ func _setup_ui() -> void:
 
 	var color_label = Label.new()
 	color_label.text = "Color:"
+	color_label.add_theme_font_size_override("font_size", 28)
 	color_container.add_child(color_label)
 
 	_color_btn = ColorPickerButton.new()

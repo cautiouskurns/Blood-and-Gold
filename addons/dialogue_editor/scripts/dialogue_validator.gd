@@ -83,6 +83,7 @@ func validate() -> Array[ValidationIssue]:
 	_validate_unreachable_nodes(issues)
 	_validate_empty_fields(issues)
 	_validate_connections(issues)
+	_validate_circular_references(issues)
 
 	return issues
 
@@ -370,6 +371,70 @@ func _validate_connections(issues: Array[ValidationIssue]) -> void:
 				from_node,
 				"Node '%s' connects to itself." % from_node
 			))
+
+
+func _validate_circular_references(issues: Array[ValidationIssue]) -> void:
+	"""Detect cycles in the dialogue graph using DFS."""
+	# Build adjacency list
+	var adjacency: Dictionary = {}
+	for node_id in _nodes:
+		adjacency[node_id] = []
+
+	for conn in _connections:
+		var from_node = conn["from_node"]
+		var to_node = conn["to_node"]
+		if from_node in adjacency and to_node in _nodes:
+			adjacency[from_node].append(to_node)
+
+	# DFS to detect cycles (excluding self-loops which are handled in _validate_connections)
+	var visited: Dictionary = {}
+	var rec_stack: Dictionary = {}  # Nodes in current recursion stack
+	var path: Array[String] = []
+
+	for node_id in _nodes:
+		if node_id not in visited:
+			var cycle = _dfs_find_cycle(node_id, adjacency, visited, rec_stack, path)
+			if not cycle.is_empty():
+				# Report the cycle (only once per unique cycle)
+				var cycle_str = " -> ".join(cycle)
+				issues.append(ValidationIssue.new(
+					IssueType.CIRCULAR_REFERENCE,
+					Severity.WARNING,
+					cycle[0],
+					"Circular reference detected: %s" % cycle_str
+				))
+
+
+func _dfs_find_cycle(node: String, adjacency: Dictionary, visited: Dictionary,
+					 rec_stack: Dictionary, path: Array[String]) -> Array[String]:
+	"""DFS helper to find cycles. Returns the cycle path if found, empty array otherwise."""
+	visited[node] = true
+	rec_stack[node] = true
+	path.append(node)
+
+	if adjacency.has(node):
+		for neighbor in adjacency[node]:
+			# Skip self-loops (handled elsewhere)
+			if neighbor == node:
+				continue
+
+			if neighbor not in visited:
+				var cycle = _dfs_find_cycle(neighbor, adjacency, visited, rec_stack, path)
+				if not cycle.is_empty():
+					return cycle
+			elif rec_stack.get(neighbor, false):
+				# Found a cycle - extract the cycle portion from path
+				var cycle_start = path.find(neighbor)
+				if cycle_start >= 0:
+					var cycle_path: Array[String] = []
+					for i in range(cycle_start, path.size()):
+						cycle_path.append(path[i])
+					cycle_path.append(neighbor)  # Complete the cycle
+					return cycle_path
+
+	rec_stack[node] = false
+	path.pop_back()
+	return []
 
 
 # =============================================================================

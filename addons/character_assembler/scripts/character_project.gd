@@ -19,9 +19,9 @@ var shapes: Array = []
 # Each body part: { name, shapes (indices), pivot, parent }
 var body_parts: Dictionary = {}
 
-# Pose data - Dictionary of pose_name -> Pose dictionary
-# Each pose: { name, rotations (body_part_name -> degrees) }
-var poses: Dictionary = {}
+# Pose data - Array of pose dictionaries
+# Each pose: { pose_name, rotations (body_part_name -> degrees), description }
+var poses: Array = []
 
 # Animation data - Dictionary of animation_name -> Animation dictionary
 # Each animation: { name, template, frames, fps, loop, pose_assignments }
@@ -103,22 +103,29 @@ func remove_body_part(name: String) -> void:
 	body_parts.erase(name)
 
 
-## Create or update a pose.
-func set_pose(name: String, rotations: Dictionary) -> void:
-	poses[name] = {
-		"name": name,
-		"rotations": rotations.duplicate()
-	}
+## Add a pose to the list.
+func add_pose(name: String, rotations: Dictionary, description: String = "") -> void:
+	poses.append({
+		"pose_name": name,
+		"rotations": rotations.duplicate(),
+		"description": description
+	})
 
 
 ## Get a pose by name.
 func get_pose(name: String) -> Dictionary:
-	return poses.get(name, {})
+	for pose in poses:
+		if pose.get("pose_name", "") == name:
+			return pose
+	return {}
 
 
-## Remove a pose.
+## Remove a pose by name.
 func remove_pose(name: String) -> void:
-	poses.erase(name)
+	for i in range(poses.size() - 1, -1, -1):
+		if poses[i].get("pose_name", "") == name:
+			poses.remove_at(i)
+			break
 
 
 ## Create or update an animation.
@@ -189,7 +196,7 @@ func from_dict(data: Dictionary) -> void:
 	reference_opacity = data.get("reference_opacity", 0.5)
 	shapes = data.get("shapes", []).duplicate(true)
 	body_parts = data.get("body_parts", {}).duplicate(true)
-	poses = data.get("poses", {}).duplicate(true)
+	poses = data.get("poses", []).duplicate(true)
 	animations = data.get("animations", {}).duplicate(true)
 	directions = data.get("directions", ["south"]).duplicate()
 

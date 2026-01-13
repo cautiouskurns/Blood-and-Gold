@@ -19,6 +19,11 @@ var portrait_path: String = ""
 var _speaker_dropdown: OptionButton
 var _text_edit: TextEdit
 var _char_count_label: Label
+var _portrait_preview: TextureRect
+var _portrait_btn: Button
+
+# Placeholder texture for missing portraits
+var _placeholder_texture: Texture2D = null
 
 
 func _setup_node() -> void:
@@ -28,6 +33,8 @@ func _setup_node() -> void:
 	_available_speakers = SpeakerColorsScript.get_common_speakers()
 	# Initial color will be set after speaker dropdown is created
 	apply_color_theme(SpeakerColorsScript.get_speaker_color("NPC"))
+	# Create placeholder texture for missing portraits
+	_create_placeholder_texture()
 
 
 func _setup_slots() -> void:
@@ -45,6 +52,34 @@ func _setup_slots() -> void:
 	_speaker_dropdown.item_selected.connect(_on_speaker_changed)
 	speaker_row.add_child(_speaker_dropdown)
 	add_child(speaker_row)
+
+	# Portrait row
+	var portrait_row = HBoxContainer.new()
+	portrait_row.alignment = BoxContainer.ALIGNMENT_BEGIN
+
+	_portrait_preview = TextureRect.new()
+	_portrait_preview.custom_minimum_size = Vector2(48, 48)
+	_portrait_preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_portrait_preview.texture = _placeholder_texture
+	_portrait_preview.tooltip_text = "No portrait set"
+	portrait_row.add_child(_portrait_preview)
+
+	var portrait_vbox = VBoxContainer.new()
+	portrait_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var portrait_label = Label.new()
+	portrait_label.text = "Portrait:"
+	portrait_label.add_theme_font_size_override("font_size", 11)
+	portrait_vbox.add_child(portrait_label)
+
+	_portrait_btn = Button.new()
+	_portrait_btn.text = "Select..."
+	_portrait_btn.custom_minimum_size = Vector2(80, 0)
+	_portrait_btn.pressed.connect(_on_portrait_button_pressed)
+	portrait_vbox.add_child(_portrait_btn)
+
+	portrait_row.add_child(portrait_vbox)
+	add_child(portrait_row)
 
 	# Set initial speaker and color
 	if _speaker_dropdown.item_count > 0:
@@ -119,6 +154,109 @@ func _update_color_by_speaker() -> void:
 	apply_color_theme(color)
 
 
+func _create_placeholder_texture() -> void:
+	# Create a simple placeholder image programmatically
+	var img = Image.create(48, 48, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0.3, 0.3, 0.3, 1.0))
+
+	# Draw a simple "?" pattern
+	var center_color = Color(0.5, 0.5, 0.5, 1.0)
+	for x in range(16, 32):
+		for y in range(10, 38):
+			img.set_pixel(x, y, center_color)
+
+	# Draw question mark shape approximation
+	var q_color = Color(0.7, 0.7, 0.7, 1.0)
+	# Top arc of ?
+	for x in range(18, 30):
+		img.set_pixel(x, 12, q_color)
+		img.set_pixel(x, 13, q_color)
+	for y in range(12, 20):
+		img.set_pixel(28, y, q_color)
+		img.set_pixel(29, y, q_color)
+	for x in range(22, 30):
+		img.set_pixel(x, 19, q_color)
+		img.set_pixel(x, 20, q_color)
+	# Stem of ?
+	for y in range(20, 28):
+		img.set_pixel(22, y, q_color)
+		img.set_pixel(23, y, q_color)
+	# Dot of ?
+	for x in range(21, 25):
+		for y in range(31, 35):
+			img.set_pixel(x, y, q_color)
+
+	_placeholder_texture = ImageTexture.create_from_image(img)
+
+
+func _on_portrait_button_pressed() -> void:
+	# Open file dialog to select portrait image
+	var dialog = EditorFileDialog.new()
+	dialog.file_mode = EditorFileDialog.FILE_MODE_OPEN_FILE
+	dialog.access = EditorFileDialog.ACCESS_RESOURCES
+	dialog.filters = PackedStringArray(["*.png ; PNG Images", "*.jpg,*.jpeg ; JPEG Images", "*.webp ; WebP Images"])
+	dialog.title = "Select Portrait Image"
+	dialog.file_selected.connect(_on_portrait_selected)
+	dialog.canceled.connect(func(): dialog.queue_free())
+
+	add_child(dialog)
+	dialog.popup_centered_ratio(0.6)
+
+
+func _on_portrait_selected(path: String) -> void:
+	portrait_path = path
+	_update_portrait_preview()
+	_emit_data_changed()
+
+	# Clean up dialog
+	for child in get_children():
+		if child is EditorFileDialog:
+			child.queue_free()
+
+
+func _update_portrait_preview() -> void:
+	if not _portrait_preview:
+		return
+
+	if portrait_path.is_empty():
+		_portrait_preview.texture = _placeholder_texture
+		_portrait_preview.tooltip_text = "No portrait set"
+		if _portrait_btn:
+			_portrait_btn.text = "Select..."
+		return
+
+	# Try to load the portrait
+	if not FileAccess.file_exists(portrait_path):
+		# Portrait file missing - show placeholder with warning
+		_portrait_preview.texture = _placeholder_texture
+		_portrait_preview.modulate = Color(1.0, 0.6, 0.6, 1.0)  # Red tint
+		_portrait_preview.tooltip_text = "Missing: %s" % portrait_path
+		if _portrait_btn:
+			_portrait_btn.text = "Missing!"
+			_portrait_btn.modulate = Color(1.0, 0.6, 0.6, 1.0)
+		push_warning("DialogueEditor: Portrait not found: %s" % portrait_path)
+		return
+
+	# Load the texture
+	var texture = load(portrait_path)
+	if texture and texture is Texture2D:
+		_portrait_preview.texture = texture
+		_portrait_preview.modulate = Color.WHITE
+		_portrait_preview.tooltip_text = portrait_path.get_file()
+		if _portrait_btn:
+			_portrait_btn.text = portrait_path.get_file().substr(0, 10) + "..." if portrait_path.get_file().length() > 10 else portrait_path.get_file()
+			_portrait_btn.modulate = Color.WHITE
+	else:
+		# Failed to load - show placeholder with warning
+		_portrait_preview.texture = _placeholder_texture
+		_portrait_preview.modulate = Color(1.0, 0.8, 0.5, 1.0)  # Orange tint
+		_portrait_preview.tooltip_text = "Failed to load: %s" % portrait_path
+		if _portrait_btn:
+			_portrait_btn.text = "Error!"
+			_portrait_btn.modulate = Color(1.0, 0.8, 0.5, 1.0)
+		push_warning("DialogueEditor: Failed to load portrait: %s" % portrait_path)
+
+
 func set_speaker(value: String) -> void:
 	speaker = value
 	if _speaker_dropdown:
@@ -134,6 +272,11 @@ func set_dialogue_text(value: String) -> void:
 	if _text_edit:
 		_text_edit.text = dialogue_text
 		_update_char_count()
+
+
+func set_portrait(value: String) -> void:
+	portrait_path = value
+	_update_portrait_preview()
 
 
 func serialize() -> Dictionary:
@@ -152,3 +295,4 @@ func deserialize(data: Dictionary) -> void:
 		set_dialogue_text(data.text)
 	if data.has("portrait"):
 		portrait_path = data.portrait
+		_update_portrait_preview()

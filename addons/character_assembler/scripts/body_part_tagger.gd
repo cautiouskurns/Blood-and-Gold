@@ -44,7 +44,7 @@ func _setup_ui() -> void:
 	# Header
 	var header := Label.new()
 	header.text = "BODY PART TAGGER"
-	header.add_theme_font_size_override("font_size", 14)
+	header.add_theme_font_size_override("font_size", 32)
 	add_child(header)
 
 	add_child(HSeparator.new())
@@ -52,6 +52,7 @@ func _setup_ui() -> void:
 	# Selected shapes info
 	_selected_label = Label.new()
 	_selected_label.text = "Selected Shapes: None"
+	_selected_label.add_theme_font_size_override("font_size", 28)
 	add_child(_selected_label)
 
 	add_child(Control.new())  # Spacer
@@ -62,10 +63,12 @@ func _setup_ui() -> void:
 
 	var part_label := Label.new()
 	part_label.text = "Assign to:"
+	part_label.add_theme_font_size_override("font_size", 28)
 	part_row.add_child(part_label)
 
 	_part_dropdown = OptionButton.new()
 	_part_dropdown.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_part_dropdown.add_theme_font_size_override("font_size", 28)
 	for part_name in BodyPart.PART_NAMES:
 		_part_dropdown.add_item(part_name)
 	part_row.add_child(_part_dropdown)
@@ -75,6 +78,7 @@ func _setup_ui() -> void:
 	# Pivot point section
 	var pivot_header := Label.new()
 	pivot_header.text = "Pivot Point:"
+	pivot_header.add_theme_font_size_override("font_size", 28)
 	add_child(pivot_header)
 
 	var pivot_row := HBoxContainer.new()
@@ -82,6 +86,7 @@ func _setup_ui() -> void:
 
 	var x_label := Label.new()
 	x_label.text = "X:"
+	x_label.add_theme_font_size_override("font_size", 28)
 	pivot_row.add_child(x_label)
 
 	_pivot_x_spin = SpinBox.new()
@@ -93,6 +98,7 @@ func _setup_ui() -> void:
 
 	var y_label := Label.new()
 	y_label.text = "Y:"
+	y_label.add_theme_font_size_override("font_size", 28)
 	pivot_row.add_child(y_label)
 
 	_pivot_y_spin = SpinBox.new()
@@ -111,7 +117,7 @@ func _setup_ui() -> void:
 	var pivot_hint := Label.new()
 	pivot_hint.name = "PivotHint"
 	pivot_hint.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
-	pivot_hint.add_theme_font_size_override("font_size", 11)
+	pivot_hint.add_theme_font_size_override("font_size", 24)
 	add_child(pivot_hint)
 
 	add_child(Control.new())  # Spacer
@@ -122,10 +128,12 @@ func _setup_ui() -> void:
 
 	var parent_label := Label.new()
 	parent_label.text = "Parent:"
+	parent_label.add_theme_font_size_override("font_size", 28)
 	parent_row.add_child(parent_label)
 
 	_parent_dropdown = OptionButton.new()
 	_parent_dropdown.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_parent_dropdown.add_theme_font_size_override("font_size", 28)
 	_parent_dropdown.add_item("None (Root)")
 	for part_name in BodyPart.PART_NAMES:
 		_parent_dropdown.add_item(part_name)
@@ -153,11 +161,11 @@ func _setup_ui() -> void:
 	# Rig tree section
 	var tree_header := Label.new()
 	tree_header.text = "CURRENT RIG:"
-	tree_header.add_theme_font_size_override("font_size", 12)
+	tree_header.add_theme_font_size_override("font_size", 30)
 	add_child(tree_header)
 
 	_rig_tree = RigTreeView.new()
-	_rig_tree.custom_minimum_size = Vector2(0, 280)
+	_rig_tree.custom_minimum_size = Vector2(0, 400)
 	_rig_tree.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	add_child(_rig_tree)
 
@@ -166,14 +174,16 @@ func _setup_ui() -> void:
 	# Validation section
 	var val_header := Label.new()
 	val_header.text = "VALIDATION:"
-	val_header.add_theme_font_size_override("font_size", 12)
+	val_header.add_theme_font_size_override("font_size", 30)
 	add_child(val_header)
 
 	_validation_label = RichTextLabel.new()
-	_validation_label.custom_minimum_size = Vector2(0, 120)
+	_validation_label.custom_minimum_size = Vector2(0, 250)
 	_validation_label.bbcode_enabled = true
 	_validation_label.fit_content = false
 	_validation_label.scroll_active = true
+	_validation_label.add_theme_font_size_override("normal_font_size", 28)
+	_validation_label.add_theme_font_size_override("bold_font_size", 28)
 	add_child(_validation_label)
 
 	add_child(HSeparator.new())
@@ -184,12 +194,14 @@ func _setup_ui() -> void:
 
 	var prog_label := Label.new()
 	prog_label.text = "Progress:"
+	prog_label.add_theme_font_size_override("font_size", 28)
 	progress_row.add_child(prog_label)
 
 	_progress_label = Label.new()
 	_progress_label.text = "0/14"
 	_progress_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_progress_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_progress_label.add_theme_font_size_override("font_size", 28)
 	progress_row.add_child(_progress_label)
 
 	_progress_bar = ProgressBar.new()

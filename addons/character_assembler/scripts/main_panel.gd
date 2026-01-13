@@ -35,6 +35,7 @@ const DEFAULT_PROJECT_DIR := "res://data/characters/"
 @onready var layer_panel = $Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox/LayerPanel
 @onready var shape_properties_panel = $Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox/ShapePropertiesPanel
 @onready var body_part_tagger = $Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox/BodyPartTagger
+@onready var pose_editor = $Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox/PoseEditor
 
 # Node references - Status bar
 @onready var project_name_label: Label = $Margin/VBox/StatusBar/ProjectNameLabel
@@ -205,6 +206,14 @@ func _connect_panel_signals() -> void:
 	else:
 		push_warning("CharacterAssembler: body_part_tagger is null!")
 
+	if pose_editor:
+		pose_editor.pose_changed.connect(_on_pose_changed)
+		pose_editor.pose_selected.connect(_on_pose_selected)
+		pose_editor.preview_requested.connect(_on_pose_preview_requested)
+		print("CharacterAssembler: Connected pose_editor signals")
+	else:
+		push_warning("CharacterAssembler: pose_editor is null!")
+
 
 func _input(event: InputEvent) -> void:
 	if not is_visible_in_tree():
@@ -260,6 +269,9 @@ func _new_project() -> void:
 
 	if body_part_tagger:
 		body_part_tagger.load_from_project({})
+
+	if pose_editor:
+		pose_editor.load_from_project([])
 
 	_update_layers()
 	_update_status_bar()
@@ -514,6 +526,40 @@ func _update_canvas_pivots() -> void:
 
 
 # =============================================================================
+# POSE EDITOR SIGNALS
+# =============================================================================
+
+func _on_pose_changed(pose: Pose) -> void:
+	mark_dirty()
+	_sync_poses_to_project()
+	_update_pose_preview()
+
+
+func _on_pose_selected(pose: Pose) -> void:
+	_update_pose_preview()
+
+
+func _on_pose_preview_requested() -> void:
+	_update_pose_preview()
+
+
+func _update_pose_preview() -> void:
+	if not character_canvas or not pose_editor or not body_part_tagger:
+		return
+
+	var current_pose = pose_editor.get_current_pose()
+	if current_pose:
+		character_canvas.set_pose_preview(current_pose, body_part_tagger.body_parts)
+	else:
+		character_canvas.clear_pose_preview()
+
+
+func _sync_poses_to_project() -> void:
+	if current_project and pose_editor:
+		current_project.poses = pose_editor.save_to_project()
+
+
+# =============================================================================
 # FILE OPERATIONS
 # =============================================================================
 
@@ -577,6 +623,10 @@ func _load_from_file(path: String) -> void:
 	if body_part_tagger:
 		body_part_tagger.load_from_project(current_project.body_parts)
 
+	# Load poses into editor
+	if pose_editor:
+		pose_editor.load_from_project(current_project.poses)
+
 	# Update canvas with pivot points
 	_update_canvas_pivots()
 
@@ -589,6 +639,7 @@ func _sync_to_project() -> void:
 	if current_project and character_canvas:
 		character_canvas.save_to_project(current_project)
 	_sync_body_parts_to_project()
+	_sync_poses_to_project()
 
 
 # =============================================================================

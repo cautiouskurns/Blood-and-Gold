@@ -163,6 +163,11 @@ layout_mode = 2
 tooltip_text = "Automatically arrange nodes in a tree layout"
 text = "Auto Layout"
 
+[node name="HelpBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
+layout_mode = 2
+tooltip_text = "Keyboard shortcuts (F1)"
+text = "Help"
+
 [node name="DialogueCanvas" type="GraphEdit" parent="Margin/HSplit/RightPanel"]
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2

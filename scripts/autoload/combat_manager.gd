@@ -625,8 +625,9 @@ func get_combat_grid() -> CombatGrid:
 	return null
 
 func is_tile_blocked_for_los(position: Vector2i) -> bool:
-	## Check if a tile blocks line of sight (obstacles only, NOT units)
+	## Check if a tile blocks line of sight (obstacles and walls, NOT units)
 	## Returns true if tile blocks LoS, false otherwise
+	## Task 2.17: Updated to include walls
 	var grid = get_combat_grid()
 	if not grid:
 		# No grid reference, assume not blocked
@@ -636,8 +637,8 @@ func is_tile_blocked_for_los(position: Vector2i) -> bool:
 	if not grid.is_valid_position(position):
 		return true
 
-	# Check if tile is an obstacle
-	return grid.is_obstacle(position)
+	# Check if tile blocks LoS (obstacles and walls)
+	return grid.blocks_los(position)
 
 func get_enemies_in_range_with_los(unit: Unit, range_tiles: int) -> Array[Unit]:
 	## Get all enemy units within range AND with clear line of sight (Task 2.7)

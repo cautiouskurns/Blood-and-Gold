@@ -14,6 +14,7 @@ var _grid_width: int
 var _grid_height: int
 var _walkable_tiles: Dictionary = {}  # Vector2i -> bool
 var _occupied_tiles: Dictionary = {}  # Vector2i -> Unit
+var _combat_grid: CombatGrid = null  # Task 2.16: Reference for terrain costs
 
 # ===== INITIALIZATION =====
 func initialize(grid_width: int, grid_height: int) -> void:
@@ -23,6 +24,10 @@ func initialize(grid_width: int, grid_height: int) -> void:
 	_astar = AStar2D.new()
 	_build_graph()
 	print("[Pathfinding] Initialized %dx%d grid" % [grid_width, grid_height])
+
+func set_combat_grid(combat_grid: CombatGrid) -> void:
+	## Set the combat grid reference for terrain cost queries (Task 2.16)
+	_combat_grid = combat_grid
 
 func _build_graph() -> void:
 	## Build the pathfinding graph from walkable tiles
@@ -131,6 +136,7 @@ func get_path(from: Vector2i, to: Vector2i, exclude_unit: Unit = null) -> Array[
 
 func get_path_cost(path: Array[Vector2i]) -> float:
 	## Calculate total movement cost for a path
+	## Task 2.16: Accounts for difficult terrain (double cost)
 	if path.size() < 2:
 		return 0.0
 
@@ -139,12 +145,24 @@ func get_path_cost(path: Array[Vector2i]) -> float:
 		var prev = path[i - 1]
 		var curr = path[i]
 		var is_diagonal = (prev.x != curr.x and prev.y != curr.y)
-		total_cost += DIAGONAL_COST if is_diagonal else CARDINAL_COST
+		var base_cost = DIAGONAL_COST if is_diagonal else CARDINAL_COST
+
+		# Task 2.16: Apply terrain movement cost multiplier
+		var terrain_cost = _get_terrain_cost(curr)
+		total_cost += base_cost * terrain_cost
 
 	return total_cost
 
+func _get_terrain_cost(coords: Vector2i) -> float:
+	## Get terrain movement cost for a tile (Task 2.16)
+	## Returns 2.0 for difficult terrain, 1.0 otherwise
+	if _combat_grid:
+		return float(_combat_grid.get_movement_cost(coords))
+	return 1.0
+
 func get_reachable_tiles(from: Vector2i, movement_range: float, exclude_unit: Unit = null) -> Array[Vector2i]:
 	## Get all tiles reachable within movement range using BFS with movement costs
+	## Task 2.16: Accounts for difficult terrain (double cost)
 	var reachable: Array[Vector2i] = []
 	var cost_to_reach: Dictionary = {}  # Vector2i -> float
 	var queue: Array = [[from, 0.0]]  # [coords, cost_so_far]
@@ -164,7 +182,11 @@ func get_reachable_tiles(from: Vector2i, movement_range: float, exclude_unit: Un
 				continue
 
 			var is_diagonal = (neighbor.x != coords.x and neighbor.y != coords.y)
-			var move_cost = DIAGONAL_COST if is_diagonal else CARDINAL_COST
+			var base_cost = DIAGONAL_COST if is_diagonal else CARDINAL_COST
+
+			# Task 2.16: Apply terrain movement cost multiplier
+			var terrain_cost = _get_terrain_cost(neighbor)
+			var move_cost = base_cost * terrain_cost
 			var new_cost = cost + move_cost
 
 			# Only process if within range and better than previous path

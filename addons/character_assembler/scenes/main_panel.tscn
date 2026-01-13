@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://dh4j6xqk5rn2c"]
+[gd_scene load_steps=9 format=3 uid="uid://dh4j6xqk5rn2c"]
 
 [ext_resource type="Script" path="res://addons/character_assembler/scripts/main_panel.gd" id="1_main_panel"]
 [ext_resource type="Script" path="res://addons/character_assembler/scripts/canvas_viewport.gd" id="2_canvas"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://addons/character_assembler/scripts/layer_panel.gd" id="4_layers"]
 [ext_resource type="Script" path="res://addons/character_assembler/scripts/shape_properties_panel.gd" id="5_properties"]
 [ext_resource type="Script" path="res://addons/character_assembler/scripts/body_part_tagger.gd" id="6_tagger"]
+[ext_resource type="Script" path="res://addons/character_assembler/scripts/pose_editor.gd" id="7_pose_editor"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_canvas"]
 bg_color = Color(0.12, 0.12, 0.12, 1)
@@ -201,7 +202,7 @@ layout_mode = 2
 text = "400%"
 
 [node name="RightPanel" type="PanelContainer" parent="Margin/VBox/OuterHSplit/InnerHSplit"]
-custom_minimum_size = Vector2(320, 0)
+custom_minimum_size = Vector2(480, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
@@ -238,6 +239,15 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 4
 script = ExtResource("6_tagger")
+
+[node name="Sep3" type="HSeparator" parent="Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox"]
+layout_mode = 2
+
+[node name="PoseEditor" type="VBoxContainer" parent="Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+script = ExtResource("7_pose_editor")
 
 [node name="StatusBar" type="HBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
