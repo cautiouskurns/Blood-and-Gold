@@ -1,0 +1,137 @@
+{
+	"version": 1,
+	"metadata": {
+		"template_name": "Shop Interaction",
+		"description": "Standard shop dialogue with buy, sell, browse, and leave options. Perfect for merchants and vendors.",
+		"author": "Blood & Gold Team",
+		"tags": ["shop", "merchant", "trade", "conversation"],
+		"category": "shop",
+		"created_date": "2026-01-14T00:00:00",
+		"modified_date": "2026-01-14T00:00:00"
+	},
+	"content": {
+		"nodes": [
+			{
+				"id": "Speaker_1",
+				"type": "Speaker",
+				"position_x": -200,
+				"position_y": 0,
+				"speaker": "{{MERCHANT}}",
+				"text": "Welcome to my shop! Take a look around. What can I help you with today?"
+			},
+			{
+				"id": "Choice_Buy",
+				"type": "Choice",
+				"position_x": 50,
+				"position_y": -150,
+				"text": "I'd like to buy something."
+			},
+			{
+				"id": "Choice_Sell",
+				"type": "Choice",
+				"position_x": 50,
+				"position_y": -50,
+				"text": "I have items to sell."
+			},
+			{
+				"id": "Choice_Browse",
+				"type": "Choice",
+				"position_x": 50,
+				"position_y": 50,
+				"text": "Just browsing for now."
+			},
+			{
+				"id": "Choice_Leave",
+				"type": "Choice",
+				"position_x": 50,
+				"position_y": 150,
+				"text": "Never mind, I'll be going."
+			},
+			{
+				"id": "Speaker_Buy",
+				"type": "Speaker",
+				"position_x": 300,
+				"position_y": -150,
+				"speaker": "{{MERCHANT}}",
+				"text": "Excellent! Here's what I have in stock..."
+			},
+			{
+				"id": "Speaker_Sell",
+				"type": "Speaker",
+				"position_x": 300,
+				"position_y": -50,
+				"speaker": "{{MERCHANT}}",
+				"text": "Let me see what you've got. I pay fair prices."
+			},
+			{
+				"id": "Speaker_Browse",
+				"type": "Speaker",
+				"position_x": 300,
+				"position_y": 50,
+				"speaker": "{{MERCHANT}}",
+				"text": "Of course, take your time. Let me know if anything catches your eye."
+			},
+			{
+				"id": "Speaker_Leave",
+				"type": "Speaker",
+				"position_x": 300,
+				"position_y": 150,
+				"speaker": "{{MERCHANT}}",
+				"text": "Come back anytime! Safe travels."
+			},
+			{
+				"id": "End_Buy",
+				"type": "End",
+				"position_x": 550,
+				"position_y": -150,
+				"end_type": "open_shop_buy"
+			},
+			{
+				"id": "End_Sell",
+				"type": "End",
+				"position_x": 550,
+				"position_y": -50,
+				"end_type": "open_shop_sell"
+			},
+			{
+				"id": "End_Browse",
+				"type": "End",
+				"position_x": 550,
+				"position_y": 50,
+				"end_type": "open_shop_browse"
+			},
+			{
+				"id": "End_Leave",
+				"type": "End",
+				"position_x": 550,
+				"position_y": 150,
+				"end_type": "normal"
+			}
+		],
+		"connections": [
+			{"from_node": "Speaker_1", "from_port": 0, "to_node": "Choice_Buy", "to_port": 0},
+			{"from_node": "Speaker_1", "from_port": 0, "to_node": "Choice_Sell", "to_port": 0},
+			{"from_node": "Speaker_1", "from_port": 0, "to_node": "Choice_Browse", "to_port": 0},
+			{"from_node": "Speaker_1", "from_port": 0, "to_node": "Choice_Leave", "to_port": 0},
+			{"from_node": "Choice_Buy", "from_port": 0, "to_node": "Speaker_Buy", "to_port": 0},
+			{"from_node": "Choice_Sell", "from_port": 0, "to_node": "Speaker_Sell", "to_port": 0},
+			{"from_node": "Choice_Browse", "from_port": 0, "to_node": "Speaker_Browse", "to_port": 0},
+			{"from_node": "Choice_Leave", "from_port": 0, "to_node": "Speaker_Leave", "to_port": 0},
+			{"from_node": "Speaker_Buy", "from_port": 0, "to_node": "End_Buy", "to_port": 0},
+			{"from_node": "Speaker_Sell", "from_port": 0, "to_node": "End_Sell", "to_port": 0},
+			{"from_node": "Speaker_Browse", "from_port": 0, "to_node": "End_Browse", "to_port": 0},
+			{"from_node": "Speaker_Leave", "from_port": 0, "to_node": "End_Leave", "to_port": 0}
+		],
+		"placeholders": [
+			{
+				"name": "MERCHANT",
+				"description": "The merchant/vendor name",
+				"default": "Merchant"
+			}
+		]
+	},
+	"preview": {
+		"node_count": 13,
+		"preview_description": "5 Speakers, 4 Choices, 4 Ends"
+	}
+}

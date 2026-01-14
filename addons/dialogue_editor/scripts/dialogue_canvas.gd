@@ -24,6 +24,7 @@ signal zoom_changed(new_zoom: float)  # Emitted when zoom level changes
 signal dialogue_node_selected(node: GraphNode)  # Renamed to avoid conflict with GraphEdit
 signal dialogue_node_deselected()  # Renamed to avoid conflict with GraphEdit
 signal undo_redo_changed()  # Emitted when undo/redo state changes
+signal save_as_template_requested()  # Emitted when user requests to save selection as template
 
 # Undo/Redo system
 var _undo_redo: UndoRedo
@@ -49,6 +50,8 @@ var _is_large_tree: bool = false
 # Context menu
 var _context_menu: PopupMenu
 var _context_menu_position: Vector2
+var _template_submenu: PopupMenu
+var _available_templates: Array = []  # Cache of available templates for submenu
 
 # Zoom tracking
 var _last_zoom: float = 1.0
@@ -116,6 +119,26 @@ func _setup_context_menu() -> void:
 	_context_menu.name = "ContextMenu"
 	add_child(_context_menu)
 
+	_context_menu.id_pressed.connect(_on_context_menu_id_pressed)
+
+	# Create template submenu (will be added to context menu when populated)
+	_template_submenu = PopupMenu.new()
+	_template_submenu.name = "TemplateSubmenu"
+	_template_submenu.id_pressed.connect(_on_template_submenu_id_pressed)
+
+
+## Populate context menu based on current selection state.
+func _populate_context_menu() -> void:
+	_context_menu.clear()
+
+	var selected = get_selected_nodes()
+	var has_selection = selected.size() > 0
+
+	# If nodes are selected, show selection-specific options first
+	if has_selection:
+		_context_menu.add_item("Save as Template...", 100)
+		_context_menu.add_separator()
+
 	# Core node types
 	_context_menu.add_item("Add Start Node", 0)
 	_context_menu.add_item("Add Speaker Node", 1)
@@ -133,9 +156,13 @@ func _setup_context_menu() -> void:
 	_context_menu.add_item("Add Item", 25)
 	_context_menu.add_separator()
 
-	_context_menu.add_item("Paste", 10)
+	# Insert Template submenu
+	_populate_template_submenu()
+	if _available_templates.size() > 0:
+		_context_menu.add_submenu_node_item("Insert Template", _template_submenu)
+		_context_menu.add_separator()
 
-	_context_menu.id_pressed.connect(_on_context_menu_id_pressed)
+	_context_menu.add_item("Paste", 10)
 
 
 func _connect_signals() -> void:
@@ -363,6 +390,7 @@ func _do_move_node(node_name: String, position: Vector2) -> void:
 
 func _on_popup_request(position: Vector2) -> void:
 	_context_menu_position = position
+	_populate_context_menu()
 	_context_menu.position = get_screen_position() + position
 	_context_menu.popup()
 
@@ -396,6 +424,194 @@ func _on_context_menu_id_pressed(id: int) -> void:
 			_create_dialogue_node("Reputation", local_pos)
 		25:  # Add Item
 			_create_dialogue_node("Item", local_pos)
+		# Template operations
+		100:  # Save as Template
+			save_as_template_requested.emit()
+
+
+## Populate the Insert Template submenu with available templates.
+func _populate_template_submenu() -> void:
+	_template_submenu.clear()
+	_available_templates.clear()
+
+	# Get template manager instance
+	var manager = DialogueTemplateManager.get_instance()
+	if not manager:
+		return
+
+	var all_templates = manager.get_all_templates()
+	if all_templates.is_empty():
+		return
+
+	# Group templates by category
+	var templates_by_category := {}
+	for template in all_templates:
+		var category = template.category if not template.category.is_empty() else "custom"
+		if not templates_by_category.has(category):
+			templates_by_category[category] = []
+		templates_by_category[category].append(template)
+
+	# Add templates to submenu grouped by category
+	var template_id := 0
+	var sorted_categories = templates_by_category.keys()
+	sorted_categories.sort()
+
+	for category in sorted_categories:
+		# Add category header (disabled item)
+		if template_id > 0:
+			_template_submenu.add_separator()
+		_template_submenu.add_item("— %s —" % category.capitalize(), -1)
+		_template_submenu.set_item_disabled(_template_submenu.get_item_count() - 1, true)
+
+		# Add templates in this category
+		var category_templates = templates_by_category[category]
+		for template in category_templates:
+			var label = template.template_name
+			if template.is_built_in:
+				label += " (built-in)"
+			_template_submenu.add_item(label, template_id)
+			_available_templates.append(template)
+			template_id += 1
+
+
+## Handle template selection from submenu.
+func _on_template_submenu_id_pressed(id: int) -> void:
+	if id < 0 or id >= _available_templates.size():
+		return
+
+	var template = _available_templates[id]
+	var local_pos = (scroll_offset + _context_menu_position) / zoom
+	insert_template(template, local_pos)
+
+
+## Insert a template at the specified canvas position.
+## Creates all nodes from the template with unique IDs, positions them, and creates connections.
+## Optionally auto-connects to a selected node's output.
+func insert_template(template: DialogueTemplateData, insert_position: Vector2, auto_connect_from: GraphNode = null) -> Array[GraphNode]:
+	if not template or template.nodes.is_empty():
+		push_warning("DialogueCanvas: Cannot insert empty template")
+		return []
+
+	_ensure_undo_redo()
+	_undo_redo.create_action("Insert Template '%s'" % template.template_name)
+
+	# Get nodes at the target position
+	var positioned_nodes = template.get_nodes_at_position(insert_position)
+
+	# Generate new unique IDs for all nodes and build mapping
+	var id_mapping := {}  # old_id -> new_id
+	var created_nodes: Array[GraphNode] = []
+	var new_node_names: Array[String] = []
+
+	for node_data in positioned_nodes:
+		var old_id = node_data.get("id", "")
+		var node_type = node_data.get("type", "Speaker")
+		var new_name = "%s_%d" % [node_type, _next_node_id]
+		_next_node_id += 1
+
+		id_mapping[old_id] = new_name
+		new_node_names.append(new_name)
+
+	# Create all nodes (using undo/redo methods)
+	var node_index := 0
+	for node_data in positioned_nodes:
+		var node_type = node_data.get("type", "Speaker")
+		var position = Vector2(
+			node_data.get("position_x", 0.0),
+			node_data.get("position_y", 0.0)
+		)
+		var new_name = new_node_names[node_index]
+
+		# Add do/undo methods for node creation
+		_undo_redo.add_do_method(self._do_create_node_from_template.bind(node_type, new_name, position, node_data))
+		_undo_redo.add_undo_method(self._undo_create_node.bind(new_name))
+
+		node_index += 1
+
+	# Get remapped connections
+	var remapped_connections = template.get_connections_remapped(id_mapping)
+
+	# Add do/undo methods for connections
+	for conn in remapped_connections:
+		_undo_redo.add_do_method(self._do_connect_nodes.bind(conn.from_node, conn.from_port, conn.to_node, conn.to_port))
+		_undo_redo.add_undo_method(self._do_disconnect_nodes.bind(conn.from_node, conn.from_port, conn.to_node, conn.to_port))
+
+	# Auto-connect from selected node if provided
+	if auto_connect_from and auto_connect_from is DialogueNodeScript:
+		# Find the first entry point in the template (node with no incoming connections)
+		var entry_node_name = _find_template_entry_point(template, id_mapping)
+		if not entry_node_name.is_empty() and auto_connect_from.can_provide_output():
+			# Find the first available output port
+			var from_port = 0  # Default to first port
+			_undo_redo.add_do_method(self._do_connect_nodes.bind(auto_connect_from.name, from_port, entry_node_name, 0))
+			_undo_redo.add_undo_method(self._do_disconnect_nodes.bind(auto_connect_from.name, from_port, entry_node_name, 0))
+
+	# Add do method to select all new nodes after creation
+	_undo_redo.add_do_method(self._do_select_nodes.bind(new_node_names))
+	_undo_redo.add_undo_method(self.deselect_all_nodes)
+
+	_undo_redo.commit_action()
+	undo_redo_changed.emit()
+
+	# Get created nodes for return
+	for node_name in new_node_names:
+		var node = get_node_or_null(NodePath(node_name))
+		if node:
+			created_nodes.append(node)
+
+	print("DialogueCanvas: Inserted template '%s' with %d nodes" % [template.template_name, created_nodes.size()])
+	return created_nodes
+
+
+## Create a node from template data (includes deserialization).
+func _do_create_node_from_template(type: String, node_name: String, position: Vector2, node_data: Dictionary) -> void:
+	var node = _do_create_node_internal(type, node_name, position)
+	if node:
+		# Update the ID in node_data to use new name before deserializing
+		var data_copy = node_data.duplicate()
+		data_copy["id"] = node_name
+		data_copy["position_x"] = position.x
+		data_copy["position_y"] = position.y
+		node.deserialize(data_copy)
+
+
+## Find the entry point node in a template (node with no incoming connections).
+## Returns the new (remapped) node name.
+func _find_template_entry_point(template: DialogueTemplateData, id_mapping: Dictionary) -> String:
+	# Build set of nodes that have incoming connections
+	var nodes_with_incoming := {}
+	for conn in template.connections:
+		var to_node = conn.get("to_node", "")
+		nodes_with_incoming[to_node] = true
+
+	# Find first node without incoming connections (prefer Start nodes)
+	for node in template.nodes:
+		var old_id = node.get("id", "")
+		var node_type = node.get("type", "")
+		if node_type == "Start" and not nodes_with_incoming.has(old_id):
+			return id_mapping.get(old_id, "")
+
+	# Fallback: any node without incoming connections
+	for node in template.nodes:
+		var old_id = node.get("id", "")
+		if not nodes_with_incoming.has(old_id):
+			return id_mapping.get(old_id, "")
+
+	# No entry point found, return first node
+	if not template.nodes.is_empty():
+		var first_id = template.nodes[0].get("id", "")
+		return id_mapping.get(first_id, "")
+
+	return ""
+
+
+## Select multiple nodes by name.
+func _do_select_nodes(node_names: Array[String]) -> void:
+	deselect_all_nodes()
+	for node_name in node_names:
+		var node = get_node_or_null(NodePath(node_name))
+		if node and node is DialogueNodeScript:
+			node.selected = true
 
 
 func _create_dialogue_node(type: String, position: Vector2, use_undo_redo: bool = true) -> GraphNode:
@@ -501,6 +717,9 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 	# Accept drops from the node palette
 	if data is Dictionary and data.get("type") == "dialogue_node":
 		return true
+	# Accept drops from the template library
+	if data is Dictionary and data.get("type") == "dialogue_template":
+		return true
 	return false
 
 
@@ -510,6 +729,12 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 		# Convert screen position to canvas position
 		var canvas_pos = (scroll_offset + at_position) / zoom
 		add_dialogue_node(node_type, canvas_pos)
+	elif data is Dictionary and data.get("type") == "dialogue_template":
+		var template = data.get("template")
+		if template:
+			# Convert screen position to canvas position
+			var canvas_pos = (scroll_offset + at_position) / zoom
+			insert_template(template, canvas_pos)
 
 
 ## Public method to add a dialogue node at the specified position.
@@ -1201,3 +1426,63 @@ func duplicate_selected_nodes() -> void:
 
 	canvas_changed.emit()
 	print("DialogueCanvas: Duplicated %d node(s)" % new_nodes.size())
+
+
+## Serialize all selected nodes to an array of dictionaries.
+## Used for creating templates from selection.
+func serialize_selected_nodes() -> Array:
+	var selected = get_selected_nodes()
+	var serialized: Array = []
+
+	for node in selected:
+		if node is DialogueNodeScript:
+			serialized.append(node.serialize())
+
+	return serialized
+
+
+## Get all connections that are internal to the selected nodes.
+## Returns only connections where both from_node and to_node are selected.
+func get_selected_internal_connections() -> Array:
+	var selected = get_selected_nodes()
+	if selected.size() < 2:
+		return []
+
+	# Build set of selected node names
+	var selected_names := {}
+	for node in selected:
+		selected_names[node.name] = true
+
+	# Find internal connections
+	var internal_connections: Array = []
+	for conn in get_connection_list():
+		var from_name = String(conn.from_node)
+		var to_name = String(conn.to_node)
+
+		if selected_names.has(from_name) and selected_names.has(to_name):
+			internal_connections.append({
+				"from_node": from_name,
+				"from_port": conn.from_port,
+				"to_node": to_name,
+				"to_port": conn.to_port
+			})
+
+	return internal_connections
+
+
+## Check if the current selection is valid for creating a template.
+## Returns a dictionary with "valid" bool and "reason" string.
+func validate_selection_for_template() -> Dictionary:
+	var selected = get_selected_nodes()
+
+	if selected.is_empty():
+		return {"valid": false, "reason": "No nodes selected"}
+
+	if selected.size() < 2:
+		return {"valid": false, "reason": "Select at least 2 nodes"}
+
+	var internal_connections = get_selected_internal_connections()
+	if internal_connections.is_empty():
+		return {"valid": false, "reason": "Selected nodes should be connected"}
+
+	return {"valid": true, "reason": ""}

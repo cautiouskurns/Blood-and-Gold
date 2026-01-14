@@ -12,6 +12,8 @@ const DialogueValidatorScript = preload("res://addons/dialogue_editor/scripts/di
 const AutoSaveManagerScript = preload("res://addons/dialogue_editor/scripts/auto_save_manager.gd")
 const PropertyPanelScript = preload("res://addons/dialogue_editor/scripts/property_panel.gd")
 const ErrorHandlerScript = preload("res://addons/dialogue_editor/scripts/error_handler.gd")
+const SaveTemplateDialogScript = preload("res://addons/dialogue_editor/scripts/templates/save_template_dialog.gd")
+const TemplateLibraryPanelScript = preload("res://addons/dialogue_editor/scripts/template_library_panel.gd")
 
 # Default save directory
 const DEFAULT_DIALOGUE_DIR := "res://data/dialogue/"
@@ -22,6 +24,7 @@ const DEFAULT_DIALOGUE_DIR := "res://data/dialogue/"
 @onready var node_count_label: Label = $Margin/HSplit/RightPanel/StatusBar/NodeCountLabel
 @onready var zoom_label: Label = $Margin/HSplit/RightPanel/StatusBar/ZoomLabel
 @onready var node_palette: VBoxContainer = $Margin/HSplit/LeftPanel/VBox/Scroll/NodeList
+@onready var template_library: VBoxContainer = $Margin/HSplit/LeftPanel/VBox/TemplateScroll/TemplateLibrary
 
 # Toolbar buttons
 @onready var new_btn: Button = $Margin/HSplit/RightPanel/Toolbar/NewBtn
@@ -33,6 +36,7 @@ const DEFAULT_DIALOGUE_DIR := "res://data/dialogue/"
 @onready var reset_view_btn: Button = $Margin/HSplit/RightPanel/Toolbar/ResetViewBtn
 @onready var auto_layout_btn: Button = $Margin/HSplit/RightPanel/Toolbar/AutoLayoutBtn
 @onready var help_btn: Button = $Margin/HSplit/RightPanel/Toolbar/HelpBtn
+@onready var whats_this_btn: Button = $Margin/HSplit/RightPanel/Toolbar/WhatsThisBtn
 
 # Search UI
 @onready var search_field: OptionButton = $Margin/HSplit/RightPanel/Toolbar/SearchField
@@ -72,6 +76,9 @@ var _export_dialog: FileDialog
 var _confirm_dialog: ConfirmationDialog
 var _pending_action: String = ""  # Tracks what to do after confirmation
 
+# Template dialog
+var _save_template_dialog: ConfirmationDialog
+
 # State
 var current_file_path: String = ""
 var dialogue_id: String = ""
@@ -86,14 +93,17 @@ func _ready() -> void:
 	custom_minimum_size = Vector2(800, 600)
 
 	_setup_dialogs()
+	_setup_template_dialog()
 	_setup_search_manager()
 	_setup_auto_save()
 	_setup_property_panel()
 	_setup_notifications()
+	_setup_template_library()
 	_connect_toolbar_signals()
 	_connect_canvas_signals()
 	_connect_palette_signals()
 	_connect_search_signals()
+	_connect_template_library_signals()
 	_update_status_bar()
 
 	# Ensure default dialogue directory exists
@@ -190,6 +200,10 @@ func _input(event: InputEvent) -> void:
 				KEY_A:  # Ctrl+A - Select all
 					_select_all_nodes()
 					handled = true
+				KEY_T:  # Ctrl+Shift+T - Save selection as template
+					if event.shift_pressed:
+						_on_save_as_template_requested()
+						handled = true
 
 		if handled:
 			get_viewport().set_input_as_handled()
@@ -240,6 +254,27 @@ func _setup_dialogs() -> void:
 	_confirm_dialog.custom_action.connect(_on_confirm_custom_action)
 	_confirm_dialog.canceled.connect(_on_confirm_canceled)
 	add_child(_confirm_dialog)
+
+
+func _setup_template_dialog() -> void:
+	# Create save template dialog
+	_save_template_dialog = SaveTemplateDialogScript.new()
+	_save_template_dialog.name = "SaveTemplateDialog"
+	_save_template_dialog.template_saved.connect(_on_template_saved)
+	add_child(_save_template_dialog)
+
+
+func _setup_template_library() -> void:
+	# Template library is created from scene, just ensure it's initialized
+	if template_library:
+		# Refresh templates on startup
+		template_library.refresh()
+
+
+func _connect_template_library_signals() -> void:
+	if template_library:
+		template_library.template_selected.connect(_on_template_library_template_selected)
+		template_library.template_drag_started.connect(_on_template_library_drag_started)
 
 
 func _ensure_dialogue_directory() -> void:
@@ -503,6 +538,12 @@ func _connect_toolbar_signals() -> void:
 		help_btn.pressed.connect(_show_help_dialog.bind(0))
 		help_btn.tooltip_text = "Help & Documentation\nOpen comprehensive help with Quick Start,\nKeyboard Shortcuts, and Node Reference.\nShortcut: F1"
 
+	# What's This?
+	if whats_this_btn:
+		_whats_this_btn = whats_this_btn
+		whats_this_btn.pressed.connect(_toggle_whats_this_mode)
+		whats_this_btn.tooltip_text = "What's This?\nClick this, then click any element\nto see help about it."
+
 	# Setup search field tooltips
 	_setup_search_tooltips()
 
@@ -537,6 +578,8 @@ func _connect_canvas_signals() -> void:
 			dialogue_canvas.dialogue_node_selected.connect(_on_dialogue_node_selected)
 		if dialogue_canvas.has_signal("dialogue_node_deselected"):
 			dialogue_canvas.dialogue_node_deselected.connect(_on_dialogue_node_deselected)
+		if dialogue_canvas.has_signal("save_as_template_requested"):
+			dialogue_canvas.save_as_template_requested.connect(_on_save_as_template_requested)
 
 
 func _process(_delta: float) -> void:
@@ -828,6 +871,7 @@ func _create_shortcuts_tab() -> ScrollContainer:
 	_add_shortcut_row(vbox, "Delete", "Delete selected nodes")
 	_add_shortcut_row(vbox, "Ctrl+D", "Duplicate selected nodes")
 	_add_shortcut_row(vbox, "Ctrl+A", "Select all nodes")
+	_add_shortcut_row(vbox, "Ctrl+Shift+T", "Save selection as template")
 	_add_shortcut_row(vbox, "Escape", "Deselect all nodes")
 
 	_add_shortcut_section(vbox, "Quick Add Nodes")
@@ -1872,6 +1916,70 @@ func _on_palette_node_clicked(node_type: String) -> void:
 	if dialogue_canvas and dialogue_canvas.is_inside_tree():
 		if dialogue_canvas.has_method("add_dialogue_node_at_center"):
 			dialogue_canvas.add_dialogue_node_at_center(node_type)
+
+
+# =============================================================================
+# TEMPLATE SYSTEM
+# =============================================================================
+
+func _on_save_as_template_requested() -> void:
+	"""Handle request to save selection as a template."""
+	if not dialogue_canvas or not dialogue_canvas.is_inside_tree():
+		show_notification("Canvas not available", 3, 3.0)
+		return
+
+	# Validate selection
+	if dialogue_canvas.has_method("validate_selection_for_template"):
+		var validation = dialogue_canvas.validate_selection_for_template()
+		if not validation.valid:
+			show_notification(validation.reason, 2, 3.0)
+			return
+
+	# Get serialized selection data
+	var nodes: Array = []
+	var connections: Array = []
+
+	if dialogue_canvas.has_method("serialize_selected_nodes"):
+		nodes = dialogue_canvas.serialize_selected_nodes()
+
+	if dialogue_canvas.has_method("get_selected_internal_connections"):
+		connections = dialogue_canvas.get_selected_internal_connections()
+
+	if nodes.is_empty():
+		show_notification("No nodes selected", 2, 3.0)
+		return
+
+	# Show the save template dialog
+	if _save_template_dialog:
+		_save_template_dialog.show_for_selection(nodes, connections)
+
+
+func _on_template_saved(template) -> void:
+	"""Handle successful template save."""
+	show_notification("Template '%s' saved successfully" % template.template_name, 1, 3.0)
+	print("DialogueEditor: Template saved: %s" % template.template_name)
+	# Refresh template library to show the new template
+	if template_library:
+		template_library.refresh()
+
+
+func _on_template_library_template_selected(template) -> void:
+	"""Handle template selection from library (double-click to insert)."""
+	if not dialogue_canvas or not dialogue_canvas.is_inside_tree():
+		return
+
+	# Insert template at center of visible canvas area
+	if dialogue_canvas.has_method("insert_template"):
+		var viewport_center = dialogue_canvas.size / 2
+		var canvas_pos = (dialogue_canvas.scroll_offset + viewport_center) / dialogue_canvas.zoom
+		dialogue_canvas.insert_template(template, canvas_pos)
+		show_notification("Inserted template: %s" % template.template_name, 1, 2.0)
+
+
+func _on_template_library_drag_started(template) -> void:
+	"""Handle template drag start from library."""
+	# This is informational - the actual drag handling is done by the canvas
+	pass
 
 
 # =============================================================================

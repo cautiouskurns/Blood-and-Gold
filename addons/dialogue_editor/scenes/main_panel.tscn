@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://c8xvmk5qd2yxk"]
+[gd_scene load_steps=5 format=3 uid="uid://c8xvmk5qd2yxk"]
 
 [ext_resource type="Script" path="res://addons/dialogue_editor/scripts/dialogue_canvas.gd" id="1_canvas"]
 [ext_resource type="Script" path="res://addons/dialogue_editor/scripts/main_panel.gd" id="2_main"]
 [ext_resource type="Script" path="res://addons/dialogue_editor/scripts/node_palette.gd" id="3_palette"]
+[ext_resource type="Script" path="res://addons/dialogue_editor/scripts/template_library_panel.gd" id="4_template_lib"]
 
 [node name="MainPanel" type="Control"]
 script = ExtResource("2_main")
@@ -56,6 +57,27 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("3_palette")
+
+[node name="Sep2" type="HSeparator" parent="Margin/HSplit/LeftPanel/VBox"]
+layout_mode = 2
+
+[node name="TemplateTitle" type="Label" parent="Margin/HSplit/LeftPanel/VBox"]
+layout_mode = 2
+text = "TEMPLATE LIBRARY"
+horizontal_alignment = 1
+
+[node name="Sep3" type="HSeparator" parent="Margin/HSplit/LeftPanel/VBox"]
+layout_mode = 2
+
+[node name="TemplateScroll" type="ScrollContainer" parent="Margin/HSplit/LeftPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TemplateLibrary" type="VBoxContainer" parent="Margin/HSplit/LeftPanel/VBox/TemplateScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("4_template_lib")
 
 [node name="RightPanel" type="VBoxContainer" parent="Margin/HSplit"]
 layout_mode = 2
@@ -165,8 +187,14 @@ text = "Auto Layout"
 
 [node name="HelpBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
 layout_mode = 2
-tooltip_text = "Keyboard shortcuts (F1)"
+tooltip_text = "Help & Documentation (F1)"
 text = "Help"
+
+[node name="WhatsThisBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
+layout_mode = 2
+toggle_mode = true
+tooltip_text = "What's This? - Click any element for help"
+text = "?"
 
 [node name="DialogueCanvas" type="GraphEdit" parent="Margin/HSplit/RightPanel"]
 custom_minimum_size = Vector2(0, 200)

@@ -1,0 +1,158 @@
+{
+	"version": 1,
+	"metadata": {
+		"template_name": "Information Loop",
+		"description": "A dialogue menu where the player can ask multiple questions before leaving. Questions loop back to the menu.",
+		"author": "Blood & Gold Team",
+		"tags": ["information", "questions", "loop", "menu", "conversation"],
+		"category": "conversation",
+		"created_date": "2026-01-14T00:00:00",
+		"modified_date": "2026-01-14T00:00:00"
+	},
+	"content": {
+		"nodes": [
+			{
+				"id": "Speaker_Menu",
+				"type": "Speaker",
+				"position_x": 0,
+				"position_y": 0,
+				"speaker": "{{NPC}}",
+				"text": "What would you like to know?"
+			},
+			{
+				"id": "Choice_Q1",
+				"type": "Choice",
+				"position_x": 250,
+				"position_y": -150,
+				"text": "{{QUESTION_1}}"
+			},
+			{
+				"id": "Choice_Q2",
+				"type": "Choice",
+				"position_x": 250,
+				"position_y": -50,
+				"text": "{{QUESTION_2}}"
+			},
+			{
+				"id": "Choice_Q3",
+				"type": "Choice",
+				"position_x": 250,
+				"position_y": 50,
+				"text": "{{QUESTION_3}}"
+			},
+			{
+				"id": "Choice_Exit",
+				"type": "Choice",
+				"position_x": 250,
+				"position_y": 150,
+				"text": "That's all I needed to know."
+			},
+			{
+				"id": "Speaker_A1",
+				"type": "Speaker",
+				"position_x": 500,
+				"position_y": -150,
+				"speaker": "{{NPC}}",
+				"text": "{{ANSWER_1}}"
+			},
+			{
+				"id": "Speaker_A2",
+				"type": "Speaker",
+				"position_x": 500,
+				"position_y": -50,
+				"speaker": "{{NPC}}",
+				"text": "{{ANSWER_2}}"
+			},
+			{
+				"id": "Speaker_A3",
+				"type": "Speaker",
+				"position_x": 500,
+				"position_y": 50,
+				"speaker": "{{NPC}}",
+				"text": "{{ANSWER_3}}"
+			},
+			{
+				"id": "Speaker_Exit",
+				"type": "Speaker",
+				"position_x": 500,
+				"position_y": 150,
+				"speaker": "{{NPC}}",
+				"text": "Safe travels, then. Come back if you have more questions."
+			},
+			{
+				"id": "Speaker_Followup",
+				"type": "Speaker",
+				"position_x": 750,
+				"position_y": -50,
+				"speaker": "{{NPC}}",
+				"text": "Anything else you'd like to know?"
+			},
+			{
+				"id": "End_Exit",
+				"type": "End",
+				"position_x": 750,
+				"position_y": 150,
+				"end_type": "normal"
+			}
+		],
+		"connections": [
+			{"from_node": "Speaker_Menu", "from_port": 0, "to_node": "Choice_Q1", "to_port": 0},
+			{"from_node": "Speaker_Menu", "from_port": 0, "to_node": "Choice_Q2", "to_port": 0},
+			{"from_node": "Speaker_Menu", "from_port": 0, "to_node": "Choice_Q3", "to_port": 0},
+			{"from_node": "Speaker_Menu", "from_port": 0, "to_node": "Choice_Exit", "to_port": 0},
+			{"from_node": "Choice_Q1", "from_port": 0, "to_node": "Speaker_A1", "to_port": 0},
+			{"from_node": "Choice_Q2", "from_port": 0, "to_node": "Speaker_A2", "to_port": 0},
+			{"from_node": "Choice_Q3", "from_port": 0, "to_node": "Speaker_A3", "to_port": 0},
+			{"from_node": "Choice_Exit", "from_port": 0, "to_node": "Speaker_Exit", "to_port": 0},
+			{"from_node": "Speaker_A1", "from_port": 0, "to_node": "Speaker_Followup", "to_port": 0},
+			{"from_node": "Speaker_A2", "from_port": 0, "to_node": "Speaker_Followup", "to_port": 0},
+			{"from_node": "Speaker_A3", "from_port": 0, "to_node": "Speaker_Followup", "to_port": 0},
+			{"from_node": "Speaker_Followup", "from_port": 0, "to_node": "Choice_Q1", "to_port": 0},
+			{"from_node": "Speaker_Followup", "from_port": 0, "to_node": "Choice_Q2", "to_port": 0},
+			{"from_node": "Speaker_Followup", "from_port": 0, "to_node": "Choice_Q3", "to_port": 0},
+			{"from_node": "Speaker_Followup", "from_port": 0, "to_node": "Choice_Exit", "to_port": 0},
+			{"from_node": "Speaker_Exit", "from_port": 0, "to_node": "End_Exit", "to_port": 0}
+		],
+		"placeholders": [
+			{
+				"name": "NPC",
+				"description": "The informant NPC name",
+				"default": "Informant"
+			},
+			{
+				"name": "QUESTION_1",
+				"description": "First question option",
+				"default": "Tell me about this place."
+			},
+			{
+				"name": "ANSWER_1",
+				"description": "Answer to the first question",
+				"default": "This is an ancient settlement. Many stories are told of the things that happened here."
+			},
+			{
+				"name": "QUESTION_2",
+				"description": "Second question option",
+				"default": "Who's in charge around here?"
+			},
+			{
+				"name": "ANSWER_2",
+				"description": "Answer to the second question",
+				"default": "The local lord oversees these lands. You'll find the keep on the hill to the north."
+			},
+			{
+				"name": "QUESTION_3",
+				"description": "Third question option",
+				"default": "Any dangers I should know about?"
+			},
+			{
+				"name": "ANSWER_3",
+				"description": "Answer to the third question",
+				"default": "Bandits have been spotted on the eastern roads. Best travel in groups if you're heading that way."
+			}
+		]
+	},
+	"preview": {
+		"node_count": 11,
+		"preview_description": "6 Speakers, 4 Choices, 1 End (with loops)"
+	}
+}

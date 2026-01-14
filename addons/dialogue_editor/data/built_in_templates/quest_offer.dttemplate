@@ -1,0 +1,148 @@
+{
+	"version": 1,
+	"metadata": {
+		"template_name": "Quest Offer",
+		"description": "NPC offers a quest with accept/decline options. Includes quest start/update nodes for tracking.",
+		"author": "Blood & Gold Team",
+		"tags": ["quest", "mission", "job", "conversation"],
+		"category": "quest",
+		"created_date": "2026-01-14T00:00:00",
+		"modified_date": "2026-01-14T00:00:00"
+	},
+	"content": {
+		"nodes": [
+			{
+				"id": "Speaker_Intro",
+				"type": "Speaker",
+				"position_x": -250,
+				"position_y": 0,
+				"speaker": "{{QUEST_GIVER}}",
+				"text": "I have a task that requires someone capable. Are you interested in earning some coin?"
+			},
+			{
+				"id": "Choice_Interested",
+				"type": "Choice",
+				"position_x": 0,
+				"position_y": -50,
+				"text": "I'm listening. What do you need?"
+			},
+			{
+				"id": "Choice_NotNow",
+				"type": "Choice",
+				"position_x": 0,
+				"position_y": 50,
+				"text": "Not right now, sorry."
+			},
+			{
+				"id": "Speaker_Details",
+				"type": "Speaker",
+				"position_x": 250,
+				"position_y": -50,
+				"speaker": "{{QUEST_GIVER}}",
+				"text": "{{QUEST_DESCRIPTION}} The pay is good. What do you say?"
+			},
+			{
+				"id": "Speaker_Decline1",
+				"type": "Speaker",
+				"position_x": 250,
+				"position_y": 50,
+				"speaker": "{{QUEST_GIVER}}",
+				"text": "I understand. Come back if you change your mind."
+			},
+			{
+				"id": "Choice_Accept",
+				"type": "Choice",
+				"position_x": 500,
+				"position_y": -100,
+				"text": "Count me in. I'll take the job."
+			},
+			{
+				"id": "Choice_Decline2",
+				"type": "Choice",
+				"position_x": 500,
+				"position_y": 0,
+				"text": "I'll have to pass on this one."
+			},
+			{
+				"id": "Quest_Start",
+				"type": "Quest",
+				"position_x": 750,
+				"position_y": -100,
+				"quest_id": "{{QUEST_ID}}",
+				"action": "start"
+			},
+			{
+				"id": "Speaker_Accept",
+				"type": "Speaker",
+				"position_x": 1000,
+				"position_y": -100,
+				"speaker": "{{QUEST_GIVER}}",
+				"text": "Excellent! I knew I could count on you. Here are the details..."
+			},
+			{
+				"id": "Speaker_Decline2",
+				"type": "Speaker",
+				"position_x": 750,
+				"position_y": 0,
+				"speaker": "{{QUEST_GIVER}}",
+				"text": "A shame, but I understand. Perhaps another time."
+			},
+			{
+				"id": "End_Accept",
+				"type": "End",
+				"position_x": 1250,
+				"position_y": -100,
+				"end_type": "quest_started"
+			},
+			{
+				"id": "End_Decline",
+				"type": "End",
+				"position_x": 1000,
+				"position_y": 0,
+				"end_type": "normal"
+			},
+			{
+				"id": "End_NotNow",
+				"type": "End",
+				"position_x": 500,
+				"position_y": 50,
+				"end_type": "normal"
+			}
+		],
+		"connections": [
+			{"from_node": "Speaker_Intro", "from_port": 0, "to_node": "Choice_Interested", "to_port": 0},
+			{"from_node": "Speaker_Intro", "from_port": 0, "to_node": "Choice_NotNow", "to_port": 0},
+			{"from_node": "Choice_Interested", "from_port": 0, "to_node": "Speaker_Details", "to_port": 0},
+			{"from_node": "Choice_NotNow", "from_port": 0, "to_node": "Speaker_Decline1", "to_port": 0},
+			{"from_node": "Speaker_Details", "from_port": 0, "to_node": "Choice_Accept", "to_port": 0},
+			{"from_node": "Speaker_Details", "from_port": 0, "to_node": "Choice_Decline2", "to_port": 0},
+			{"from_node": "Speaker_Decline1", "from_port": 0, "to_node": "End_NotNow", "to_port": 0},
+			{"from_node": "Choice_Accept", "from_port": 0, "to_node": "Quest_Start", "to_port": 0},
+			{"from_node": "Quest_Start", "from_port": 0, "to_node": "Speaker_Accept", "to_port": 0},
+			{"from_node": "Choice_Decline2", "from_port": 0, "to_node": "Speaker_Decline2", "to_port": 0},
+			{"from_node": "Speaker_Accept", "from_port": 0, "to_node": "End_Accept", "to_port": 0},
+			{"from_node": "Speaker_Decline2", "from_port": 0, "to_node": "End_Decline", "to_port": 0}
+		],
+		"placeholders": [
+			{
+				"name": "QUEST_GIVER",
+				"description": "The NPC offering the quest",
+				"default": "Quest Giver"
+			},
+			{
+				"name": "QUEST_ID",
+				"description": "Unique identifier for the quest",
+				"default": "quest_example"
+			},
+			{
+				"name": "QUEST_DESCRIPTION",
+				"description": "Brief description of the quest objective",
+				"default": "I need you to retrieve an important item from the nearby ruins."
+			}
+		]
+	},
+	"preview": {
+		"node_count": 13,
+		"preview_description": "6 Speakers, 4 Choices, 1 Quest, 3 Ends"
+	}
+}

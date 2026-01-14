@@ -1,0 +1,119 @@
+{
+	"version": 1,
+	"metadata": {
+		"template_name": "Basic Greeting",
+		"description": "A simple NPC greeting with three player response options leading to different outcomes.",
+		"author": "Blood & Gold Team",
+		"tags": ["greeting", "conversation", "basic"],
+		"category": "conversation",
+		"created_date": "2026-01-13T00:00:00",
+		"modified_date": "2026-01-13T00:00:00"
+	},
+	"content": {
+		"nodes": [
+			{
+				"id": "Start_1",
+				"type": "Start",
+				"position_x": -300,
+				"position_y": 0
+			},
+			{
+				"id": "Speaker_1",
+				"type": "Speaker",
+				"position_x": -100,
+				"position_y": 0,
+				"speaker": "{{SPEAKER}}",
+				"text": "Greetings, traveler. What brings you to these parts?"
+			},
+			{
+				"id": "Choice_1",
+				"type": "Choice",
+				"position_x": 150,
+				"position_y": -100,
+				"text": "I'm just passing through."
+			},
+			{
+				"id": "Choice_2",
+				"type": "Choice",
+				"position_x": 150,
+				"position_y": 0,
+				"text": "I'm looking for work."
+			},
+			{
+				"id": "Choice_3",
+				"type": "Choice",
+				"position_x": 150,
+				"position_y": 100,
+				"text": "None of your business."
+			},
+			{
+				"id": "Speaker_2",
+				"type": "Speaker",
+				"position_x": 400,
+				"position_y": -100,
+				"speaker": "{{SPEAKER}}",
+				"text": "Safe travels then. The roads can be dangerous."
+			},
+			{
+				"id": "Speaker_3",
+				"type": "Speaker",
+				"position_x": 400,
+				"position_y": 0,
+				"speaker": "{{SPEAKER}}",
+				"text": "Work, you say? There might be something..."
+			},
+			{
+				"id": "Speaker_4",
+				"type": "Speaker",
+				"position_x": 400,
+				"position_y": 100,
+				"speaker": "{{SPEAKER}}",
+				"text": "Hmph. Suit yourself, stranger."
+			},
+			{
+				"id": "End_1",
+				"type": "End",
+				"position_x": 650,
+				"position_y": -100,
+				"end_type": "normal"
+			},
+			{
+				"id": "End_2",
+				"type": "End",
+				"position_x": 650,
+				"position_y": 0,
+				"end_type": "normal"
+			},
+			{
+				"id": "End_3",
+				"type": "End",
+				"position_x": 650,
+				"position_y": 100,
+				"end_type": "normal"
+			}
+		],
+		"connections": [
+			{"from_node": "Start_1", "from_port": 0, "to_node": "Speaker_1", "to_port": 0},
+			{"from_node": "Speaker_1", "from_port": 0, "to_node": "Choice_1", "to_port": 0},
+			{"from_node": "Speaker_1", "from_port": 0, "to_node": "Choice_2", "to_port": 0},
+			{"from_node": "Speaker_1", "from_port": 0, "to_node": "Choice_3", "to_port": 0},
+			{"from_node": "Choice_1", "from_port": 0, "to_node": "Speaker_2", "to_port": 0},
+			{"from_node": "Choice_2", "from_port": 0, "to_node": "Speaker_3", "to_port": 0},
+			{"from_node": "Choice_3", "from_port": 0, "to_node": "Speaker_4", "to_port": 0},
+			{"from_node": "Speaker_2", "from_port": 0, "to_node": "End_1", "to_port": 0},
+			{"from_node": "Speaker_3", "from_port": 0, "to_node": "End_2", "to_port": 0},
+			{"from_node": "Speaker_4", "from_port": 0, "to_node": "End_3", "to_port": 0}
+		],
+		"placeholders": [
+			{
+				"name": "SPEAKER",
+				"description": "The NPC speaker name",
+				"default": "Villager"
+			}
+		]
+	},
+	"preview": {
+		"node_count": 11,
+		"preview_description": "1 Start, 4 Speakers, 3 Choices, 3 Ends"
+	}
+}

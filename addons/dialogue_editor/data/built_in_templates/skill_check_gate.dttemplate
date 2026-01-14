@@ -1,0 +1,138 @@
+{
+	"version": 1,
+	"metadata": {
+		"template_name": "Skill Check Gate",
+		"description": "A dialogue gate that requires passing a skill check to proceed. Includes success and failure branches.",
+		"author": "Blood & Gold Team",
+		"tags": ["skill", "check", "gate", "branch", "combat"],
+		"category": "combat",
+		"created_date": "2026-01-14T00:00:00",
+		"modified_date": "2026-01-14T00:00:00"
+	},
+	"content": {
+		"nodes": [
+			{
+				"id": "Speaker_Challenge",
+				"type": "Speaker",
+				"position_x": -250,
+				"position_y": 0,
+				"speaker": "{{NPC}}",
+				"text": "{{CHALLENGE_TEXT}}"
+			},
+			{
+				"id": "Choice_Attempt",
+				"type": "Choice",
+				"position_x": 0,
+				"position_y": -50,
+				"text": "[{{SKILL_NAME}}] {{ATTEMPT_TEXT}}"
+			},
+			{
+				"id": "Choice_Decline",
+				"type": "Choice",
+				"position_x": 0,
+				"position_y": 50,
+				"text": "I'd rather not risk it."
+			},
+			{
+				"id": "SkillCheck_1",
+				"type": "SkillCheck",
+				"position_x": 250,
+				"position_y": -50,
+				"skill": "{{SKILL_NAME}}",
+				"difficulty": 12
+			},
+			{
+				"id": "Speaker_Success",
+				"type": "Speaker",
+				"position_x": 500,
+				"position_y": -100,
+				"speaker": "{{NPC}}",
+				"text": "{{SUCCESS_TEXT}}"
+			},
+			{
+				"id": "Speaker_Failure",
+				"type": "Speaker",
+				"position_x": 500,
+				"position_y": 0,
+				"speaker": "{{NPC}}",
+				"text": "{{FAILURE_TEXT}}"
+			},
+			{
+				"id": "Speaker_Decline",
+				"type": "Speaker",
+				"position_x": 250,
+				"position_y": 50,
+				"speaker": "{{NPC}}",
+				"text": "Very well. Perhaps another approach then."
+			},
+			{
+				"id": "End_Success",
+				"type": "End",
+				"position_x": 750,
+				"position_y": -100,
+				"end_type": "skill_success"
+			},
+			{
+				"id": "End_Failure",
+				"type": "End",
+				"position_x": 750,
+				"position_y": 0,
+				"end_type": "skill_failure"
+			},
+			{
+				"id": "End_Decline",
+				"type": "End",
+				"position_x": 500,
+				"position_y": 50,
+				"end_type": "normal"
+			}
+		],
+		"connections": [
+			{"from_node": "Speaker_Challenge", "from_port": 0, "to_node": "Choice_Attempt", "to_port": 0},
+			{"from_node": "Speaker_Challenge", "from_port": 0, "to_node": "Choice_Decline", "to_port": 0},
+			{"from_node": "Choice_Attempt", "from_port": 0, "to_node": "SkillCheck_1", "to_port": 0},
+			{"from_node": "SkillCheck_1", "from_port": 0, "to_node": "Speaker_Success", "to_port": 0},
+			{"from_node": "SkillCheck_1", "from_port": 1, "to_node": "Speaker_Failure", "to_port": 0},
+			{"from_node": "Choice_Decline", "from_port": 0, "to_node": "Speaker_Decline", "to_port": 0},
+			{"from_node": "Speaker_Success", "from_port": 0, "to_node": "End_Success", "to_port": 0},
+			{"from_node": "Speaker_Failure", "from_port": 0, "to_node": "End_Failure", "to_port": 0},
+			{"from_node": "Speaker_Decline", "from_port": 0, "to_node": "End_Decline", "to_port": 0}
+		],
+		"placeholders": [
+			{
+				"name": "NPC",
+				"description": "The NPC presenting the challenge",
+				"default": "Guard"
+			},
+			{
+				"name": "SKILL_NAME",
+				"description": "The skill being tested (e.g., Persuasion, Intimidation, Stealth)",
+				"default": "Persuasion"
+			},
+			{
+				"name": "CHALLENGE_TEXT",
+				"description": "The NPC's challenge or obstacle",
+				"default": "This area is restricted. You'll need to convince me you belong here."
+			},
+			{
+				"name": "ATTEMPT_TEXT",
+				"description": "The player's attempt text",
+				"default": "Try to convince them."
+			},
+			{
+				"name": "SUCCESS_TEXT",
+				"description": "What the NPC says on success",
+				"default": "Hmm, I suppose you're right. Go ahead."
+			},
+			{
+				"name": "FAILURE_TEXT",
+				"description": "What the NPC says on failure",
+				"default": "Nice try, but I'm not buying it. Move along."
+			}
+		]
+	},
+	"preview": {
+		"node_count": 10,
+		"preview_description": "4 Speakers, 2 Choices, 1 SkillCheck, 3 Ends"
+	}
+}
