@@ -601,31 +601,34 @@ graph LR
 
 ---
 
-### Feature 4C.4: Formatting Tags
+### Feature 4C.4: Formatting Tags ✅ COMPLETE
 
 **Description:** Support BBCode-style formatting tags in dialogue text.
 
 **Implementation Tasks:**
-- [ ] Create `formatting_tags.gd` with supported tags:
-  - [ ] `[b]bold[/b]`
-  - [ ] `[i]italic[/i]`
-  - [ ] `[color=red]colored[/color]`
-  - [ ] `[shake]effect[/shake]` (passthrough for game)
-  - [ ] `[wave]effect[/wave]` (passthrough for game)
-  - [ ] `[pause=1.5]` (timing hint for game)
-  - [ ] `[speed=0.5]` (typewriter speed)
-- [ ] Pass through to export (game handles rendering)
-- [ ] Validate tag nesting
-- [ ] Preview formatting in editor using RichTextLabel
+- [x] Create `formatting_tags.gd` with supported tags:
+  - [x] `[b]bold[/b]`
+  - [x] `[i]italic[/i]`
+  - [x] `[color=red]colored[/color]`
+  - [x] `[shake]effect[/shake]` (passthrough for game)
+  - [x] `[wave]effect[/wave]` (passthrough for game)
+  - [x] `[pause=1.5]` (timing hint for game)
+  - [x] `[speed=0.5]` (typewriter speed)
+  - [x] Additional tags: `[u]`, `[s]`, `[font_size]`, `[code]`, `[center]`, `[right]`
+  - [x] Game effect tags: `[rainbow]`, `[fade]`
+  - [x] Timing tags: `[wait]`, `[clear]`
+- [x] Pass through to export (game handles rendering)
+- [x] Validate tag nesting (with error messages and positions)
+- [x] Preview formatting in editor using RichTextLabel (generate_preview method)
 
-**Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/text_tags/formatting_tags.gd` (new)
-- `addons/dialogue_editor/scripts/text_tags/tag_parser.gd` (integrate)
+**Files Created:**
+- `addons/dialogue_editor/scripts/text_tags/formatting_tags.gd` ✅
+- `addons/dialogue_editor/scripts/text_tags/test_formatting_tags.gd` ✅ (25 tests)
 
 **Success Criteria:**
-- [ ] BBCode tags preserved in export
-- [ ] Validates proper tag nesting
-- [ ] Editor preview shows basic formatting (bold, italic, color)
+- [x] BBCode tags preserved in export
+- [x] Validates proper tag nesting
+- [x] Editor preview shows basic formatting (bold, italic, color)
 
 ---
 
@@ -1083,7 +1086,7 @@ graph LR
 - [x] Feature 4C.1: Variable Tag Parser ✅
 - [x] Feature 4C.2: Conditional Tag Parser ✅
 - [x] Feature 4C.3: Tag Renderer ✅
-- [ ] Feature 4C.4: Formatting Tags
+- [x] Feature 4C.4: Formatting Tags ✅
 - [ ] Feature 4C.5: Text Preview in Property Panel
 - [ ] Feature 4C.6: Export with Tags
 
