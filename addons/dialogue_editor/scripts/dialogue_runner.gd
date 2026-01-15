@@ -25,6 +25,7 @@ const NODE_TYPE_FLAG_SET := "FlagSet"
 const NODE_TYPE_QUEST := "Quest"
 const NODE_TYPE_REPUTATION := "Reputation"
 const NODE_TYPE_ITEM := "Item"
+const NODE_TYPE_SET_EXPRESSION := "SetExpression"
 
 # Simulated game state
 var flags: Dictionary = {}  # flag_name -> value (String)
@@ -305,6 +306,11 @@ func _process_node(node_type: String, node_data: Dictionary) -> void:
 			# Item node - process item action
 			_process_item_node(node_data)
 
+		NODE_TYPE_SET_EXPRESSION:
+			# Set Expression node - execute variable assignments
+			_process_set_expression_node(node_data)
+			_auto_continue()
+
 
 func _get_available_choices() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
@@ -546,6 +552,56 @@ func _process_item_node(node_data: Dictionary) -> void:
 			# Check has conditional outputs like skill check
 			var has_item = items.get(item_id, 0) >= quantity
 			_follow_item_check_output(has_item)
+
+
+func _process_set_expression_node(node_data: Dictionary) -> void:
+	var assignments = node_data.get("assignments", [])
+
+	# Build context for evaluation
+	var context = _build_expression_context()
+	var evaluator = ExpressionEvaluatorScript.new()
+	evaluator.set_context(context)
+
+	# Execute each assignment
+	for assignment in assignments:
+		var variable = assignment.get("variable", "")
+		var expression = assignment.get("expression", "")
+
+		if variable.is_empty():
+			continue
+
+		# Evaluate the expression
+		var result = evaluator.evaluate_string(expression)
+		var value = result.value if result.success else null
+
+		if not result.success:
+			push_warning("DialogueRunner: Expression error in SetExpression: %s" % result.error)
+			continue
+
+		# Determine where to store the variable based on naming convention
+		if variable.begins_with("flag_") or variable.ends_with("_flag"):
+			# Store as flag
+			flags[variable] = str(value) if value != null else ""
+		elif variable.begins_with("item_"):
+			# Store as item count
+			var item_name = variable.substr(5)  # Remove "item_" prefix
+			items[item_name] = int(value) if value != null else 0
+		elif variable.begins_with("quest_"):
+			# Store as quest state
+			var quest_name = variable.substr(6)  # Remove "quest_" prefix
+			quests[quest_name] = str(value) if value != null else ""
+		elif variable.begins_with("rep_") or variable.begins_with("reputation_"):
+			# Store as reputation
+			var faction = variable.replace("rep_", "").replace("reputation_", "")
+			reputation[faction] = int(value) if value != null else 0
+		else:
+			# Default: store as flag (most flexible)
+			flags[variable] = str(value) if value != null else ""
+
+		# Update context for subsequent assignments
+		context[variable] = value
+
+	state_changed.emit()
 
 
 func _follow_branch_output(result: bool) -> void:

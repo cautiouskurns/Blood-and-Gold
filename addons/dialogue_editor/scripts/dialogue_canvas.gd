@@ -18,6 +18,7 @@ const FlagSetNodeScript = preload("res://addons/dialogue_editor/scripts/nodes/fl
 const QuestNodeScript = preload("res://addons/dialogue_editor/scripts/nodes/quest_node.gd")
 const ReputationNodeScript = preload("res://addons/dialogue_editor/scripts/nodes/reputation_node.gd")
 const ItemNodeScript = preload("res://addons/dialogue_editor/scripts/nodes/item_node.gd")
+const SetExpressionNodeScript = preload("res://addons/dialogue_editor/scripts/nodes/set_expression_node.gd")
 
 signal canvas_changed()  # Emitted when any change is made (for dirty tracking)
 signal zoom_changed(new_zoom: float)  # Emitted when zoom level changes
@@ -154,6 +155,7 @@ func _populate_context_menu() -> void:
 	_context_menu.add_item("Add Quest", 23)
 	_context_menu.add_item("Add Reputation", 24)
 	_context_menu.add_item("Add Item", 25)
+	_context_menu.add_item("Add Set Variables", 26)
 	_context_menu.add_separator()
 
 	# Insert Template submenu
@@ -424,6 +426,8 @@ func _on_context_menu_id_pressed(id: int) -> void:
 			_create_dialogue_node("Reputation", local_pos)
 		25:  # Add Item
 			_create_dialogue_node("Item", local_pos)
+		26:  # Add SetExpression
+			_create_dialogue_node("SetExpression", local_pos)
 		# Template operations
 		100:  # Save as Template
 			save_as_template_requested.emit()
@@ -660,6 +664,8 @@ func _do_create_node_internal(type: String, node_name: String, position: Vector2
 			node = ReputationNodeScript.new()
 		"Item":
 			node = ItemNodeScript.new()
+		"SetExpression":
+			node = SetExpressionNodeScript.new()
 		_:
 			push_error("DialogueCanvas: Unknown node type: %s" % type)
 			return null

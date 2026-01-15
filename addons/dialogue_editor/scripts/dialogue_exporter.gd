@@ -153,6 +153,19 @@ static func _convert_node_to_runtime(node_data: Dictionary) -> Dictionary:
 			runtime["item_id"] = node_data.get("item_id", "")
 			runtime["quantity"] = node_data.get("quantity", 1)
 
+		"SetExpression":
+			# Export all variable assignments
+			var assignments: Array = []
+			for assignment in node_data.get("assignments", []):
+				var variable = assignment.get("variable", "")
+				var expression = assignment.get("expression", "")
+				if not variable.is_empty():
+					assignments.append({
+						"variable": variable,
+						"expression": expression
+					})
+			runtime["assignments"] = assignments
+
 	return runtime
 
 

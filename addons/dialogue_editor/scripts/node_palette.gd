@@ -68,6 +68,11 @@ const PHASE2_NODE_TYPES = {
 		"description": "Give/take/check items",
 		"color": Color.ORANGE,
 		"icon": "Briefcase"
+	},
+	"SetExpression": {
+		"description": "Set multiple variables",
+		"color": Color.MEDIUM_SLATE_BLUE,
+		"icon": "Script"
 	}
 }
 

@@ -481,34 +481,35 @@ graph LR
 
 ---
 
-### Feature 4B.7: Set Expression Node
+### Feature 4B.7: Set Expression Node ✅ COMPLETE
 
 **Description:** New node type for setting multiple variables in one action.
 
 **Dependencies:** Feature 4B.3
 
 **Implementation Tasks:**
-- [ ] Create `set_expression_node.gd`:
-  - [ ] Multiple assignment rows (variable = expression)
-  - [ ] Add/remove assignment buttons
-  - [ ] Validate each expression
-  - [ ] One input, one output
-- [ ] Add to node palette under "Advanced" section
-- [ ] Implement serialization/deserialization
-- [ ] Update exporter for new node type
-- [ ] Update test mode to execute assignments
+- [x] Create `set_expression_node.gd`:
+  - [x] Multiple assignment rows (variable = expression)
+  - [x] Add/remove assignment buttons
+  - [x] Validate each expression
+  - [x] One input, one output
+- [x] Add to node palette under "Advanced" section
+- [x] Implement serialization/deserialization
+- [x] Update exporter for new node type
+- [x] Update test mode to execute assignments
 
-**Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/nodes/set_expression_node.gd` (new)
-- `addons/dialogue_editor/scripts/node_palette.gd` (add to palette)
-- `addons/dialogue_editor/scripts/dialogue_canvas.gd` (node creation)
-- `addons/dialogue_editor/scripts/dialogue_exporter.gd` (export support)
+**Files Created/Modified:**
+- `addons/dialogue_editor/scripts/nodes/set_expression_node.gd` ✅
+- `addons/dialogue_editor/scripts/node_palette.gd` ✅
+- `addons/dialogue_editor/scripts/dialogue_canvas.gd` ✅
+- `addons/dialogue_editor/scripts/dialogue_exporter.gd` ✅
+- `addons/dialogue_editor/scripts/dialogue_runner.gd` ✅
 
 **Success Criteria:**
-- [ ] Can create Set Expression node
-- [ ] Can add multiple assignments
-- [ ] Assignments execute in test mode
-- [ ] Exports correctly to JSON
+- [x] Can create Set Expression node
+- [x] Can add multiple assignments
+- [x] Assignments execute in test mode
+- [x] Exports correctly to JSON
 
 ---
 
@@ -1065,14 +1066,14 @@ graph LR
 - [x] Feature 4A.4: Built-in Template Library ✅
 - [x] Feature 4A.5: Template Library Panel ✅
 
-### Phase 4B: Expressions
+### Phase 4B: Expressions ✅ COMPLETE
 - [x] Feature 4B.1: Expression Lexer ✅
 - [x] Feature 4B.2: Expression Parser ✅
 - [x] Feature 4B.3: Expression Evaluator ✅
 - [x] Feature 4B.4: Expression Editor UI ✅
 - [x] Feature 4B.5: Update Branch Node (Dual-Mode) ✅
 - [x] Feature 4B.6: Variable Browser Panel ✅
-- [ ] Feature 4B.7: Set Expression Node
+- [x] Feature 4B.7: Set Expression Node ✅
 
 ### Phase 4C: Conditional Text
 - [ ] Feature 4C.1: Variable Tag Parser
