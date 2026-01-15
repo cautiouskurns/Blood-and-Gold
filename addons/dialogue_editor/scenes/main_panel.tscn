@@ -1,21 +1,25 @@
 [gd_scene load_steps=5 format=3 uid="uid://c8xvmk5qd2yxk"]
 
-[ext_resource type="Script" path="res://addons/dialogue_editor/scripts/dialogue_canvas.gd" id="1_canvas"]
-[ext_resource type="Script" path="res://addons/dialogue_editor/scripts/main_panel.gd" id="2_main"]
-[ext_resource type="Script" path="res://addons/dialogue_editor/scripts/node_palette.gd" id="3_palette"]
-[ext_resource type="Script" path="res://addons/dialogue_editor/scripts/template_library_panel.gd" id="4_template_lib"]
+[ext_resource type="Script" uid="uid://c5606yb7d7d07" path="res://addons/dialogue_editor/scripts/dialogue_canvas.gd" id="1_canvas"]
+[ext_resource type="Script" uid="uid://isfx8owenb35" path="res://addons/dialogue_editor/scripts/main_panel.gd" id="2_main"]
+[ext_resource type="Script" uid="uid://blt1h7xtfuhhb" path="res://addons/dialogue_editor/scripts/node_palette.gd" id="3_palette"]
+[ext_resource type="Script" uid="uid://c8vik8eup54y3" path="res://addons/dialogue_editor/scripts/template_library_panel.gd" id="4_template_lib"]
 
 [node name="MainPanel" type="Control"]
-script = ExtResource("2_main")
+custom_minimum_size = Vector2(800, 600)
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 mouse_filter = 2
+script = ExtResource("2_main")
 
 [node name="Margin" type="MarginContainer" parent="."]
-anchors_preset = 15
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
@@ -29,62 +33,57 @@ theme_override_constants/margin_bottom = 0
 [node name="HSplit" type="HSplitContainer" parent="Margin"]
 layout_mode = 2
 size_flags_vertical = 3
-split_offset = 180
+split_offset = 400
 
 [node name="LeftPanel" type="PanelContainer" parent="Margin/HSplit"]
-custom_minimum_size = Vector2(160, 0)
+custom_minimum_size = Vector2(350, 0)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="LeftScroll" type="ScrollContainer" parent="Margin/HSplit/LeftPanel"]
+[node name="LeftVSplit" type="VSplitContainer" parent="Margin/HSplit/LeftPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+split_offset = -150
+
+[node name="TabContainer" type="TabContainer" parent="Margin/HSplit/LeftPanel/LeftVSplit"]
+layout_mode = 2
+size_flags_vertical = 3
+current_tab = 0
+
+[node name="Nodes" type="ScrollContainer" parent="Margin/HSplit/LeftPanel/LeftVSplit/TabContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
+metadata/_tab_index = 0
 
-[node name="VBox" type="VBoxContainer" parent="Margin/HSplit/LeftPanel/LeftScroll"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="Title" type="Label" parent="Margin/HSplit/LeftPanel/LeftScroll/VBox"]
-layout_mode = 2
-text = "NODE PALETTE"
-horizontal_alignment = 1
-
-[node name="Sep" type="HSeparator" parent="Margin/HSplit/LeftPanel/LeftScroll/VBox"]
-layout_mode = 2
-
-[node name="Scroll" type="ScrollContainer" parent="Margin/HSplit/LeftPanel/LeftScroll/VBox"]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="NodeList" type="VBoxContainer" parent="Margin/HSplit/LeftPanel/VBox/Scroll"]
+[node name="NodeList" type="VBoxContainer" parent="Margin/HSplit/LeftPanel/LeftVSplit/TabContainer/Nodes"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("3_palette")
 
-[node name="Sep2" type="HSeparator" parent="Margin/HSplit/LeftPanel/LeftScroll/VBox"]
+[node name="Templates" type="ScrollContainer" parent="Margin/HSplit/LeftPanel/LeftVSplit/TabContainer"]
+visible = false
 layout_mode = 2
-
-[node name="TemplateTitle" type="Label" parent="Margin/HSplit/LeftPanel/LeftScroll/VBox"]
-layout_mode = 2
-text = "TEMPLATE LIBRARY"
-horizontal_alignment = 1
-
-[node name="Sep3" type="HSeparator" parent="Margin/HSplit/LeftPanel/LeftScroll/VBox"]
-layout_mode = 2
-
-[node name="TemplateScroll" type="ScrollContainer" parent="Margin/HSplit/LeftPanel/LeftScroll/VBox"]
-layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
+horizontal_scroll_mode = 0
+metadata/_tab_index = 1
 
-[node name="TemplateLibrary" type="VBoxContainer" parent="Margin/HSplit/LeftPanel/VBox/TemplateScroll"]
+[node name="TemplateLibrary" type="VBoxContainer" parent="Margin/HSplit/LeftPanel/LeftVSplit/TabContainer/Templates"]
+custom_minimum_size = Vector2(200, 300)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("4_template_lib")
+
+[node name="VariablesContainer" type="ScrollContainer" parent="Margin/HSplit/LeftPanel/LeftVSplit"]
+custom_minimum_size = Vector2(0, 400)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
 [node name="RightPanel" type="VBoxContainer" parent="Margin/HSplit"]
 layout_mode = 2
@@ -96,14 +95,23 @@ layout_mode = 2
 
 [node name="NewBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
 layout_mode = 2
+tooltip_text = "New Dialogue
+Create a new empty dialogue tree.
+Shortcut: Ctrl+N"
 text = "New"
 
 [node name="OpenBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
 layout_mode = 2
+tooltip_text = "Open Dialogue
+Open an existing .dtree file.
+Shortcut: Ctrl+O"
 text = "Open"
 
 [node name="SaveBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
 layout_mode = 2
+tooltip_text = "Save Dialogue
+Save the current dialogue tree to .dtree file.
+Shortcut: Ctrl+S (Save), Ctrl+Shift+S (Save As)"
 text = "Save"
 
 [node name="Sep1" type="VSeparator" parent="Margin/HSplit/RightPanel/Toolbar"]
@@ -111,6 +119,9 @@ layout_mode = 2
 
 [node name="ExportBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
 layout_mode = 2
+tooltip_text = "Export to JSON
+Export dialogue to JSON format for game use.
+Shortcut: Ctrl+E"
 text = "Export JSON"
 
 [node name="Sep3" type="VSeparator" parent="Margin/HSplit/RightPanel/Toolbar"]
@@ -118,9 +129,15 @@ layout_mode = 2
 
 [node name="SearchField" type="OptionButton" parent="Margin/HSplit/RightPanel/Toolbar"]
 layout_mode = 2
-tooltip_text = "Search in..."
-item_count = 5
+tooltip_text = "Search Field
+Select which field to search in:
+- All: Search all text fields
+- Node ID: Search by node identifier
+- Speaker: Search by speaker name
+- Text: Search dialogue text only
+- Type: Search by node type"
 selected = 0
+item_count = 5
 popup/item_0/text = "All"
 popup/item_0/id = 0
 popup/item_1/text = "Node ID"
@@ -135,21 +152,28 @@ popup/item_4/id = 4
 [node name="SearchEdit" type="LineEdit" parent="Margin/HSplit/RightPanel/Toolbar"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
+tooltip_text = "Search nodes (F3 / Shift+F3)"
 placeholder_text = "Search... (F3)"
 clear_button_enabled = true
 
 [node name="FindPrevBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
 layout_mode = 2
-tooltip_text = "Find Previous (Shift+F3)"
+tooltip_text = "Find Previous
+Jump to the previous search result.
+Shortcut: Shift+F3"
 text = "<"
 
 [node name="FindNextBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
 layout_mode = 2
-tooltip_text = "Find Next (F3)"
+tooltip_text = "Find Next
+Jump to the next search result.
+Shortcut: F3"
 text = ">"
 
 [node name="SearchResultLabel" type="Label" parent="Margin/HSplit/RightPanel/Toolbar"]
 layout_mode = 2
+tooltip_text = "Search Results
+Shows current result position out of total matches."
 text = "0/0"
 
 [node name="Sep4" type="VSeparator" parent="Margin/HSplit/RightPanel/Toolbar"]
@@ -161,9 +185,11 @@ text = "Filter:"
 
 [node name="FilterDropdown" type="OptionButton" parent="Margin/HSplit/RightPanel/Toolbar"]
 layout_mode = 2
-tooltip_text = "Show only specific node types"
-item_count = 1
+tooltip_text = "Type Filter
+Show only specific node types on the canvas.
+Select 'All Types' to show everything."
 selected = 0
+item_count = 1
 popup/item_0/text = "All Types"
 popup/item_0/id = 0
 
@@ -177,36 +203,57 @@ layout_mode = 2
 
 [node name="TestBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
 layout_mode = 2
+tooltip_text = "Test Dialogue
+Play through the dialogue in the editor.
+Shortcut: F5"
 text = "Test (F5)"
 
 [node name="ValidateBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
 layout_mode = 2
+tooltip_text = "Validate Tree
+Check for structural issues like orphan nodes,
+dead ends, and missing connections."
 text = "Validate"
 
 [node name="ResetViewBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
 layout_mode = 2
+tooltip_text = "Reset View
+Reset canvas zoom to 100% and center position."
 text = "Reset View"
 
 [node name="AutoLayoutBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
 layout_mode = 2
-tooltip_text = "Automatically arrange nodes in a tree layout"
+tooltip_text = "Auto Layout
+Automatically arrange nodes in a tree layout
+starting from the Start node."
 text = "Auto Layout"
 
 [node name="HelpBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
 layout_mode = 2
-tooltip_text = "Help & Documentation (F1)"
+tooltip_text = "Help & Documentation
+Open comprehensive help with Quick Start,
+Keyboard Shortcuts, and Node Reference.
+Shortcut: F1"
 text = "Help"
 
 [node name="WhatsThisBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
 layout_mode = 2
+tooltip_text = "What's This?
+Click this, then click any element
+to see help about it."
 toggle_mode = true
-tooltip_text = "What's This? - Click any element for help"
 text = "?"
 
 [node name="DialogueCanvas" type="GraphEdit" parent="Margin/HSplit/RightPanel"]
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 size_flags_vertical = 3
+right_disconnects = true
+connection_lines_thickness = 2.0
+zoom_min = 0.25
+zoom_max = 2.0
+zoom_step = 0.1
+minimap_size = Vector2(200, 150)
 script = ExtResource("1_canvas")
 
 [node name="StatusBar" type="HBoxContainer" parent="Margin/HSplit/RightPanel"]

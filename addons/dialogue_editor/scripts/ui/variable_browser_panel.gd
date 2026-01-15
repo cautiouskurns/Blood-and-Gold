@@ -4,7 +4,8 @@ extends VBoxContainer
 ## Panel showing all variables used across the dialogue tree.
 ## Displays variables in categorized lists with test value editing.
 
-const ExpressionLexerScript = preload("res://addons/dialogue_editor/scripts/expressions/expression_lexer.gd")
+# Lazy-loaded to avoid blocking compilation if lexer has issues
+var _expression_lexer_script: GDScript = null
 
 signal variable_selected(variable_name: String, node_names: Array)
 signal test_value_changed(variable_name: String, value: Variant)
@@ -56,7 +57,8 @@ const BUILTIN_CATEGORIES = {
 
 func _ready() -> void:
 	_setup_ui()
-	custom_minimum_size = Vector2(0, 150)
+	custom_minimum_size = Vector2(0, 350)
+	size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 
 func _setup_ui() -> void:
@@ -206,7 +208,7 @@ func set_collapsed(collapsed: bool) -> void:
 	if _is_collapsed:
 		custom_minimum_size = Vector2(0, 30)
 	else:
-		custom_minimum_size = Vector2(0, 150)
+		custom_minimum_size = Vector2(0, 350)
 
 
 ## Get collapsed state.
@@ -255,35 +257,49 @@ func _extract_variables_from_expression(expression: String, node_name: String) -
 	if expression.is_empty():
 		return
 
+	# Lazy load lexer to avoid blocking compilation
+	if _expression_lexer_script == null:
+		_expression_lexer_script = load("res://addons/dialogue_editor/scripts/expressions/expression_lexer.gd")
+
+	if _expression_lexer_script == null:
+		# Lexer unavailable, skip expression parsing
+		return
+
 	# Use lexer to tokenize
-	var lexer = ExpressionLexerScript.new()
-	var tokens = lexer.tokenize(expression)
+	var lexer = _expression_lexer_script.new()
+	var tokens_result = lexer.tokenize(expression)
+	if tokens_result == null or not tokens_result.success:
+		return
+	var tokens = tokens_result.tokens
 
 	var i = 0
 	while i < tokens.size():
 		var token = tokens[i]
+		var token_type_name = token.get_type_name() if token.has_method("get_type_name") else ""
 
 		# Check for function calls like has_flag("name")
-		if token.type == "IDENTIFIER" and i + 1 < tokens.size():
+		if token_type_name == "IDENTIFIER" and i + 1 < tokens.size():
 			var func_name = token.value
 			var next_token = tokens[i + 1]
+			var next_type_name = next_token.get_type_name() if next_token.has_method("get_type_name") else ""
 
-			if next_token.type == "LPAREN":
+			if next_type_name == "LPAREN":
 				# This is a function call - find the argument
 				if i + 2 < tokens.size():
 					var arg_token = tokens[i + 2]
-					if arg_token.type == "STRING":
+					var arg_type_name = arg_token.get_type_name() if arg_token.has_method("get_type_name") else ""
+					if arg_type_name == "STRING":
 						var category = BUILTIN_CATEGORIES.get(func_name, "custom")
-						var var_name = func_name + "(\"" + arg_token.value + "\")"
+						var var_name = func_name + "(\"" + str(arg_token.value) + "\")"
 						_add_variable(var_name, node_name, category)
 			else:
 				# Regular variable
 				var category = _guess_category(func_name)
 				_add_variable(func_name, node_name, category)
-		elif token.type == "IDENTIFIER":
+		elif token_type_name == "IDENTIFIER":
 			# Standalone variable
-			var category = _guess_category(token.value)
-			_add_variable(token.value, node_name, category)
+			var category = _guess_category(str(token.value))
+			_add_variable(str(token.value), node_name, category)
 
 		i += 1
 

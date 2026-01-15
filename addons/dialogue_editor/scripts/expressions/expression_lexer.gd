@@ -41,14 +41,14 @@ enum TokenType {
 # =============================================================================
 
 class Token:
-	var type: TokenType
+	var type: int  # TokenType enum value (avoid @tool inner class type issues)
 	var value: Variant          # The actual value (number, string, etc.)
 	var lexeme: String          # The raw text that was tokenized
 	var position: int           # Character position in source
 	var line: int               # Line number (for multi-line expressions)
 	var column: int             # Column number
 
-	func _init(p_type: TokenType, p_value: Variant, p_lexeme: String, p_position: int, p_line: int = 1, p_column: int = 0) -> void:
+	func _init(p_type: int, p_value: Variant, p_lexeme: String, p_position: int, p_line: int = 1, p_column: int = 0) -> void:
 		type = p_type
 		value = p_value
 		lexeme = p_lexeme
@@ -59,7 +59,7 @@ class Token:
 	func _to_string() -> String:
 		return "Token(%s, %s, pos=%d)" % [TokenType.keys()[type], str(value), position]
 
-	func is_type(t: TokenType) -> bool:
+	func is_type(t: int) -> bool:
 		return type == t
 
 	## Get a human-readable type name.
@@ -466,7 +466,7 @@ func _peek_next() -> String:
 	return _source[_position + 1]
 
 
-func _make_token(type: TokenType, value: Variant, lexeme: String = "") -> Token:
+func _make_token(type: int, value: Variant, lexeme: String = "") -> Token:
 	if lexeme.is_empty():
 		lexeme = str(value)
 	return Token.new(type, value, lexeme, _start_position, _start_line, _start_column)
@@ -487,17 +487,17 @@ func _get_context(pos: int, context_size: int = 20) -> String:
 # =============================================================================
 
 ## Get a human-readable name for a token type.
-static func get_type_name(type: TokenType) -> String:
+static func get_type_name(type: int) -> String:
 	return TokenType.keys()[type]
 
 
 ## Check if a token type is a literal (NUMBER, STRING, BOOLEAN).
-static func is_literal_type(type: TokenType) -> bool:
+static func is_literal_type(type: int) -> bool:
 	return type in [TokenType.NUMBER, TokenType.STRING, TokenType.BOOLEAN]
 
 
 ## Check if a token type is an operator.
-static func is_operator_type(type: TokenType) -> bool:
+static func is_operator_type(type: int) -> bool:
 	return type == TokenType.OPERATOR
 
 

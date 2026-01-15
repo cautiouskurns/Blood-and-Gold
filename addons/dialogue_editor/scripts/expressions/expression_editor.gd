@@ -4,10 +4,34 @@ extends VBoxContainer
 ## Rich text editor for dialogue expressions with syntax highlighting,
 ## real-time validation, autocomplete, and testing capabilities.
 
-const ExpressionLexerScript = preload("res://addons/dialogue_editor/scripts/expressions/expression_lexer.gd")
-const ExpressionParserScript = preload("res://addons/dialogue_editor/scripts/expressions/expression_parser.gd")
-const ExpressionEvaluatorScript = preload("res://addons/dialogue_editor/scripts/expressions/expression_evaluator.gd")
-const ExpressionContextScript = preload("res://addons/dialogue_editor/scripts/expressions/expression_context.gd")
+# Lazy-loaded to avoid @tool compilation issues with inner class types
+var _lexer_script: GDScript = null
+var _parser_script: GDScript = null
+var _evaluator_script: GDScript = null
+var _context_script: GDScript = null
+
+func _get_lexer_script() -> GDScript:
+	if _lexer_script == null:
+		_lexer_script = load("res://addons/dialogue_editor/scripts/expressions/expression_lexer.gd")
+	return _lexer_script
+
+func _get_parser_script() -> GDScript:
+	if _parser_script == null:
+		_parser_script = load("res://addons/dialogue_editor/scripts/expressions/expression_parser.gd")
+	return _parser_script
+
+func _get_evaluator_script() -> GDScript:
+	if _evaluator_script == null:
+		_evaluator_script = load("res://addons/dialogue_editor/scripts/expressions/expression_evaluator.gd")
+	return _evaluator_script
+
+func _get_context_script() -> GDScript:
+	if _context_script == null:
+		_context_script = load("res://addons/dialogue_editor/scripts/expressions/expression_context.gd")
+	return _context_script
+
+# Token type constant (mirrors ExpressionLexer.TokenType.IDENTIFIER)
+const TT_IDENTIFIER = 3
 
 signal expression_changed(expression: String)
 signal validation_changed(is_valid: bool, error: String)
@@ -32,7 +56,7 @@ signal validation_changed(is_valid: bool, error: String)
 var known_variables: Array[String] = []
 
 ## Test context for evaluation.
-var test_context: ExpressionContextScript
+var test_context: ExpressionContext
 
 # =============================================================================
 # UI COMPONENTS
@@ -97,7 +121,9 @@ func _ready() -> void:
 		_setup_test_panel()
 
 	# Initialize test context
-	test_context = ExpressionContextScript.create_default()
+	var ContextScript = _get_context_script()
+	if ContextScript:
+		test_context = ContextScript.create_default()
 
 
 func _setup_ui() -> void:
@@ -283,7 +309,7 @@ func add_known_variable(variable: String) -> void:
 
 
 ## Set the test context.
-func set_test_context(context: ExpressionContextScript) -> void:
+func set_test_context(context: ExpressionContext) -> void:
 	test_context = context
 	_update_test_variables_ui()
 
@@ -326,7 +352,11 @@ func _validate_expression() -> void:
 		return
 
 	# Parse the expression
-	var parser = ExpressionParserScript.new()
+	var ParserScript = _get_parser_script()
+	if ParserScript == null:
+		_set_valid(false, "Parser not available")
+		return
+	var parser = ParserScript.new()
 	var result = parser.parse(expression)
 
 	if result.has_errors():
@@ -543,14 +573,17 @@ func _extract_variables_from_expression() -> Array[String]:
 	var variables: Array[String] = []
 
 	# Use lexer to find identifiers
-	var lexer = ExpressionLexerScript.new()
+	var LexerScript = _get_lexer_script()
+	if LexerScript == null:
+		return variables
+	var lexer = LexerScript.new()
 	var result = lexer.tokenize(expression)
 
 	if result.has_errors():
 		return variables
 
 	for token in result.tokens:
-		if token.type == ExpressionLexerScript.TokenType.IDENTIFIER:
+		if token.type == TT_IDENTIFIER:
 			var name = str(token.value)
 			# Skip function names (followed by parenthesis)
 			var is_function = false

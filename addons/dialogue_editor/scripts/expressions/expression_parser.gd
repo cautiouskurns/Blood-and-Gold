@@ -231,14 +231,40 @@ class ParseResult:
 
 
 # =============================================================================
+# TOKEN TYPE CONSTANTS (mirror ExpressionLexer.TokenType)
+# =============================================================================
+
+const TT_NUMBER = 0
+const TT_STRING = 1
+const TT_BOOLEAN = 2
+const TT_IDENTIFIER = 3
+const TT_KEYWORD = 4
+const TT_OPERATOR = 5
+const TT_LPAREN = 6
+const TT_RPAREN = 7
+const TT_COMMA = 8
+const TT_DOT = 9
+const TT_LBRACKET = 10
+const TT_RBRACKET = 11
+const TT_EOF = 12
+const TT_ERROR = 13
+
+
+# =============================================================================
 # PARSER STATE
 # =============================================================================
 
-const ExpressionLexerScript = preload("res://addons/dialogue_editor/scripts/expressions/expression_lexer.gd")
+# Lazy-loaded to avoid @tool compilation issues with inner class types
+var _lexer_script: GDScript = null
 
-var _tokens: Array  # Array of ExpressionLexer.Token
+var _tokens: Array  # Array of Token objects
 var _current: int = 0
 var _source: String = ""
+
+func _get_lexer_script() -> GDScript:
+	if _lexer_script == null:
+		_lexer_script = load("res://addons/dialogue_editor/scripts/expressions/expression_lexer.gd")
+	return _lexer_script
 
 
 # =============================================================================
@@ -254,7 +280,11 @@ func parse(expression: String) -> ParseResult:
 	var result = ParseResult.new()
 
 	# Tokenize the expression first
-	var lexer = ExpressionLexerScript.new()
+	var LexerScript = _get_lexer_script()
+	if LexerScript == null:
+		result.add_error(ParseError.new("Failed to load expression lexer", 0, 1, 1))
+		return result
+	var lexer = LexerScript.new()
 	var lexer_result = lexer.tokenize(expression)
 
 	if lexer_result.has_errors():
@@ -281,7 +311,7 @@ func parse(expression: String) -> ParseResult:
 
 	if ast != null and not result.has_errors():
 		# Check for trailing tokens (except EOF)
-		if not _check_type(ExpressionLexerScript.TokenType.EOF):
+		if not _check_type(TT_EOF):
 			var token = _peek()
 			result.add_error(ParseError.new(
 				"Unexpected token after expression",
@@ -465,15 +495,15 @@ func _parse_postfix(result: ParseResult) -> ASTNode:
 		return null
 
 	while true:
-		if _match_type(ExpressionLexerScript.TokenType.LPAREN):
+		if _match_type(TT_LPAREN):
 			# Function call
 			expr = _parse_function_call(expr, result)
 			if expr == null:
 				return null
-		elif _match_type(ExpressionLexerScript.TokenType.DOT):
+		elif _match_type(TT_DOT):
 			# Member access
 			var dot = _previous()
-			if not _check_type(ExpressionLexerScript.TokenType.IDENTIFIER):
+			if not _check_type(TT_IDENTIFIER):
 				result.add_error(ParseError.new(
 					"Expected identifier after '.'",
 					dot.position,
@@ -484,7 +514,7 @@ func _parse_postfix(result: ParseResult) -> ASTNode:
 				return null
 			var member_token = _advance()
 			expr = MemberAccessNode.new(expr, member_token.value, dot.position, dot.line, dot.column)
-		elif _match_type(ExpressionLexerScript.TokenType.LBRACKET):
+		elif _match_type(TT_LBRACKET):
 			# Index access
 			var bracket = _previous()
 			var index = _parse_expression(result)
@@ -497,7 +527,7 @@ func _parse_postfix(result: ParseResult) -> ASTNode:
 					"["
 				))
 				return null
-			if not _match_type(ExpressionLexerScript.TokenType.RBRACKET):
+			if not _match_type(TT_RBRACKET):
 				var token = _peek()
 				result.add_error(ParseError.new(
 					"Expected ']' after index",
@@ -537,13 +567,13 @@ func _parse_function_call(callee: ASTNode, result: ParseResult) -> ASTNode:
 		return null
 
 	# Parse arguments
-	if not _check_type(ExpressionLexerScript.TokenType.RPAREN):
+	if not _check_type(TT_RPAREN):
 		var first_arg = _parse_expression(result)
 		if first_arg == null:
 			return null
 		args.append(first_arg)
 
-		while _match_type(ExpressionLexerScript.TokenType.COMMA):
+		while _match_type(TT_COMMA):
 			var arg = _parse_expression(result)
 			if arg == null:
 				var token = _peek()
@@ -557,7 +587,7 @@ func _parse_function_call(callee: ASTNode, result: ParseResult) -> ASTNode:
 				return null
 			args.append(arg)
 
-	if not _match_type(ExpressionLexerScript.TokenType.RPAREN):
+	if not _match_type(TT_RPAREN):
 		var token = _peek()
 		result.add_error(ParseError.new(
 			"Expected ')' after function arguments",
@@ -582,27 +612,27 @@ func _parse_primary(result: ParseResult) -> ASTNode:
 	var token = _peek()
 
 	# Number literal
-	if _match_type(ExpressionLexerScript.TokenType.NUMBER):
+	if _match_type(TT_NUMBER):
 		var prev = _previous()
 		return LiteralNode.new(prev.value, prev.position, prev.line, prev.column)
 
 	# String literal
-	if _match_type(ExpressionLexerScript.TokenType.STRING):
+	if _match_type(TT_STRING):
 		var prev = _previous()
 		return LiteralNode.new(prev.value, prev.position, prev.line, prev.column)
 
 	# Boolean literal
-	if _match_type(ExpressionLexerScript.TokenType.BOOLEAN):
+	if _match_type(TT_BOOLEAN):
 		var prev = _previous()
 		return LiteralNode.new(prev.value, prev.position, prev.line, prev.column)
 
 	# Parenthesized expression
-	if _match_type(ExpressionLexerScript.TokenType.LPAREN):
+	if _match_type(TT_LPAREN):
 		var lparen = _previous()
 		var expr = _parse_expression(result)
 		if expr == null:
 			return null
-		if not _match_type(ExpressionLexerScript.TokenType.RPAREN):
+		if not _match_type(TT_RPAREN):
 			var next_token = _peek()
 			result.add_error(ParseError.new(
 				"Expected ')' after expression",
@@ -615,12 +645,12 @@ func _parse_primary(result: ParseResult) -> ASTNode:
 		return expr
 
 	# Identifier (variable or function name)
-	if _match_type(ExpressionLexerScript.TokenType.IDENTIFIER):
+	if _match_type(TT_IDENTIFIER):
 		var prev = _previous()
 		return VariableNode.new(prev.value, [prev.value], prev.position, prev.line, prev.column)
 
 	# Error: unexpected token
-	if _check_type(ExpressionLexerScript.TokenType.EOF):
+	if _check_type(TT_EOF):
 		result.add_error(ParseError.new(
 			"Unexpected end of expression",
 			token.position,
@@ -645,42 +675,45 @@ func _parse_primary(result: ParseResult) -> ASTNode:
 # =============================================================================
 
 func _is_at_end() -> bool:
-	return _current >= _tokens.size() or _check_type(ExpressionLexerScript.TokenType.EOF)
+	return _current >= _tokens.size() or _check_type(TT_EOF)
 
 
-func _peek() -> ExpressionLexerScript.Token:
+func _peek():  # Returns Token object (type hint removed to avoid @tool issues)
 	if _current >= _tokens.size():
 		# Return a dummy EOF token
-		return ExpressionLexerScript.Token.new(
-			ExpressionLexerScript.TokenType.EOF,
-			null,
-			"",
-			_source.length(),
-			1,
-			_source.length() + 1
-		)
+		var LexerScript = _get_lexer_script()
+		if LexerScript:
+			return LexerScript.Token.new(
+				TT_EOF,
+				null,
+				"",
+				_source.length(),
+				1,
+				_source.length() + 1
+			)
+		return null
 	return _tokens[_current]
 
 
-func _previous() -> ExpressionLexerScript.Token:
+func _previous():  # Returns Token object
 	if _current == 0:
 		return _tokens[0]
 	return _tokens[_current - 1]
 
 
-func _advance() -> ExpressionLexerScript.Token:
+func _advance():  # Returns Token object
 	if not _is_at_end():
 		_current += 1
 	return _previous()
 
 
-func _check_type(type: ExpressionLexerScript.TokenType) -> bool:
-	if _is_at_end() and type != ExpressionLexerScript.TokenType.EOF:
+func _check_type(type: int) -> bool:
+	if _is_at_end() and type != TT_EOF:
 		return false
 	return _peek().type == type
 
 
-func _match_type(type: ExpressionLexerScript.TokenType) -> bool:
+func _match_type(type: int) -> bool:
 	if _check_type(type):
 		_advance()
 		return true
@@ -688,14 +721,14 @@ func _match_type(type: ExpressionLexerScript.TokenType) -> bool:
 
 
 func _match_keyword(keyword: String) -> bool:
-	if _check_type(ExpressionLexerScript.TokenType.KEYWORD) and _peek().value == keyword:
+	if _check_type(TT_KEYWORD) and _peek().value == keyword:
 		_advance()
 		return true
 	return false
 
 
 func _match_operator(op: String) -> bool:
-	if _check_type(ExpressionLexerScript.TokenType.OPERATOR) and _peek().value == op:
+	if _check_type(TT_OPERATOR) and _peek().value == op:
 		_advance()
 		return true
 	return false
