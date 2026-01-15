@@ -228,8 +228,8 @@ func _setup_expression_mode_ui() -> void:
 	_expression_container = VBoxContainer.new()
 	_expression_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-	# Expression field
-	_expression_field = ExpressionFieldScript.new()
+	# Expression field (use class_name directly to avoid @tool preload timing issues)
+	_expression_field = ExpressionField.new()
 	_expression_field.placeholder_text = "condition expression..."
 	_expression_field.expression_changed.connect(_on_expression_changed)
 	_expression_field.validation_changed.connect(_on_expression_validation_changed)

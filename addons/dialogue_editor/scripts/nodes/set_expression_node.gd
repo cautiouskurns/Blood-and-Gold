@@ -112,8 +112,8 @@ func _add_assignment_row(variable: String, expression: String) -> void:
 	equals.text = " = "
 	row.add_child(equals)
 
-	# Expression field
-	var expr_field = ExpressionFieldScript.new()
+	# Expression field (use class_name directly to avoid @tool preload timing issues)
+	var expr_field = ExpressionField.new()
 	expr_field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	expr_field.custom_minimum_size = Vector2(120, 0)
 	expr_field.placeholder_text = "expression"
