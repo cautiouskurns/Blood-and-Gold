@@ -3,6 +3,9 @@ class_name DialogueRunner
 extends RefCounted
 ## Runs dialogue trees for in-editor testing.
 ## Tracks simulated game state and navigation history.
+## Supports expression-based conditions using the expression evaluator.
+
+const ExpressionEvaluatorScript = preload("res://addons/dialogue_editor/scripts/expressions/expression_evaluator.gd")
 
 signal dialogue_started()
 signal dialogue_ended(end_type: String)
@@ -324,12 +327,21 @@ func _get_available_choices() -> Array[Dictionary]:
 
 
 func _process_branch_node(node_data: Dictionary) -> void:
-	var condition_type = node_data.get("condition_type", 0)
-	var condition_key = node_data.get("condition_key", "")
-	var condition_value = node_data.get("condition_value", "")
+	# Check if node has an expression (new dual-mode format)
+	var expression = node_data.get("expression", "")
 
-	var result = _evaluate_branch_condition(condition_type, condition_key, condition_value)
-	_follow_branch_output(result)
+	if not expression.is_empty():
+		# Use expression evaluator
+		var result = _evaluate_expression(expression)
+		_follow_branch_output(result)
+	else:
+		# Fall back to legacy condition format
+		var condition_type = node_data.get("condition_type", 0)
+		var condition_key = node_data.get("condition_key", "")
+		var condition_value = node_data.get("condition_value", "")
+
+		var result = _evaluate_branch_condition(condition_type, condition_key, condition_value)
+		_follow_branch_output(result)
 
 
 func _evaluate_branch_condition(condition_type: int, key: String, value: String) -> bool:
@@ -347,6 +359,91 @@ func _evaluate_branch_condition(condition_type: int, key: String, value: String)
 			return true  # Custom always passes in test mode
 		_:
 			return false
+
+
+## Evaluate an expression string using the expression evaluator.
+func _evaluate_expression(expression: String) -> bool:
+	if expression.is_empty():
+		return true  # Empty expression = always true
+
+	# Build context dictionary from current game state
+	var context = _build_expression_context()
+
+	# Create evaluator and evaluate
+	var evaluator = ExpressionEvaluatorScript.new()
+	evaluator.set_context(context)
+
+	# Register custom functions that depend on runner state
+	evaluator.register_function("skill_check", func(args: Array) -> Variant:
+		# In test mode, use auto_pass setting
+		return skill_check_auto_pass
+	)
+
+	var result = evaluator.evaluate_string(expression)
+
+	if not result.success:
+		push_warning("DialogueRunner: Expression error: %s" % result.error)
+		return false
+
+	# Convert result to bool
+	return _to_bool(result.value)
+
+
+## Build expression context from current game state.
+func _build_expression_context() -> Dictionary:
+	var context := {}
+
+	# Add all flags as variables
+	for flag_name in flags:
+		context[flag_name] = flags[flag_name]
+
+	# Add flag lookup dictionary for has_flag function
+	context["flags"] = flags.duplicate()
+
+	# Add items for has_item/count functions
+	context["items"] = items.duplicate()
+
+	# Add inventory as array format for has_item compatibility
+	var inventory_array: Array[Dictionary] = []
+	for item_id in items:
+		if items[item_id] > 0:
+			inventory_array.append({"id": item_id, "quantity": items[item_id]})
+	context["inventory"] = inventory_array
+
+	# Add reputation values
+	for faction in reputation:
+		context[faction] = reputation[faction]
+	context["reputation"] = reputation.duplicate()
+
+	# Add quests for quest_state function
+	var quest_data := {}
+	for quest_id in quests:
+		quest_data[quest_id] = {"state": quests[quest_id]}
+	context["quests"] = quest_data
+
+	# Add player-like object for player.* access
+	context["player"] = {
+		"flags": flags.duplicate(),
+		"items": items.duplicate(),
+		"reputation": reputation.duplicate(),
+		"quests": quests.duplicate()
+	}
+
+	return context
+
+
+## Convert a value to bool for condition evaluation.
+func _to_bool(value: Variant) -> bool:
+	if value is bool:
+		return value
+	elif value is int or value is float:
+		return value != 0
+	elif value is String:
+		return value.to_lower() == "true" or (value.is_valid_float() and float(value) != 0)
+	elif value == null:
+		return false
+	else:
+		return true  # Default to true for non-null objects
 
 
 func _process_skill_check_node(node_data: Dictionary) -> void:

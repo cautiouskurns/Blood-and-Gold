@@ -14,6 +14,7 @@ const PropertyPanelScript = preload("res://addons/dialogue_editor/scripts/proper
 const ErrorHandlerScript = preload("res://addons/dialogue_editor/scripts/error_handler.gd")
 const SaveTemplateDialogScript = preload("res://addons/dialogue_editor/scripts/templates/save_template_dialog.gd")
 const TemplateLibraryPanelScript = preload("res://addons/dialogue_editor/scripts/template_library_panel.gd")
+const VariableBrowserPanelScript = preload("res://addons/dialogue_editor/scripts/ui/variable_browser_panel.gd")
 
 # Default save directory
 const DEFAULT_DIALOGUE_DIR := "res://data/dialogue/"
@@ -79,6 +80,10 @@ var _pending_action: String = ""  # Tracks what to do after confirmation
 # Template dialog
 var _save_template_dialog: ConfirmationDialog
 
+# Variable browser panel
+var _variable_browser_panel: VBoxContainer = null
+var _variable_browser_vsplit: VSplitContainer = null
+
 # State
 var current_file_path: String = ""
 var dialogue_id: String = ""
@@ -99,6 +104,7 @@ func _ready() -> void:
 	_setup_property_panel()
 	_setup_notifications()
 	_setup_template_library()
+	_setup_variable_browser_panel()
 	_connect_toolbar_signals()
 	_connect_canvas_signals()
 	_connect_palette_signals()
@@ -269,6 +275,75 @@ func _setup_template_library() -> void:
 	if template_library:
 		# Refresh templates on startup
 		template_library.refresh()
+
+
+func _setup_variable_browser_panel() -> void:
+	# Create the variable browser panel
+	_variable_browser_panel = VariableBrowserPanelScript.new()
+	_variable_browser_panel.name = "VariableBrowserPanel"
+	_variable_browser_panel.custom_minimum_size = Vector2(0, 120)
+
+	# Set the GraphEdit reference
+	if dialogue_canvas and dialogue_canvas.is_inside_tree():
+		_variable_browser_panel.set_graph_edit(dialogue_canvas)
+
+	# Connect signals
+	_variable_browser_panel.variable_selected.connect(_on_variable_selected)
+	_variable_browser_panel.test_value_changed.connect(_on_variable_test_value_changed)
+
+	# Add to the left panel, below the template library
+	var left_panel = get_node_or_null("Margin/HSplit/LeftPanel/VBox")
+	if left_panel:
+		# Add a separator
+		var sep = HSeparator.new()
+		left_panel.add_child(sep)
+
+		# Add the panel
+		left_panel.add_child(_variable_browser_panel)
+
+	# Initial scan
+	call_deferred("_refresh_variable_browser")
+
+
+func _refresh_variable_browser() -> void:
+	if _variable_browser_panel and dialogue_canvas:
+		_variable_browser_panel.set_graph_edit(dialogue_canvas)
+		_variable_browser_panel.scan_variables()
+
+
+func _on_variable_selected(variable_name: String, node_names: Array) -> void:
+	# Highlight nodes that use this variable
+	_highlight_nodes_using_variable(node_names)
+
+
+func _on_variable_test_value_changed(variable_name: String, value: Variant) -> void:
+	# Test values are stored in the panel and used during test mode
+	print("DialogueEditor: Variable '%s' test value changed to: %s" % [variable_name, str(value)])
+
+
+func _highlight_nodes_using_variable(node_names: Array) -> void:
+	if not dialogue_canvas or not dialogue_canvas.is_inside_tree():
+		return
+
+	# Deselect all nodes first
+	for child in dialogue_canvas.get_children():
+		if child is GraphNode:
+			child.selected = false
+
+	# Select nodes that use this variable
+	for node_name in node_names:
+		var node = dialogue_canvas.get_node_or_null(NodePath(node_name))
+		if node and node is GraphNode:
+			node.selected = true
+
+	# If only one node, center on it
+	if node_names.size() == 1:
+		var node = dialogue_canvas.get_node_or_null(NodePath(node_names[0]))
+		if node and node is GraphNode:
+			var node_center = node.position_offset + node.size / 2
+			var viewport_size = dialogue_canvas.size
+			var target_scroll = node_center * dialogue_canvas.zoom - viewport_size / 2
+			dialogue_canvas.scroll_offset = target_scroll
 
 
 func _connect_template_library_signals() -> void:
@@ -618,6 +693,7 @@ func _do_new() -> void:
 	_update_status_bar()
 	_clear_search()
 	_update_filter_dropdown()
+	_refresh_variable_browser()
 	print("DialogueEditor: New dialogue created")
 
 
@@ -1833,6 +1909,7 @@ func _load_from_file(path: String) -> void:
 	_update_status_bar()
 	_clear_search()
 	_update_filter_dropdown()
+	_refresh_variable_browser()
 
 	# Show success notification
 	var node_count = canvas_data.nodes.size() if canvas_data.has("nodes") else 0
@@ -1895,6 +1972,7 @@ func _on_canvas_changed() -> void:
 	_update_status_bar()
 	_update_filter_dropdown()
 	_refresh_validation()
+	_refresh_variable_browser()
 
 
 func _on_zoom_changed(_new_zoom: float) -> void:

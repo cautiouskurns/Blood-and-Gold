@@ -105,6 +105,12 @@ static func _convert_node_to_runtime(node_data: Dictionary) -> Dictionary:
 			runtime["text"] = node_data.get("text", "")
 
 		"Branch":
+			# Export as expression (unified runtime format)
+			# The Branch node's serialize() method always generates an expression
+			runtime["expression"] = node_data.get("expression", "")
+			# Also export mode for debugging purposes
+			runtime["condition_mode"] = node_data.get("condition_mode", "simple")
+			# Keep legacy format for backward compatibility with old runtime code
 			runtime["condition_type"] = _get_condition_type_name(node_data.get("condition_type", 0))
 			runtime["condition_key"] = node_data.get("condition_key", "")
 			runtime["condition_value"] = node_data.get("condition_value", "")
