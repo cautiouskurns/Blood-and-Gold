@@ -104,9 +104,9 @@ class UnaryOpNode extends ASTNode:
 ## Function call with arguments.
 class FunctionCallNode extends ASTNode:
 	var name: String
-	var arguments: Array[ASTNode]
+	var arguments: Array  # Array of ASTNode (untyped to avoid @tool compilation issues)
 
-	func _init(p_name: String, p_arguments: Array[ASTNode] = [], p_position: int = 0, p_line: int = 1, p_column: int = 1) -> void:
+	func _init(p_name: String, p_arguments: Array = [], p_position: int = 0, p_line: int = 1, p_column: int = 1) -> void:
 		super(p_position, p_line, p_column)
 		name = p_name
 		arguments = p_arguments
@@ -212,7 +212,7 @@ class ParseError:
 class ParseResult:
 	var success: bool
 	var ast: ASTNode
-	var errors: Array[ParseError]
+	var errors: Array  # Array of ParseError (untyped to avoid @tool compilation issues)
 
 	func _init() -> void:
 		success = true
@@ -222,7 +222,7 @@ class ParseResult:
 	func set_ast(node: ASTNode) -> void:
 		ast = node
 
-	func add_error(error: ParseError) -> void:
+	func add_error(error) -> void:
 		errors.append(error)
 		success = false
 
@@ -517,7 +517,7 @@ func _parse_postfix(result: ParseResult) -> ASTNode:
 ## Parse function call arguments.
 func _parse_function_call(callee: ASTNode, result: ParseResult) -> ASTNode:
 	var lparen = _previous()
-	var args: Array[ASTNode] = []
+	var args: Array = []  # Array of ASTNode
 
 	# Get function name from callee
 	var func_name = ""

@@ -97,18 +97,18 @@ class LexerError:
 
 class LexerResult:
 	var success: bool
-	var tokens: Array[Token]
-	var errors: Array[LexerError]
+	var tokens: Array  # Array of Token (untyped to avoid @tool compilation issues)
+	var errors: Array  # Array of LexerError
 
 	func _init() -> void:
 		success = true
 		tokens = []
 		errors = []
 
-	func add_token(token: Token) -> void:
+	func add_token(token) -> void:
 		tokens.append(token)
 
-	func add_error(error: LexerError) -> void:
+	func add_error(error) -> void:
 		errors.append(error)
 		success = false
 
@@ -200,7 +200,7 @@ func tokenize(expression: String) -> LexerResult:
 
 ## Convenience method that returns just the tokens array.
 ## Throws an error if lexing fails.
-func tokenize_or_fail(expression: String) -> Array[Token]:
+func tokenize_or_fail(expression: String) -> Array:
 	var result = tokenize(expression)
 	if result.has_errors():
 		push_error("Lexer errors: " + str(result.errors))
