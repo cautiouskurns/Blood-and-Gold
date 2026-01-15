@@ -1,0 +1,369 @@
+{
+	"file_version": 1,
+	"character_id": "fighter",
+	"version": "1.0",
+	"canvas_size": 64,
+	"reference_image_path": "",
+	"reference_opacity": 0.5,
+	"shapes": [
+		{
+			"type": "circle",
+			"position": [24, 4],
+			"size": [16, 16],
+			"color": [0.85, 0.72, 0.58, 1.0],
+			"rotation": 0.0,
+			"layer": 10
+		},
+		{
+			"type": "circle",
+			"position": [22, 2],
+			"size": [20, 18],
+			"color": [0.55, 0.55, 0.6, 1.0],
+			"rotation": 0.0,
+			"layer": 11
+		},
+		{
+			"type": "rectangle",
+			"position": [20, 20],
+			"size": [24, 22],
+			"color": [0.55, 0.55, 0.6, 1.0],
+			"rotation": 0.0,
+			"layer": 5
+		},
+		{
+			"type": "rectangle",
+			"position": [22, 22],
+			"size": [20, 18],
+			"color": [0.5, 0.5, 0.55, 1.0],
+			"rotation": 0.0,
+			"layer": 6
+		},
+		{
+			"type": "rectangle",
+			"position": [10, 20],
+			"size": [12, 8],
+			"color": [0.55, 0.55, 0.6, 1.0],
+			"rotation": 0.0,
+			"layer": 4
+		},
+		{
+			"type": "rectangle",
+			"position": [6, 26],
+			"size": [10, 12],
+			"color": [0.55, 0.55, 0.6, 1.0],
+			"rotation": 0.0,
+			"layer": 3
+		},
+		{
+			"type": "circle",
+			"position": [4, 36],
+			"size": [10, 10],
+			"color": [0.6, 0.58, 0.55, 1.0],
+			"rotation": 0.0,
+			"layer": 2
+		},
+		{
+			"type": "rectangle",
+			"position": [42, 20],
+			"size": [12, 8],
+			"color": [0.55, 0.55, 0.6, 1.0],
+			"rotation": 0.0,
+			"layer": 4
+		},
+		{
+			"type": "rectangle",
+			"position": [48, 26],
+			"size": [10, 12],
+			"color": [0.55, 0.55, 0.6, 1.0],
+			"rotation": 0.0,
+			"layer": 3
+		},
+		{
+			"type": "circle",
+			"position": [50, 36],
+			"size": [10, 10],
+			"color": [0.6, 0.58, 0.55, 1.0],
+			"rotation": 0.0,
+			"layer": 2
+		},
+		{
+			"type": "rectangle",
+			"position": [22, 40],
+			"size": [10, 12],
+			"color": [0.55, 0.55, 0.6, 1.0],
+			"rotation": 0.0,
+			"layer": 1
+		},
+		{
+			"type": "rectangle",
+			"position": [21, 50],
+			"size": [10, 10],
+			"color": [0.5, 0.5, 0.55, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		},
+		{
+			"type": "rectangle",
+			"position": [20, 58],
+			"size": [12, 6],
+			"color": [0.4, 0.35, 0.3, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		},
+		{
+			"type": "rectangle",
+			"position": [32, 40],
+			"size": [10, 12],
+			"color": [0.55, 0.55, 0.6, 1.0],
+			"rotation": 0.0,
+			"layer": 1
+		},
+		{
+			"type": "rectangle",
+			"position": [33, 50],
+			"size": [10, 10],
+			"color": [0.5, 0.5, 0.55, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		},
+		{
+			"type": "rectangle",
+			"position": [32, 58],
+			"size": [12, 6],
+			"color": [0.4, 0.35, 0.3, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		},
+		{
+			"type": "rectangle",
+			"position": [52, 8],
+			"size": [6, 28],
+			"color": [0.7, 0.7, 0.75, 1.0],
+			"rotation": 0.0,
+			"layer": 8
+		},
+		{
+			"type": "rectangle",
+			"position": [46, 34],
+			"size": [18, 4],
+			"color": [0.45, 0.4, 0.35, 1.0],
+			"rotation": 0.0,
+			"layer": 9
+		},
+		{
+			"type": "rectangle",
+			"position": [52, 38],
+			"size": [6, 10],
+			"color": [0.35, 0.3, 0.25, 1.0],
+			"rotation": 0.0,
+			"layer": 7
+		},
+		{
+			"type": "circle",
+			"position": [2, 18],
+			"size": [18, 18],
+			"color": [0.55, 0.4, 0.25, 1.0],
+			"rotation": 0.0,
+			"layer": 6
+		},
+		{
+			"type": "circle",
+			"position": [7, 23],
+			"size": [8, 8],
+			"color": [0.6, 0.55, 0.5, 1.0],
+			"rotation": 0.0,
+			"layer": 7
+		}
+	],
+	"body_parts": {
+		"Head": {
+			"name": "Head",
+			"shapes": [0, 1],
+			"pivot": [32, 18],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"Torso": {
+			"name": "Torso",
+			"shapes": [2, 3],
+			"pivot": [32, 32],
+			"pivot_set": true,
+			"parent": ""
+		},
+		"L Upper Arm": {
+			"name": "L Upper Arm",
+			"shapes": [4],
+			"pivot": [18, 22],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"L Lower Arm": {
+			"name": "L Lower Arm",
+			"shapes": [5],
+			"pivot": [11, 28],
+			"pivot_set": true,
+			"parent": "L Upper Arm"
+		},
+		"L Hand": {
+			"name": "L Hand",
+			"shapes": [6, 19, 20],
+			"pivot": [9, 38],
+			"pivot_set": true,
+			"parent": "L Lower Arm"
+		},
+		"R Upper Arm": {
+			"name": "R Upper Arm",
+			"shapes": [7],
+			"pivot": [46, 22],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"R Lower Arm": {
+			"name": "R Lower Arm",
+			"shapes": [8],
+			"pivot": [53, 28],
+			"pivot_set": true,
+			"parent": "R Upper Arm"
+		},
+		"R Hand": {
+			"name": "R Hand",
+			"shapes": [9, 16, 17, 18],
+			"pivot": [55, 38],
+			"pivot_set": true,
+			"parent": "R Lower Arm"
+		},
+		"L Upper Leg": {
+			"name": "L Upper Leg",
+			"shapes": [10],
+			"pivot": [27, 42],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"L Lower Leg": {
+			"name": "L Lower Leg",
+			"shapes": [11],
+			"pivot": [26, 52],
+			"pivot_set": true,
+			"parent": "L Upper Leg"
+		},
+		"L Foot": {
+			"name": "L Foot",
+			"shapes": [12],
+			"pivot": [26, 60],
+			"pivot_set": true,
+			"parent": "L Lower Leg"
+		},
+		"R Upper Leg": {
+			"name": "R Upper Leg",
+			"shapes": [13],
+			"pivot": [37, 42],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"R Lower Leg": {
+			"name": "R Lower Leg",
+			"shapes": [14],
+			"pivot": [38, 52],
+			"pivot_set": true,
+			"parent": "R Upper Leg"
+		},
+		"R Foot": {
+			"name": "R Foot",
+			"shapes": [15],
+			"pivot": [38, 60],
+			"pivot_set": true,
+			"parent": "R Lower Leg"
+		}
+	},
+	"poses": [
+		{
+			"pose_name": "Idle",
+			"rotations": {},
+			"description": "Standing ready with sword and shield"
+		},
+		{
+			"pose_name": "Walk_L",
+			"rotations": {
+				"L Upper Arm": -15.0,
+				"L Lower Arm": 5.0,
+				"R Upper Arm": 15.0,
+				"R Lower Arm": -5.0,
+				"L Upper Leg": 20.0,
+				"L Lower Leg": -10.0,
+				"R Upper Leg": -15.0,
+				"R Lower Leg": 5.0
+			},
+			"description": "Walking - left foot forward"
+		},
+		{
+			"pose_name": "Walk_R",
+			"rotations": {
+				"L Upper Arm": 15.0,
+				"L Lower Arm": -5.0,
+				"R Upper Arm": -15.0,
+				"R Lower Arm": 5.0,
+				"L Upper Leg": -15.0,
+				"L Lower Leg": 5.0,
+				"R Upper Leg": 20.0,
+				"R Lower Leg": -10.0
+			},
+			"description": "Walking - right foot forward"
+		},
+		{
+			"pose_name": "Shield_Block",
+			"rotations": {
+				"Torso": -5.0,
+				"L Upper Arm": -60.0,
+				"L Lower Arm": -30.0,
+				"R Upper Arm": 10.0
+			},
+			"description": "Blocking with shield raised"
+		},
+		{
+			"pose_name": "Sword_Windup",
+			"rotations": {
+				"Torso": -15.0,
+				"R Upper Arm": -90.0,
+				"R Lower Arm": -60.0,
+				"L Upper Arm": 15.0
+			},
+			"description": "Winding up for sword swing"
+		},
+		{
+			"pose_name": "Sword_Swing",
+			"rotations": {
+				"Torso": 20.0,
+				"R Upper Arm": 45.0,
+				"R Lower Arm": 15.0,
+				"L Upper Arm": -10.0
+			},
+			"description": "Sword swing follow-through"
+		},
+		{
+			"pose_name": "Hurt",
+			"rotations": {
+				"Torso": -15.0,
+				"Head": 25.0,
+				"L Upper Arm": 25.0,
+				"R Upper Arm": 25.0
+			},
+			"description": "Taking damage"
+		},
+		{
+			"pose_name": "Death",
+			"rotations": {
+				"Torso": 90.0,
+				"Head": 45.0,
+				"L Upper Arm": 50.0,
+				"L Lower Arm": 25.0,
+				"R Upper Arm": 40.0,
+				"R Lower Arm": 15.0,
+				"L Upper Leg": 25.0,
+				"R Upper Leg": 10.0
+			},
+			"description": "Fallen in battle"
+		}
+	],
+	"animations": {},
+	"directions": ["south"]
+}

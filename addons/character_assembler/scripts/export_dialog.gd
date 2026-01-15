@@ -248,7 +248,7 @@ func execute_export(
 		_update_progress(current_step, total_steps, "Frames export complete")
 
 	# Finish
-	var success := results.errors.is_empty()
+	var success: bool = results.errors.is_empty()
 	_finish_export(success, results)
 
 

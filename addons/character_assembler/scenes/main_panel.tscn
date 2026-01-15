@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://dh4j6xqk5rn2c"]
+[gd_scene load_steps=11 format=3 uid="uid://dh4j6xqk5rn2c"]
 
 [ext_resource type="Script" path="res://addons/character_assembler/scripts/main_panel.gd" id="1_main_panel"]
 [ext_resource type="Script" path="res://addons/character_assembler/scripts/canvas_viewport.gd" id="2_canvas"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://addons/character_assembler/scripts/animation_generator.gd" id="8_animation_generator"]
 [ext_resource type="Script" path="res://addons/character_assembler/scripts/direction_manager.gd" id="9_direction_manager"]
 [ext_resource type="Script" path="res://addons/character_assembler/scripts/export_manager.gd" id="10_export_manager"]
+[ext_resource type="Script" path="res://addons/character_assembler/scripts/shape_library.gd" id="11_shape_library"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_canvas"]
 bg_color = Color(0.12, 0.12, 0.12, 1)
@@ -54,6 +55,11 @@ text = "New"
 layout_mode = 2
 text = "Open"
 
+[node name="ExamplesBtn" type="MenuButton" parent="Margin/VBox/Toolbar"]
+layout_mode = 2
+tooltip_text = "Load example character projects"
+text = "Examples"
+
 [node name="SaveBtn" type="Button" parent="Margin/VBox/Toolbar"]
 layout_mode = 2
 text = "Save"
@@ -61,6 +67,19 @@ text = "Save"
 [node name="SaveAsBtn" type="Button" parent="Margin/VBox/Toolbar"]
 layout_mode = 2
 text = "Save As"
+
+[node name="SepUndo" type="VSeparator" parent="Margin/VBox/Toolbar"]
+layout_mode = 2
+
+[node name="UndoBtn" type="Button" parent="Margin/VBox/Toolbar"]
+layout_mode = 2
+tooltip_text = "Undo (Ctrl+Z)"
+text = "Undo"
+
+[node name="RedoBtn" type="Button" parent="Margin/VBox/Toolbar"]
+layout_mode = 2
+tooltip_text = "Redo (Ctrl+Shift+Z / Ctrl+Y)"
+text = "Redo"
 
 [node name="Sep1" type="VSeparator" parent="Margin/VBox/Toolbar"]
 layout_mode = 2
@@ -108,6 +127,11 @@ suffix = "px"
 layout_mode = 2
 size_flags_horizontal = 3
 
+[node name="ShortcutsBtn" type="Button" parent="Margin/VBox/Toolbar"]
+layout_mode = 2
+tooltip_text = "Show keyboard shortcuts reference"
+text = "?"
+
 [node name="OuterHSplit" type="HSplitContainer" parent="Margin/VBox"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -124,11 +148,23 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="ShapeToolsPanel" type="VBoxContainer" parent="Margin/VBox/OuterHSplit/LeftPanel/LeftScroll"]
+[node name="LeftVBox" type="VBoxContainer" parent="Margin/VBox/OuterHSplit/LeftPanel/LeftScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="ShapeToolsPanel" type="VBoxContainer" parent="Margin/VBox/OuterHSplit/LeftPanel/LeftScroll/LeftVBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 script = ExtResource("3_tools")
+
+[node name="ShapeLibraryPanel" type="VBoxContainer" parent="Margin/VBox/OuterHSplit/LeftPanel/LeftScroll/LeftVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+script = ExtResource("11_shape_library")
 
 [node name="InnerHSplit" type="HSplitContainer" parent="Margin/VBox/OuterHSplit"]
 layout_mode = 2

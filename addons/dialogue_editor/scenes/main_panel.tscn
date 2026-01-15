@@ -36,19 +36,26 @@ custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="VBox" type="VBoxContainer" parent="Margin/HSplit/LeftPanel"]
+[node name="LeftScroll" type="ScrollContainer" parent="Margin/HSplit/LeftPanel"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="VBox" type="VBoxContainer" parent="Margin/HSplit/LeftPanel/LeftScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="Title" type="Label" parent="Margin/HSplit/LeftPanel/VBox"]
+[node name="Title" type="Label" parent="Margin/HSplit/LeftPanel/LeftScroll/VBox"]
 layout_mode = 2
 text = "NODE PALETTE"
 horizontal_alignment = 1
 
-[node name="Sep" type="HSeparator" parent="Margin/HSplit/LeftPanel/VBox"]
+[node name="Sep" type="HSeparator" parent="Margin/HSplit/LeftPanel/LeftScroll/VBox"]
 layout_mode = 2
 
-[node name="Scroll" type="ScrollContainer" parent="Margin/HSplit/LeftPanel/VBox"]
+[node name="Scroll" type="ScrollContainer" parent="Margin/HSplit/LeftPanel/LeftScroll/VBox"]
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -58,18 +65,18 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("3_palette")
 
-[node name="Sep2" type="HSeparator" parent="Margin/HSplit/LeftPanel/VBox"]
+[node name="Sep2" type="HSeparator" parent="Margin/HSplit/LeftPanel/LeftScroll/VBox"]
 layout_mode = 2
 
-[node name="TemplateTitle" type="Label" parent="Margin/HSplit/LeftPanel/VBox"]
+[node name="TemplateTitle" type="Label" parent="Margin/HSplit/LeftPanel/LeftScroll/VBox"]
 layout_mode = 2
 text = "TEMPLATE LIBRARY"
 horizontal_alignment = 1
 
-[node name="Sep3" type="HSeparator" parent="Margin/HSplit/LeftPanel/VBox"]
+[node name="Sep3" type="HSeparator" parent="Margin/HSplit/LeftPanel/LeftScroll/VBox"]
 layout_mode = 2
 
-[node name="TemplateScroll" type="ScrollContainer" parent="Margin/HSplit/LeftPanel/VBox"]
+[node name="TemplateScroll" type="ScrollContainer" parent="Margin/HSplit/LeftPanel/LeftScroll/VBox"]
 layout_mode = 2
 size_flags_vertical = 3
 

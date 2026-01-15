@@ -17,7 +17,7 @@ static func flip_shapes_horizontal(shapes: Array, canvas_size: int) -> Array:
 	var flipped: Array = []
 
 	for shape in shapes:
-		var new_shape := shape.duplicate(true)
+		var new_shape: Dictionary = shape.duplicate(true)
 
 		# Flip X position: new_x = canvas_size - old_x - width
 		var old_x: float = shape.position[0]
@@ -40,7 +40,7 @@ static func flip_shapes_vertical(shapes: Array, canvas_size: int) -> Array:
 	var flipped: Array = []
 
 	for shape in shapes:
-		var new_shape := shape.duplicate(true)
+		var new_shape: Dictionary = shape.duplicate(true)
 
 		# Flip Y position: new_y = canvas_size - old_y - height
 		var old_y: float = shape.position[1]

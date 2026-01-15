@@ -1,0 +1,104 @@
+[gd_scene load_steps=2 format=3 uid="uid://camp_dialogue_scene"]
+
+[ext_resource type="Script" path="res://scripts/camp/camp_dialogue.gd" id="1_script"]
+
+[node name="CampDialogue" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.1, 0.15, 1)
+
+[node name="PortraitLayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="LeftPortrait" type="Control" parent="PortraitLayer"]
+anchors_preset = 0
+offset_left = 50.0
+offset_top = 150.0
+offset_right = 250.0
+offset_bottom = 400.0
+
+[node name="RightPortrait" type="Control" parent="PortraitLayer"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -250.0
+offset_top = 150.0
+offset_right = -50.0
+offset_bottom = 400.0
+
+[node name="DialogueLayer" type="CanvasLayer" parent="."]
+layer = 20
+
+[node name="DialoguePanel" type="PanelContainer" parent="DialogueLayer"]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 50.0
+offset_top = -250.0
+offset_right = -50.0
+offset_bottom = -20.0
+
+[node name="MarginContainer" type="MarginContainer" parent="DialogueLayer/DialoguePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="DialogueLayer/DialoguePanel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SpeakerLabel" type="Label" parent="DialogueLayer/DialoguePanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.364706, 0.678431, 0.886275, 1)
+theme_override_font_sizes/font_size = 22
+text = "SPEAKER NAME"
+
+[node name="DialogueText" type="RichTextLabel" parent="DialogueLayer/DialoguePanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/normal_font_size = 18
+bbcode_enabled = true
+text = "Dialogue text appears here..."
+
+[node name="ContinueIndicator" type="Label" parent="DialogueLayer/DialoguePanel/MarginContainer/VBoxContainer"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_font_sizes/font_size = 14
+text = "[Click or Press Space to Continue]"
+horizontal_alignment = 2
+
+[node name="ChoiceLayer" type="CanvasLayer" parent="."]
+layer = 30
+
+[node name="ChoiceContainer" type="VBoxContainer" parent="ChoiceLayer"]
+visible = false
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_top = -180.0
+offset_right = 300.0
+offset_bottom = -270.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 8

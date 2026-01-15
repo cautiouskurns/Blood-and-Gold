@@ -58,6 +58,7 @@ func _setup_ui() -> void:
 	_pose_dropdown = OptionButton.new()
 	_pose_dropdown.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_pose_dropdown.add_theme_font_size_override("font_size", 28)
+	_pose_dropdown.tooltip_text = "Select a pose to edit or preview"
 	pose_row.add_child(_pose_dropdown)
 
 	# Buttons row
@@ -68,16 +69,19 @@ func _setup_ui() -> void:
 	_new_btn = Button.new()
 	_new_btn.text = "+ New"
 	_new_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_new_btn.tooltip_text = "Create a new empty pose"
 	btn_row.add_child(_new_btn)
 
 	_duplicate_btn = Button.new()
 	_duplicate_btn.text = "Duplicate"
 	_duplicate_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_duplicate_btn.tooltip_text = "Copy the current pose with a new name"
 	btn_row.add_child(_duplicate_btn)
 
 	_delete_btn = Button.new()
 	_delete_btn.text = "Delete"
 	_delete_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_delete_btn.tooltip_text = "Delete the current pose"
 	btn_row.add_child(_delete_btn)
 
 	add_child(HSeparator.new())
@@ -113,11 +117,13 @@ func _setup_ui() -> void:
 	_reset_all_btn = Button.new()
 	_reset_all_btn.text = "Reset All"
 	_reset_all_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_reset_all_btn.tooltip_text = "Reset all body part rotations to 0°"
 	action_row.add_child(_reset_all_btn)
 
 	_mirror_btn = Button.new()
 	_mirror_btn.text = "Mirror L↔R"
 	_mirror_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_mirror_btn.tooltip_text = "Swap left and right body part rotations"
 	action_row.add_child(_mirror_btn)
 
 	add_child(HSeparator.new())

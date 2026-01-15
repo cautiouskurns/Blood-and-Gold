@@ -664,6 +664,14 @@ func get_animations() -> Dictionary:
 	return animations
 
 
+## Get all animations as an array.
+func get_all_animations() -> Array[AnimationData]:
+	var result: Array[AnimationData] = []
+	for anim_name in animations:
+		result.append(animations[anim_name])
+	return result
+
+
 ## Get the currently selected animation.
 func get_selected_animation() -> AnimationData:
 	return current_animation

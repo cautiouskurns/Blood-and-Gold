@@ -72,24 +72,28 @@ func _setup_ui() -> void:
 	_sprite_sheet_check.text = "Sprite Sheet (PNG)"
 	_sprite_sheet_check.button_pressed = true
 	_sprite_sheet_check.toggled.connect(_on_sprite_sheet_toggled)
+	_sprite_sheet_check.tooltip_text = "Export all frames in a single image grid"
 	_format_section.add_child(_sprite_sheet_check)
 
 	_individual_frames_check = CheckBox.new()
 	_individual_frames_check.text = "Individual Frames (PNG)"
 	_individual_frames_check.button_pressed = false
 	_individual_frames_check.toggled.connect(_on_individual_frames_toggled)
+	_individual_frames_check.tooltip_text = "Export each frame as a separate PNG file"
 	_format_section.add_child(_individual_frames_check)
 
 	_godot_scene_check = CheckBox.new()
 	_godot_scene_check.text = "Godot Scene (.tscn + .tres)"
 	_godot_scene_check.button_pressed = true
 	_godot_scene_check.toggled.connect(_on_godot_scene_toggled)
+	_godot_scene_check.tooltip_text = "Generate ready-to-use AnimatedSprite2D scene"
 	_format_section.add_child(_godot_scene_check)
 
 	_metadata_check = CheckBox.new()
 	_metadata_check.text = "Metadata (JSON)"
 	_metadata_check.button_pressed = true
 	_metadata_check.toggled.connect(_on_metadata_toggled)
+	_metadata_check.tooltip_text = "Export animation frame data as JSON"
 	_format_section.add_child(_metadata_check)
 
 	# Separator
@@ -120,6 +124,7 @@ func _setup_ui() -> void:
 	_scale_option.add_item("8x")
 	_scale_option.selected = 0
 	_scale_option.item_selected.connect(_on_scale_selected)
+	_scale_option.tooltip_text = "Upscale exported images (nearest-neighbor)"
 	scale_hbox.add_child(_scale_option)
 
 	# Background
@@ -136,6 +141,7 @@ func _setup_ui() -> void:
 	_background_option.add_item("Solid Color")
 	_background_option.selected = 0
 	_background_option.item_selected.connect(_on_background_selected)
+	_background_option.tooltip_text = "Background fill for exported frames"
 	bg_hbox.add_child(_background_option)
 
 	_color_picker = ColorPickerButton.new()
@@ -143,6 +149,7 @@ func _setup_ui() -> void:
 	_color_picker.custom_minimum_size = Vector2(32, 24)
 	_color_picker.visible = false
 	_color_picker.color_changed.connect(_on_color_changed)
+	_color_picker.tooltip_text = "Background color (magenta works well as a key color)"
 	bg_hbox.add_child(_color_picker)
 
 	# Directions
@@ -150,6 +157,7 @@ func _setup_ui() -> void:
 	_directions_check.text = "Export All Directions"
 	_directions_check.button_pressed = true
 	_directions_check.toggled.connect(_on_directions_toggled)
+	_directions_check.tooltip_text = "Include all 8 direction variants in export"
 	_settings_section.add_child(_directions_check)
 
 	# Separator
@@ -177,6 +185,7 @@ func _setup_ui() -> void:
 	_name_edit.placeholder_text = "character_name"
 	_name_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_name_edit.text_changed.connect(_on_name_changed)
+	_name_edit.tooltip_text = "Base name for exported files (e.g., 'warrior' creates warrior_walk.png)"
 	name_hbox.add_child(_name_edit)
 
 	# Output path
@@ -192,11 +201,13 @@ func _setup_ui() -> void:
 	_output_path_edit.placeholder_text = "res://exports/"
 	_output_path_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_output_path_edit.text_changed.connect(_on_path_changed)
+	_output_path_edit.tooltip_text = "Directory where exported files will be saved"
 	path_hbox.add_child(_output_path_edit)
 
 	_browse_btn = Button.new()
 	_browse_btn.text = "..."
 	_browse_btn.pressed.connect(_on_browse_pressed)
+	_browse_btn.tooltip_text = "Browse for output directory"
 	path_hbox.add_child(_browse_btn)
 
 	# Export button
@@ -208,6 +219,7 @@ func _setup_ui() -> void:
 	_export_btn.text = "Export"
 	_export_btn.custom_minimum_size = Vector2(120, 32)
 	_export_btn.pressed.connect(_on_export_pressed)
+	_export_btn.tooltip_text = "Generate all animations and export files"
 	btn_hbox.add_child(_export_btn)
 
 	# Status

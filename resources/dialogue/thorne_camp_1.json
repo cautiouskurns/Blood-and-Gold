@@ -1,0 +1,115 @@
+{
+  "id": "thorne_camp_1",
+  "title": "Thorne - After the First Contract",
+  "trigger_contract": "merchants_escort",
+  "one_time": true,
+  "nodes": {
+    "start_1": {
+      "type": "Start",
+      "connections": [{"to": "speaker_1", "port": 0}]
+    },
+    "speaker_1": {
+      "type": "Speaker",
+      "speaker": "thorne",
+      "portrait": "thorne_neutral",
+      "text": "Captain. Mind if I join you?",
+      "connections": [{"to": "speaker_2", "port": 0}]
+    },
+    "speaker_2": {
+      "type": "Speaker",
+      "speaker": "thorne",
+      "portrait": "thorne_neutral",
+      "text": "I've been with a dozen companies over the years. Most of them are dead now. You know why?",
+      "connections": [{"to": "speaker_3", "port": 0}]
+    },
+    "speaker_3": {
+      "type": "Speaker",
+      "speaker": "thorne",
+      "portrait": "thorne_thoughtful",
+      "text": "Idealism. Captains who thought they could be heroes. Who took contracts for 'the right reasons' instead of the right coin. This work isn't about glory - it's about survival. Gold keeps us fed, steel keeps us alive.",
+      "connections": [{"to": "speaker_4", "port": 0}]
+    },
+    "speaker_4": {
+      "type": "Speaker",
+      "speaker": "thorne",
+      "portrait": "thorne_neutral",
+      "text": "So I have to ask, Captain... what are you in this for?",
+      "connections": [
+        {"to": "choice_agree", "port": 0},
+        {"to": "choice_disagree", "port": 1},
+        {"to": "choice_ask", "port": 2}
+      ]
+    },
+    "choice_agree": {
+      "type": "Choice",
+      "text": "Gold and survival. Same as you.",
+      "loyalty_changes": {},
+      "connections": [{"to": "speaker_agree", "port": 0}]
+    },
+    "choice_disagree": {
+      "type": "Choice",
+      "text": "There's more to life than coin.",
+      "loyalty_changes": {"thorne": -5},
+      "connections": [{"to": "speaker_disagree", "port": 0}]
+    },
+    "choice_ask": {
+      "type": "Choice",
+      "text": "What happened to those other companies?",
+      "loyalty_changes": {"thorne": 5},
+      "connections": [{"to": "speaker_ask_1", "port": 0}]
+    },
+    "speaker_agree": {
+      "type": "Speaker",
+      "speaker": "thorne",
+      "portrait": "thorne_approving",
+      "text": "*nods* Good. A practical captain. That's rare. We might just survive this after all.",
+      "connections": [{"to": "speaker_closing", "port": 0}]
+    },
+    "speaker_disagree": {
+      "type": "Speaker",
+      "speaker": "thorne",
+      "portrait": "thorne_disapproval",
+      "text": "*sighs* I've heard that before. From captains who are rotting in unmarked graves now. I hope you prove me wrong, but I won't hold my breath.",
+      "connections": [{"to": "speaker_closing", "port": 0}]
+    },
+    "speaker_ask_1": {
+      "type": "Speaker",
+      "speaker": "thorne",
+      "portrait": "thorne_neutral",
+      "text": "*pauses* ...You actually want to know? Most just want yes-men, not stories.",
+      "connections": [{"to": "speaker_ask_2", "port": 0}]
+    },
+    "speaker_ask_2": {
+      "type": "Speaker",
+      "speaker": "thorne",
+      "portrait": "thorne_thoughtful",
+      "text": "The last company I served with - the Red Shields - took a contract defending a village that couldn't pay. 'It's the right thing to do,' the captain said.",
+      "connections": [{"to": "speaker_ask_3", "port": 0}]
+    },
+    "speaker_ask_3": {
+      "type": "Speaker",
+      "speaker": "thorne",
+      "portrait": "thorne_thoughtful",
+      "text": "We won. And then we starved because we had no coin for the winter. Half of us died before spring.",
+      "connections": [{"to": "speaker_ask_4", "port": 0}]
+    },
+    "speaker_ask_4": {
+      "type": "Speaker",
+      "speaker": "thorne",
+      "portrait": "thorne_neutral",
+      "text": "I learned something that year, Captain. Good intentions don't fill bellies. But you asking... that's something. Most captains don't care what their soldiers think.",
+      "connections": [{"to": "speaker_closing", "port": 0}]
+    },
+    "speaker_closing": {
+      "type": "Speaker",
+      "speaker": "thorne",
+      "portrait": "thorne_neutral",
+      "text": "Anyway. Get some rest. Tomorrow we see what other work Ironmark has for sellswords like us.",
+      "connections": [{"to": "end_1", "port": 0}]
+    },
+    "end_1": {
+      "type": "End",
+      "end_type": "normal"
+    }
+  }
+}

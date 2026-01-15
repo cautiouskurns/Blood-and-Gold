@@ -4,9 +4,25 @@ extends Control
 ## Manages the toolbar, canvas, shape tools, layers, and file operations.
 
 const CharacterProjectScript = preload("res://addons/character_assembler/scripts/character_project.gd")
+const AddShapeCommand = preload("res://addons/character_assembler/scripts/commands/add_shape_command.gd")
+const DeleteShapeCommand = preload("res://addons/character_assembler/scripts/commands/delete_shape_command.gd")
+const MoveShapeCommand = preload("res://addons/character_assembler/scripts/commands/move_shape_command.gd")
+const ModifyShapeCommandScript = preload("res://addons/character_assembler/scripts/commands/modify_shape_command.gd")
+const CompoundCommandScript = preload("res://addons/character_assembler/scripts/commands/compound_command.gd")
 
 # Default save directory for character projects
 const DEFAULT_PROJECT_DIR := "res://data/characters/"
+const EXAMPLES_DIR := "res://data/characters/examples/"
+
+# Example character definitions
+const EXAMPLE_CHARACTERS := [
+	{"id": "fighter", "name": "Fighter - Sword & Shield", "file": "fighter.charproj"},
+	{"id": "rogue", "name": "Rogue - Dual Daggers", "file": "rogue.charproj"},
+	{"id": "mage", "name": "Mage - Staff & Spells", "file": "mage.charproj"},
+]
+
+# Auto-save manager
+var _auto_save_manager: AutoSaveManager
 
 # Node references - Toolbar
 @onready var toolbar: HBoxContainer = $Margin/VBox/Toolbar
@@ -14,10 +30,14 @@ const DEFAULT_PROJECT_DIR := "res://data/characters/"
 @onready var open_btn: Button = $Margin/VBox/Toolbar/OpenBtn
 @onready var save_btn: Button = $Margin/VBox/Toolbar/SaveBtn
 @onready var save_as_btn: Button = $Margin/VBox/Toolbar/SaveAsBtn
+@onready var examples_btn: MenuButton = $Margin/VBox/Toolbar/ExamplesBtn
+@onready var undo_btn: Button = $Margin/VBox/Toolbar/UndoBtn
+@onready var redo_btn: Button = $Margin/VBox/Toolbar/RedoBtn
 @onready var load_ref_btn: Button = $Margin/VBox/Toolbar/LoadRefBtn
 @onready var clear_ref_btn: Button = $Margin/VBox/Toolbar/ClearRefBtn
 @onready var opacity_slider: HSlider = $Margin/VBox/Toolbar/OpacitySlider
 @onready var canvas_size_spin: SpinBox = $Margin/VBox/Toolbar/CanvasSizeSpinBox
+@onready var shortcuts_btn: Button = $Margin/VBox/Toolbar/ShortcutsBtn
 
 # Node references - Canvas area
 @onready var character_canvas = $"Margin/VBox/OuterHSplit/InnerHSplit/CenterVBox/CanvasContainer/CharacterCanvas"
@@ -31,7 +51,8 @@ const DEFAULT_PROJECT_DIR := "res://data/characters/"
 @onready var zoom_percent_label: Label = $Margin/VBox/OuterHSplit/InnerHSplit/CenterVBox/CanvasToolbar/ZoomPercentLabel
 
 # Node references - Panels
-@onready var shape_tools_panel = $Margin/VBox/OuterHSplit/LeftPanel/LeftScroll/ShapeToolsPanel
+@onready var shape_tools_panel = $Margin/VBox/OuterHSplit/LeftPanel/LeftScroll/LeftVBox/ShapeToolsPanel
+@onready var shape_library_panel = $Margin/VBox/OuterHSplit/LeftPanel/LeftScroll/LeftVBox/ShapeLibraryPanel
 @onready var layer_panel = $Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox/LayerPanel
 @onready var shape_properties_panel = $Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox/ShapePropertiesPanel
 @onready var direction_manager = $Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox/DirectionManager
@@ -56,6 +77,9 @@ var current_project: RefCounted = null
 var current_file_path: String = ""
 var is_dirty: bool = false
 
+# Undo/redo system
+var _command_manager: CommandManager = null
+
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -63,6 +87,8 @@ func _ready() -> void:
 	set_v_size_flags(Control.SIZE_EXPAND_FILL)
 	custom_minimum_size = Vector2(800, 600)
 
+	_setup_command_manager()
+	_setup_auto_save()
 	_setup_dialogs()
 	_connect_toolbar_signals()
 	_connect_canvas_signals()
@@ -70,6 +96,95 @@ func _ready() -> void:
 	_ensure_project_directory()
 	_new_project()
 	_update_status_bar()
+
+	# Check for recovery files after a delay to allow UI to initialize
+	call_deferred("_check_for_recovery")
+
+
+func _setup_command_manager() -> void:
+	_command_manager = CommandManager.new()
+	_command_manager.history_changed.connect(_on_undo_history_changed)
+	print("CharacterAssembler: Command manager initialized")
+
+
+func _setup_auto_save() -> void:
+	_auto_save_manager = AutoSaveManager.new()
+	_auto_save_manager.initialize(self)
+	_auto_save_manager.auto_save_triggered.connect(_on_auto_save_triggered)
+	print("CharacterAssembler: Auto-save manager initialized")
+
+
+func _check_for_recovery() -> void:
+	## Check for recovery files from a previous session.
+	var recovery_files := _auto_save_manager.check_for_recovery_files()
+	if recovery_files.is_empty():
+		# No recovery files, start auto-save normally
+		_auto_save_manager.start(current_file_path)
+		return
+
+	# Show recovery dialog
+	var dialog := RecoveryDialog.new()
+	dialog.recovery_requested.connect(_on_recovery_requested)
+	dialog.recovery_dismissed.connect(_on_recovery_dismissed)
+	dialog.recovery_all_dismissed.connect(_on_recovery_all_dismissed)
+	add_child(dialog)
+	dialog.show_recovery_files(recovery_files)
+
+
+func _on_auto_save_triggered(path: String) -> void:
+	## Triggered when auto-save timer fires or auto-save completes.
+	if path.is_empty() and is_dirty:
+		# Timer triggered - perform auto-save
+		_perform_auto_save()
+
+
+func _perform_auto_save() -> void:
+	## Perform an auto-save of the current project.
+	if not current_project:
+		return
+
+	_sync_to_project()
+	var project_data := current_project.to_dict()
+	var err := _auto_save_manager.perform_auto_save(project_data)
+	if err != OK:
+		push_warning("CharacterAssembler: Auto-save failed (error: %d)" % err)
+
+
+func _on_recovery_requested(path: String) -> void:
+	## Handle recovery file request.
+	var data := _auto_save_manager.load_recovery_file(path)
+	if data.is_empty():
+		push_error("CharacterAssembler: Failed to load recovery file")
+		_auto_save_manager.start(current_file_path)
+		return
+
+	# Create project from recovered data
+	current_project = CharacterProjectScript.new()
+	current_project.from_dict(data)
+	current_file_path = ""
+	is_dirty = true  # Mark as dirty since it's recovered data
+
+	# Update all UI components
+	_load_project_into_ui()
+
+	# Delete the recovery file
+	_auto_save_manager.delete_recovery_file(path)
+
+	# Start auto-save
+	_auto_save_manager.start(current_file_path)
+	print("CharacterAssembler: Recovered project from auto-save")
+
+
+func _on_recovery_dismissed() -> void:
+	## Handle recovery dismissed - start normally.
+	_auto_save_manager.start(current_file_path)
+
+
+func _on_recovery_all_dismissed() -> void:
+	## Handle discard all recovery files.
+	_auto_save_manager.clear_auto_saves()
+	_auto_save_manager.start(current_file_path)
+	print("CharacterAssembler: Discarded all recovery files")
 
 
 func _setup_dialogs() -> void:
@@ -138,6 +253,14 @@ func _connect_toolbar_signals() -> void:
 	if save_as_btn:
 		save_as_btn.pressed.connect(_on_save_as_pressed)
 		save_as_btn.tooltip_text = "Save As (Ctrl+Shift+S)"
+	if examples_btn:
+		_setup_examples_menu()
+	if undo_btn:
+		undo_btn.pressed.connect(_undo)
+		undo_btn.disabled = true
+	if redo_btn:
+		redo_btn.pressed.connect(_redo)
+		redo_btn.disabled = true
 	if load_ref_btn:
 		load_ref_btn.pressed.connect(_on_load_ref_pressed)
 		load_ref_btn.tooltip_text = "Load reference image"
@@ -152,20 +275,35 @@ func _connect_toolbar_signals() -> void:
 	# Zoom buttons
 	if fit_btn:
 		fit_btn.pressed.connect(func(): character_canvas.fit_to_view())
+		fit_btn.tooltip_text = "Fit canvas to view"
 	if zoom_1x_btn:
 		zoom_1x_btn.pressed.connect(func(): character_canvas.set_zoom(1.0))
+		zoom_1x_btn.tooltip_text = "Zoom to 100% (1 pixel = 1 screen pixel)"
 	if zoom_2x_btn:
 		zoom_2x_btn.pressed.connect(func(): character_canvas.set_zoom(2.0))
+		zoom_2x_btn.tooltip_text = "Zoom to 200%"
 	if zoom_4x_btn:
 		zoom_4x_btn.pressed.connect(func(): character_canvas.set_zoom(4.0))
+		zoom_4x_btn.tooltip_text = "Zoom to 400%"
 	if zoom_8x_btn:
 		zoom_8x_btn.pressed.connect(func(): character_canvas.set_zoom(8.0))
+		zoom_8x_btn.tooltip_text = "Zoom to 800%"
 
 	# Grid and snap
 	if grid_check:
 		grid_check.toggled.connect(func(pressed): character_canvas.grid_enabled = pressed)
+		grid_check.tooltip_text = "Show/hide pixel grid overlay"
 	if snap_check:
 		snap_check.toggled.connect(func(pressed): character_canvas.snap_to_grid = pressed)
+		snap_check.tooltip_text = "Snap shapes to grid when moving"
+
+	# Other toolbar elements
+	if opacity_slider:
+		opacity_slider.tooltip_text = "Reference image opacity (0-100%)"
+	if canvas_size_spin:
+		canvas_size_spin.tooltip_text = "Canvas size in pixels (e.g., 64x64 for sprites)"
+	if shortcuts_btn:
+		shortcuts_btn.pressed.connect(_on_shortcuts_pressed)
 
 
 func _connect_canvas_signals() -> void:
@@ -177,6 +315,11 @@ func _connect_canvas_signals() -> void:
 		character_canvas.canvas_changed.connect(_on_canvas_changed)
 		character_canvas.zoom_changed.connect(_on_zoom_changed)
 		character_canvas.pivot_clicked.connect(_on_pivot_clicked)
+		# Undo/redo signals
+		character_canvas.shape_draw_completed.connect(_on_shape_draw_completed)
+		character_canvas.shapes_move_completed.connect(_on_shapes_move_completed)
+		character_canvas.shapes_resize_completed.connect(_on_shapes_resize_completed)
+		character_canvas.shapes_delete_requested.connect(_on_shapes_delete_requested)
 
 
 func _connect_panel_signals() -> void:
@@ -239,6 +382,13 @@ func _connect_panel_signals() -> void:
 	else:
 		push_warning("CharacterAssembler: export_manager is null!")
 
+	if shape_library_panel:
+		shape_library_panel.group_insert_requested.connect(_on_shape_library_insert_requested)
+		shape_library_panel.save_selection_requested.connect(_on_save_selection_as_group_requested)
+		print("CharacterAssembler: Connected shape_library_panel signals")
+	else:
+		push_warning("CharacterAssembler: shape_library_panel is null!")
+
 
 func _input(event: InputEvent) -> void:
 	if not is_visible_in_tree():
@@ -261,15 +411,113 @@ func _input(event: InputEvent) -> void:
 					else:
 						_on_save_pressed()
 					handled = true
+				KEY_Z:
+					if event.shift_pressed:
+						_redo()
+					else:
+						_undo()
+					handled = true
+				KEY_Y:
+					_redo()
+					handled = true
 		else:
 			match event.keycode:
 				KEY_DELETE, KEY_BACKSPACE:
-					if character_canvas:
-						character_canvas.delete_selected()
+					if character_canvas and not character_canvas.selected_indices.is_empty():
+						# For multiple shapes, show confirmation; for single shape, delete immediately
+						if character_canvas.selected_indices.size() > 1:
+							_on_delete_requested()
+						else:
+							character_canvas.delete_selected()
 					handled = true
 
 		if handled:
 			get_viewport().set_input_as_handled()
+
+
+# =============================================================================
+# EXAMPLES MENU
+# =============================================================================
+
+func _setup_examples_menu() -> void:
+	## Set up the examples dropdown menu with available example characters.
+	var popup := examples_btn.get_popup()
+	popup.clear()
+
+	for i in range(EXAMPLE_CHARACTERS.size()):
+		var example := EXAMPLE_CHARACTERS[i]
+		popup.add_item(example.name, i)
+
+	popup.add_separator()
+	popup.add_item("Browse Examples Folder...", 100)
+
+	popup.id_pressed.connect(_on_example_selected)
+
+
+func _on_example_selected(id: int) -> void:
+	## Handle selection from the examples menu.
+	if id == 100:
+		# Browse examples folder
+		_open_dialog.current_dir = EXAMPLES_DIR
+		_do_open()
+		return
+
+	if id < 0 or id >= EXAMPLE_CHARACTERS.size():
+		return
+
+	if is_dirty:
+		_pending_action = "load_example_%d" % id
+		_confirm_dialog.popup_centered()
+	else:
+		_load_example(id)
+
+
+func _load_example(index: int) -> void:
+	## Load an example character project.
+	if index < 0 or index >= EXAMPLE_CHARACTERS.size():
+		return
+
+	var example := EXAMPLE_CHARACTERS[index]
+	var path := EXAMPLES_DIR + example.file
+
+	if not FileAccess.file_exists(path):
+		_show_error_dialog("Example Not Found",
+			"The example file could not be found:\n%s\n\nThe examples may need to be reinstalled." % path)
+		return
+
+	# Load the example but don't set the file path (user should Save As to keep their copy)
+	var project = _try_load_project(path)
+	if project == null:
+		return
+
+	current_project = project
+	current_file_path = ""  # Don't set path - user should Save As
+	is_dirty = false
+
+	# Clear undo/redo history for loaded project
+	if _command_manager:
+		_command_manager.clear()
+
+	_load_project_into_ui()
+
+	# Update auto-save with empty path (no auto-save until user saves)
+	if _auto_save_manager:
+		_auto_save_manager.set_project_path("")
+
+	print("CharacterAssembler: Loaded example: %s" % example.name)
+
+
+# =============================================================================
+# HELP / SHORTCUTS
+# =============================================================================
+
+func _on_shortcuts_pressed() -> void:
+	## Show the keyboard shortcuts dialog.
+	var dialog := ShortcutsDialog.new()
+	dialog.confirmed.connect(func(): dialog.queue_free())
+	dialog.canceled.connect(func(): dialog.queue_free())
+	add_child(dialog)
+	dialog.show_shortcuts()
 
 
 # =============================================================================
@@ -280,6 +528,10 @@ func _new_project() -> void:
 	current_project = CharacterProjectScript.new()
 	current_file_path = ""
 	is_dirty = false
+
+	# Clear undo/redo history for new project
+	if _command_manager:
+		_command_manager.clear()
 
 	if character_canvas:
 		character_canvas.load_from_project(current_project)
@@ -421,6 +673,9 @@ func _on_shape_selected(indices: Array[int]) -> void:
 				shapes.append(character_canvas.shapes[idx])
 			shape_properties_panel.show_multiple(shapes)
 
+	# Update shape library selection state
+	_update_shape_library_selection()
+
 	# Update body part tagger with selected shapes
 	if body_part_tagger:
 		body_part_tagger.set_selected_shapes(indices)
@@ -452,6 +707,108 @@ func _on_canvas_changed() -> void:
 func _on_zoom_changed(zoom: float) -> void:
 	if zoom_percent_label:
 		zoom_percent_label.text = "%d%%" % int(zoom * 100)
+
+
+# =============================================================================
+# UNDO/REDO SYSTEM
+# =============================================================================
+
+func _undo() -> void:
+	if _command_manager and _command_manager.can_undo():
+		_command_manager.undo()
+		print("CharacterAssembler: Undo - %s" % _command_manager.get_undo_description())
+
+
+func _redo() -> void:
+	if _command_manager and _command_manager.can_redo():
+		_command_manager.redo()
+		print("CharacterAssembler: Redo - %s" % _command_manager.get_redo_description())
+
+
+func _on_undo_history_changed() -> void:
+	# Update button enabled states
+	if undo_btn and _command_manager:
+		undo_btn.disabled = not _command_manager.can_undo()
+		if _command_manager.can_undo():
+			undo_btn.tooltip_text = "Undo: %s (Ctrl+Z)" % _command_manager.get_undo_description()
+		else:
+			undo_btn.tooltip_text = "Nothing to undo (Ctrl+Z)"
+
+	if redo_btn and _command_manager:
+		redo_btn.disabled = not _command_manager.can_redo()
+		if _command_manager.can_redo():
+			redo_btn.tooltip_text = "Redo: %s (Ctrl+Shift+Z)" % _command_manager.get_redo_description()
+		else:
+			redo_btn.tooltip_text = "Nothing to redo (Ctrl+Shift+Z)"
+
+	_update_status_bar()
+
+
+func _on_shape_draw_completed(shape_data: Dictionary) -> void:
+	if not _command_manager or not character_canvas:
+		return
+
+	# Create and execute add shape command
+	var cmd := AddShapeCommand.new(character_canvas, shape_data)
+	_command_manager.execute(cmd)
+
+	# Update UI after the command adds the shape
+	var index: int = character_canvas.shapes.size() - 1
+	var new_selection: Array[int] = [index]
+	character_canvas.selected_indices = new_selection
+	character_canvas.shape_selected.emit(character_canvas.selected_indices)
+	character_canvas.shape_added.emit(index)
+	character_canvas.canvas_changed.emit()
+	character_canvas.queue_redraw()
+
+
+func _on_shapes_move_completed(indices: Array[int], delta: Vector2, before_positions: Dictionary) -> void:
+	if not _command_manager or not character_canvas or indices.is_empty():
+		return
+
+	# The shapes have already been moved on the canvas by the dragging operation
+	# We need to create a command that can undo this move (restore original positions)
+	# and redo it (reapply the delta)
+
+	# Create move command from the final state
+	var cmd := MoveShapeCommand.new(character_canvas, indices, Vector2.ZERO)
+
+	# Override the positions with the actual before/after state
+	cmd._original_positions = before_positions.duplicate()
+	cmd._final_positions = {}
+	for index in indices:
+		if index >= 0 and index < character_canvas.shapes.size():
+			var shape = character_canvas.shapes[index]
+			cmd._final_positions[index] = [shape.position[0], shape.position[1]]
+	cmd._delta = delta
+
+	# Add to history (don't execute - shapes already moved)
+	_command_manager._add_to_history(cmd)
+
+
+func _on_shapes_resize_completed(indices: Array[int], before_states: Dictionary, after_states: Dictionary) -> void:
+	if not _command_manager or not character_canvas or indices.is_empty():
+		return
+
+	# Create compound command for resize operation
+	var compound := CompoundCommandScript.create_resize_command(
+		character_canvas,
+		indices,
+		before_states,
+		after_states
+	)
+
+	# Add to history (don't execute - shapes already resized)
+	_command_manager._add_to_history(compound)
+
+
+func _on_shapes_delete_requested(indices: Array[int]) -> void:
+	if not _command_manager or not character_canvas or indices.is_empty():
+		return
+
+	# Create and execute delete command
+	var cmd := DeleteShapeCommand.new(character_canvas, indices)
+	_command_manager.execute(cmd)
 
 
 # =============================================================================
@@ -493,6 +850,23 @@ func _on_layer_order_changed() -> void:
 
 
 func _on_delete_requested() -> void:
+	if not character_canvas or character_canvas.selected_indices.is_empty():
+		return
+
+	var count := character_canvas.selected_indices.size()
+	_show_delete_confirmation(count)
+
+
+func _show_delete_confirmation(count: int) -> void:
+	## Show confirmation dialog before deleting shapes.
+	var dialog := ConfirmActionDialog.new()
+	dialog.action_confirmed.connect(_do_delete_shapes)
+	add_child(dialog)
+	dialog.confirm_delete_shapes(count)
+
+
+func _do_delete_shapes() -> void:
+	## Actually delete the selected shapes after confirmation.
 	if character_canvas:
 		character_canvas.delete_selected()
 
@@ -576,7 +950,7 @@ func _on_direction_changed(direction: DirectionView.Direction) -> void:
 	if not direction_manager or not character_canvas:
 		return
 
-	var view := direction_manager.get_direction_view(direction)
+	var view: DirectionView = direction_manager.get_direction_view(direction)
 	if view and view.is_configured:
 		# Load direction-specific shapes
 		character_canvas.shapes = view.shapes.duplicate(true)
@@ -752,28 +1126,71 @@ func _on_export_requested(options: ExportManager.ExportOptions) -> void:
 	if options.export_all_directions and direction_manager:
 		for dir_key in DirectionView.Direction.keys():
 			var dir_enum: DirectionView.Direction = DirectionView.Direction[dir_key]
-			var view := direction_manager.get_direction_view(dir_enum)
+			var view: DirectionView = direction_manager.get_direction_view(dir_enum)
 			if view and view.is_configured:
 				direction_views[dir_key.to_lower()] = view
 				body_parts_per_direction[dir_key.to_lower()] = view.body_parts
 
-	# Validate we have something to export
-	if animations.is_empty():
-		if export_manager:
-			export_manager.set_status("No animations to export", true)
-		return
+	# Perform comprehensive validation
+	var export_issues: Array[String] = []
 
-	var has_generated := false
-	for anim in animations:
-		if anim.is_generated:
-			has_generated = true
+	# Basic export option validation
+	if options.character_name.is_empty():
+		export_issues.append("Character name is required")
+	if options.output_directory.is_empty():
+		export_issues.append("Output directory is required")
+	if not options.export_sprite_sheet and not options.export_individual_frames:
+		export_issues.append("Select at least one export format (sprite sheet or individual frames)")
+
+	# Animation validation
+	if animations.is_empty():
+		export_issues.append("No animations to export - create some animations first")
+	else:
+		var has_generated := false
+		for anim in animations:
+			if anim.is_generated:
+				has_generated = true
+				break
+		if not has_generated:
+			export_issues.append("No generated animations - click 'Generate' on your animations")
+
+	# Rig validation
+	var rig_issues: Array[RigValidator.ValidationIssue] = []
+	if body_part_tagger:
+		var shape_count := shapes.size()
+		rig_issues = RigValidator.validate(body_parts, shape_count)
+
+	# Check if we have any errors (not just warnings)
+	var has_blocking_errors := not export_issues.is_empty()
+	for issue in rig_issues:
+		if issue.type == RigValidator.IssueType.ERROR:
+			has_blocking_errors = true
 			break
 
-	if not has_generated:
-		if export_manager:
-			export_manager.set_status("No generated animations to export", true)
+	# Show validation dialog if there are any issues
+	if has_blocking_errors or not rig_issues.is_empty():
+		var validation_dialog := ValidationDialog.new()
+		validation_dialog.validation_accepted.connect(
+			func(): _execute_export(options, shapes, body_parts, animations, canvas_size, direction_views, body_parts_per_direction)
+		)
+		add_child(validation_dialog)
+		validation_dialog.show_validation(rig_issues, export_issues)
 		return
 
+	# No issues - proceed with export
+	_execute_export(options, shapes, body_parts, animations, canvas_size, direction_views, body_parts_per_direction)
+
+
+func _execute_export(
+	options: ExportManager.ExportOptions,
+	shapes: Array,
+	body_parts: Dictionary,
+	animations: Array[AnimationData],
+	canvas_size: int,
+	direction_views: Dictionary,
+	body_parts_per_direction: Dictionary
+) -> void:
+	## Execute the actual export after validation passes.
 	# Create and show export dialog
 	var dialog := ExportDialog.new()
 	dialog.export_finished.connect(_on_export_finished)
@@ -812,6 +1229,55 @@ func _update_export_manager() -> void:
 
 
 # =============================================================================
+# SHAPE LIBRARY SIGNALS
+# =============================================================================
+
+func _on_shape_library_insert_requested(shapes: Array) -> void:
+	## Insert a group of shapes from the shape library onto the canvas.
+	if not character_canvas:
+		return
+
+	# Add each shape to the canvas with undo support
+	var compound_cmd := CompoundCommandScript.new("Insert Shape Group")
+
+	for shape_data in shapes:
+		var cmd := AddShapeCommand.new(character_canvas, shape_data)
+		compound_cmd.add_command(cmd)
+
+	if compound_cmd.get_command_count() > 0:
+		_command_manager.execute(compound_cmd)
+		mark_dirty()
+		_update_layers()
+		print("CharacterAssembler: Inserted %d shapes from library" % shapes.size())
+
+
+func _on_save_selection_as_group_requested() -> void:
+	## Save the currently selected shapes as a new shape group.
+	if not character_canvas or not shape_library_panel:
+		return
+
+	var selected_shapes: Array = []
+	for index in character_canvas.selected_indices:
+		if index >= 0 and index < character_canvas.shapes.size():
+			selected_shapes.append(character_canvas.shapes[index].duplicate(true))
+
+	if selected_shapes.is_empty():
+		print("CharacterAssembler: No shapes selected to save as group")
+		return
+
+	var canvas_size: int = character_canvas.canvas_size
+	shape_library_panel.save_shapes_as_group(selected_shapes, canvas_size)
+
+
+func _update_shape_library_selection() -> void:
+	## Update the shape library panel about current selection state.
+	if shape_library_panel and character_canvas:
+		var has_selection: bool = not character_canvas.selected_indices.is_empty()
+		shape_library_panel.set_has_selection(has_selection)
+		shape_library_panel.set_canvas_size(character_canvas.canvas_size)
+
+
+# =============================================================================
 # FILE OPERATIONS
 # =============================================================================
 
@@ -847,20 +1313,94 @@ func _save_to_file(path: String) -> void:
 		current_file_path = path
 		is_dirty = false
 		_update_status_bar()
+
+		# Clear auto-save files since we saved successfully
+		if _auto_save_manager:
+			_auto_save_manager.clear_auto_saves()
+			_auto_save_manager.set_project_path(path)
+
 		print("CharacterAssembler: Saved to %s" % path)
 	else:
-		push_error("CharacterAssembler: Failed to save: %s (error: %d)" % [path, err])
+		_show_error_dialog("Save Failed",
+			"Could not save the project to:\n%s\n\nError code: %d\n\nMake sure you have write permissions to this location." % [path, err])
 
 
 func _load_from_file(path: String) -> void:
-	var project = CharacterProjectScript.load_from_file(path)
+	var project = _try_load_project(path)
 	if project == null:
-		push_error("CharacterAssembler: Failed to load: %s" % path)
 		return
 
 	current_project = project
 	current_file_path = path
 	is_dirty = false
+
+	# Clear undo/redo history for loaded project
+	if _command_manager:
+		_command_manager.clear()
+
+	_load_project_into_ui()
+
+	# Update auto-save with new project path
+	if _auto_save_manager:
+		_auto_save_manager.set_project_path(path)
+
+	print("CharacterAssembler: Loaded from %s" % path)
+
+
+func _try_load_project(path: String) -> CharacterProject:
+	## Try to load a project with comprehensive error handling.
+	## Returns null on failure and shows user-friendly error messages.
+
+	if not FileAccess.file_exists(path):
+		_show_error_dialog("File Not Found",
+			"The file could not be found:\n%s\n\nMake sure the file exists and try again." % path)
+		return null
+
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		var err := FileAccess.get_open_error()
+		_show_error_dialog("Cannot Open File",
+			"Could not open the file:\n%s\n\nError code: %d\n\nThe file may be locked by another program or you may not have read permissions." % [path, err])
+		return null
+
+	var json_string := file.get_as_text()
+	file.close()
+
+	if json_string.is_empty():
+		_show_error_dialog("Empty File",
+			"The file is empty:\n%s\n\nThis project file appears to be corrupted or empty." % path)
+		return null
+
+	var data = JSON.parse_string(json_string)
+	if data == null:
+		_show_error_dialog("Invalid File Format",
+			"The file contains invalid JSON data:\n%s\n\nThe file may be corrupted. Try loading a backup or contact support." % path)
+		return null
+
+	if not data is Dictionary:
+		_show_error_dialog("Invalid Project Data",
+			"The file does not contain valid project data:\n%s\n\nExpected a project dictionary but got something else." % path)
+		return null
+
+	# Validate required fields
+	var validation_issues: Array[String] = []
+	if not data.has("shapes"):
+		validation_issues.append("Missing 'shapes' data")
+	if not data.has("canvas_size"):
+		validation_issues.append("Missing 'canvas_size' - will use default (64px)")
+
+	if not validation_issues.is_empty():
+		print("CharacterAssembler: Project loaded with warnings: %s" % ", ".join(validation_issues))
+
+	var project := CharacterProject.new()
+	project.from_dict(data)
+	return project
+
+
+func _load_project_into_ui() -> void:
+	## Load the current project data into all UI components.
+	if not current_project:
+		return
 
 	if character_canvas:
 		character_canvas.load_from_project(current_project)
@@ -870,6 +1410,10 @@ func _load_from_file(path: String) -> void:
 
 	if opacity_slider:
 		opacity_slider.value = current_project.reference_opacity * 100
+
+	# Try to load reference image if path is set
+	if not current_project.reference_image_path.is_empty():
+		_try_load_reference_image(current_project.reference_image_path)
 
 	# Load body parts into tagger
 	if body_part_tagger:
@@ -895,7 +1439,34 @@ func _load_from_file(path: String) -> void:
 	_update_export_manager()
 	_update_layers()
 	_update_status_bar()
-	print("CharacterAssembler: Loaded from %s" % path)
+
+
+func _try_load_reference_image(path: String) -> void:
+	## Try to load a reference image with graceful error handling.
+	if not character_canvas:
+		return
+
+	if not FileAccess.file_exists(path):
+		print("CharacterAssembler: Reference image not found: %s (skipping)" % path)
+		# Clear the path since file doesn't exist
+		current_project.reference_image_path = ""
+		return
+
+	if not character_canvas.load_reference_image(path):
+		print("CharacterAssembler: Failed to load reference image: %s (unsupported format?)" % path)
+		current_project.reference_image_path = ""
+
+
+func _show_error_dialog(title: String, message: String) -> void:
+	## Show an error dialog with the given title and message.
+	var dialog := AcceptDialog.new()
+	dialog.title = title
+	dialog.dialog_text = message
+	dialog.dialog_hide_on_ok = true
+	dialog.confirmed.connect(func(): dialog.queue_free())
+	dialog.canceled.connect(func(): dialog.queue_free())
+	add_child(dialog)
+	dialog.popup_centered()
 
 
 func _sync_to_project() -> void:
@@ -946,6 +1517,12 @@ func _continue_pending_action() -> void:
 			_do_new()
 		"open":
 			_do_open()
+		_:
+			# Handle example loading: "load_example_0", "load_example_1", etc.
+			if action.begins_with("load_example_"):
+				var index_str := action.substr("load_example_".length())
+				if index_str.is_valid_int():
+					_load_example(index_str.to_int())
 
 
 # =============================================================================

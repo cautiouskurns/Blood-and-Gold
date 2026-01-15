@@ -1,0 +1,79 @@
+{
+  "id": "camp_scene_1_thorne",
+  "title": "After the Merchant's Escort",
+  "trigger_contract": "merchants_escort",
+  "nodes": {
+    "start_1": {
+      "type": "Start",
+      "connections": [{"to": "speaker_1", "port": 0}]
+    },
+    "speaker_1": {
+      "type": "Speaker",
+      "speaker": "thorne",
+      "portrait": "thorne_neutral",
+      "text": "Captain. The merchant's coin is secured, and nobody lost their head. I'd call that a good day's work.",
+      "connections": [{"to": "speaker_2", "port": 0}]
+    },
+    "speaker_2": {
+      "type": "Speaker",
+      "speaker": "thorne",
+      "portrait": "thorne_thoughtful",
+      "text": "But I've been thinking... we've been taking a lot of escort jobs lately. Safe work, but it doesn't pay like real combat.",
+      "connections": [
+        {"to": "choice_1", "port": 0},
+        {"to": "choice_2", "port": 1},
+        {"to": "choice_3", "port": 2}
+      ]
+    },
+    "choice_1": {
+      "type": "Choice",
+      "text": "Safety keeps the company alive. Dead mercenaries don't spend gold.",
+      "loyalty_changes": {"thorne": -5},
+      "connections": [{"to": "speaker_3a", "port": 0}]
+    },
+    "choice_2": {
+      "type": "Choice",
+      "text": "You want glory? We'll find you a real fight soon enough.",
+      "loyalty_changes": {"thorne": 5},
+      "connections": [{"to": "speaker_3b", "port": 0}]
+    },
+    "choice_3": {
+      "type": "Choice",
+      "text": "What would you have us do differently?",
+      "loyalty_changes": {},
+      "connections": [{"to": "speaker_3c", "port": 0}]
+    },
+    "speaker_3a": {
+      "type": "Speaker",
+      "speaker": "thorne",
+      "portrait": "thorne_disapproval",
+      "text": "*grunts* You sound like a banker, not a warrior. But you're the captain.",
+      "connections": [{"to": "speaker_4", "port": 0}]
+    },
+    "speaker_3b": {
+      "type": "Speaker",
+      "speaker": "thorne",
+      "portrait": "thorne_approving",
+      "text": "*grins* Now that's what I wanted to hear. Point me at the enemy, Captain, and watch them fall.",
+      "connections": [{"to": "speaker_4", "port": 0}]
+    },
+    "speaker_3c": {
+      "type": "Speaker",
+      "speaker": "thorne",
+      "portrait": "thorne_neutral",
+      "text": "I've heard rumors of bandits holed up in the old ruins. Real fighters, not road thugs. That's where the real coin is.",
+      "connections": [{"to": "speaker_4", "port": 0}]
+    },
+    "speaker_4": {
+      "type": "Speaker",
+      "speaker": "thorne",
+      "portrait": "thorne_neutral",
+      "text": "Anyway, I'll be sharpening my blade if you need me. This company won't fail for lack of a good sword arm.",
+      "connections": [{"to": "end_1", "port": 0}]
+    },
+    "end_1": {
+      "type": "End",
+      "end_type": "normal"
+    }
+  }
+}

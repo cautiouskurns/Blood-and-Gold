@@ -189,7 +189,7 @@ static func _fill_rect(image: Image, rect: Rect2i, color: Color, canvas_size: in
 ## Fill a circle (same width and height).
 static func _fill_circle(image: Image, rect: Rect2i, color: Color, canvas_size: int) -> void:
 	var center := Vector2(rect.position.x + rect.size.x / 2.0, rect.position.y + rect.size.y / 2.0)
-	var radius := min(rect.size.x, rect.size.y) / 2.0
+	var radius: float = min(rect.size.x, rect.size.y) / 2.0
 
 	for y in range(max(0, rect.position.y), min(canvas_size, rect.end.y)):
 		for x in range(max(0, rect.position.x), min(canvas_size, rect.end.x)):

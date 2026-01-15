@@ -39,6 +39,7 @@ func _setup_ui() -> void:
 	_layer_list.custom_minimum_size = Vector2(0, 150)
 	_layer_list.select_mode = ItemList.SELECT_MULTI
 	_layer_list.add_theme_font_size_override("font_size", 28)
+	_layer_list.tooltip_text = "Shape layers - higher layers render on top\nCtrl+click to multi-select, Shift+click for range"
 	add_child(_layer_list)
 
 	# Buttons

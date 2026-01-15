@@ -52,7 +52,9 @@ Implement [feature] from data table editor roadmap using tool-feature-implemente
 - Create editors and tools for everything
 - Create map editor
 - Decide when to create data architecture
-
+- Feature specs nd imlementation skills should be updated to include clear visual guidance, both in text or from figma 
+- Clearer differentiation and guidance on roadmaps for prototype, vertical slice and production needed in skills
+- Embed project and promot managemenet into plugin
 
 ## Known Issues
 The Background ColorRect is likely blocking mouse input

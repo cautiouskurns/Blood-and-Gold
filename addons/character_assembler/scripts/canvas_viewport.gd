@@ -12,6 +12,12 @@ signal canvas_changed()
 signal zoom_changed(zoom: float)
 signal pivot_clicked(canvas_pos: Vector2)
 
+# Undo/redo support signals
+signal shape_draw_completed(shape_data: Dictionary)
+signal shapes_move_completed(indices: Array[int], delta: Vector2, before_positions: Dictionary)
+signal shapes_resize_completed(indices: Array[int], before_states: Dictionary, after_states: Dictionary)
+signal shapes_delete_requested(indices: Array[int])
+
 # Canvas settings
 var canvas_size: int = 64:
 	set(value):
@@ -74,6 +80,11 @@ var _resize_handle: int = -1  # 0-7 for corners/edges, -1 for none
 var _rotation_start: float = 0.0
 var _drawing_start: Vector2 = Vector2.ZERO
 var _drawing_end: Vector2 = Vector2.ZERO
+
+# Undo/redo state tracking
+var _operation_before_positions: Dictionary = {}  # index -> [x, y]
+var _operation_before_states: Dictionary = {}  # index -> shape_data
+var _total_drag_delta: Vector2 = Vector2.ZERO
 
 # Visual settings
 const GRID_COLOR := Color(0.3, 0.3, 0.3, 0.5)
@@ -443,6 +454,8 @@ func _start_selection(screen_pos: Vector2, canvas_pos: Vector2, add_to_selection
 				_resize_handle = i
 				_is_resizing = true
 				_drag_start = canvas_pos
+				# Capture before states for undo/redo
+				_capture_before_states()
 				return
 
 	# Check if clicking on a shape
@@ -461,6 +474,9 @@ func _start_selection(screen_pos: Vector2, canvas_pos: Vector2, add_to_selection
 			_is_dragging = true
 			_drag_start = canvas_pos
 			_drag_offset = Vector2.ZERO
+			_total_drag_delta = Vector2.ZERO
+			# Capture before positions for undo/redo
+			_capture_before_positions()
 
 		shape_selected.emit(selected_indices)
 	else:
@@ -503,14 +519,10 @@ func _finish_drawing(canvas_pos: Vector2) -> void:
 			"rotation": 0.0,
 			"layer": shapes.size()
 		}
-		shapes.append(shape)
-		var index = shapes.size() - 1
-		shape_added.emit(index)
-		canvas_changed.emit()
 
-		# Select the new shape
-		selected_indices = [index]
-		shape_selected.emit(selected_indices)
+		# Emit signal for undo/redo instead of directly adding
+		# The main_panel will handle creating the command
+		shape_draw_completed.emit(shape.duplicate(true))
 
 
 func _update_dragging(canvas_pos: Vector2) -> void:
@@ -521,6 +533,9 @@ func _update_dragging(canvas_pos: Vector2) -> void:
 	# Only move if there's actual movement
 	if delta == Vector2.ZERO:
 		return
+
+	# Track total delta for undo/redo
+	_total_drag_delta += delta
 
 	for index in selected_indices:
 		if index >= 0 and index < shapes.size():
@@ -535,6 +550,15 @@ func _update_dragging(canvas_pos: Vector2) -> void:
 
 func _finish_dragging() -> void:
 	_is_dragging = false
+
+	# Emit completion signal for undo/redo if there was actual movement
+	if _total_drag_delta != Vector2.ZERO and not selected_indices.is_empty():
+		shapes_move_completed.emit(selected_indices.duplicate(), _total_drag_delta, _operation_before_positions.duplicate())
+
+	# Clear state
+	_operation_before_positions.clear()
+	_total_drag_delta = Vector2.ZERO
+
 	for index in selected_indices:
 		shape_modified.emit(index)
 
@@ -584,6 +608,18 @@ func _update_resizing(canvas_pos: Vector2) -> void:
 func _finish_resizing() -> void:
 	_is_resizing = false
 	_resize_handle = -1
+
+	# Emit completion signal for undo/redo
+	if not selected_indices.is_empty() and not _operation_before_states.is_empty():
+		var after_states: Dictionary = {}
+		for index in selected_indices:
+			if index >= 0 and index < shapes.size():
+				after_states[index] = shapes[index].duplicate(true)
+		shapes_resize_completed.emit(selected_indices.duplicate(), _operation_before_states.duplicate(), after_states)
+
+	# Clear state
+	_operation_before_states.clear()
+
 	for index in selected_indices:
 		shape_modified.emit(index)
 
@@ -758,23 +794,14 @@ func save_to_project(project: RefCounted) -> void:
 
 
 ## Delete selected shapes.
+## Emits shapes_delete_requested signal for undo/redo support.
 func delete_selected() -> void:
 	if selected_indices.is_empty():
 		return
 
-	# Sort indices in descending order to delete from end first
-	var sorted_indices = selected_indices.duplicate()
-	sorted_indices.sort()
-	sorted_indices.reverse()
-
-	for index in sorted_indices:
-		if index >= 0 and index < shapes.size():
-			shapes.remove_at(index)
-			shape_removed.emit(index)
-
-	selected_indices.clear()
-	shape_selected.emit(selected_indices)
-	canvas_changed.emit()
+	# Emit signal for undo/redo instead of directly deleting
+	# The main_panel will handle creating the command
+	shapes_delete_requested.emit(selected_indices.duplicate())
 
 
 ## Move selected shapes up in layer order.
@@ -929,3 +956,44 @@ func is_pose_preview_active() -> bool:
 func update_pose_preview() -> void:
 	if _pose_preview_enabled and _current_preview_pose:
 		set_pose_preview(_current_preview_pose, _current_preview_body_parts)
+
+
+# =============================================================================
+# UNDO/REDO STATE CAPTURE
+# =============================================================================
+
+## Capture before positions for selected shapes (used for move operations).
+func _capture_before_positions() -> void:
+	_operation_before_positions.clear()
+	for index in selected_indices:
+		if index >= 0 and index < shapes.size():
+			var shape = shapes[index]
+			_operation_before_positions[index] = [shape.position[0], shape.position[1]]
+
+
+## Capture complete before states for selected shapes (used for resize operations).
+func _capture_before_states() -> void:
+	_operation_before_states.clear()
+	for index in selected_indices:
+		if index >= 0 and index < shapes.size():
+			_operation_before_states[index] = shapes[index].duplicate(true)
+
+
+## Add a shape directly (used by undo/redo commands).
+func add_shape_direct(shape_data: Dictionary, at_index: int = -1) -> int:
+	var data = shape_data.duplicate(true)
+	if at_index >= 0 and at_index <= shapes.size():
+		shapes.insert(at_index, data)
+		return at_index
+	else:
+		shapes.append(data)
+		return shapes.size() - 1
+
+
+## Remove a shape directly (used by undo/redo commands).
+func remove_shape_direct(index: int) -> Dictionary:
+	if index >= 0 and index < shapes.size():
+		var data = shapes[index].duplicate(true)
+		shapes.remove_at(index)
+		return data
+	return {}

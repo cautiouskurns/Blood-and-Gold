@@ -428,7 +428,7 @@ func _to_bool(value: Variant) -> bool:
 # CACHING
 # =============================================================================
 
-func _get_cached(text: String, context: Dictionary) -> String:
+func _get_cached(text: String, context: Dictionary) -> Variant:
 	if not _cache.has(text):
 		return null
 

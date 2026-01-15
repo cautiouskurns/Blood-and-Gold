@@ -99,7 +99,7 @@ var _selected_choice: String = ""
 var _final_gold_reward: int = 0
 var _units: Array[Unit] = []
 var _choice_panel: ChoicePanel = null
-var _loyalty_popup: LoyaltyPopup = null
+var _loyalty_popup: CanvasLayer = null
 var _battle_result_popup: BattleResultPopup = null
 var _cha_check_result: Dictionary = {}
 
@@ -483,7 +483,7 @@ func _setup_battle_result_popup() -> void:
 	_battle_result_popup.retry_pressed.connect(_on_retry_pressed)
 
 func _setup_loyalty_popup() -> void:
-	_loyalty_popup = LoyaltyPopupScene.instantiate() as LoyaltyPopup
+	_loyalty_popup = LoyaltyPopupScene.instantiate()
 	add_child(_loyalty_popup)
 
 func _show_defeat() -> void:

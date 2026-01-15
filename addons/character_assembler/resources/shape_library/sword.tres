@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="ShapeGroup" load_steps=2 format=3 uid="uid://u7vfd7h42fj4"]
+
+[ext_resource type="Script" uid="uid://j4i0f6kv3w3t" path="res://addons/character_assembler/scripts/shape_group.gd" id="1_rxy53"]
+
+[resource]
+script = ExtResource("1_rxy53")
+group_name = "Sword"
+category = "weapons"
+description = "Basic sword weapon"
+shapes = [{
+"color": [0.75, 0.75, 0.8, 1.0],
+"layer": 8,
+"position": [28.0, 8.0],
+"rotation": 0.0,
+"size": [8.0, 28.0],
+"type": "rectangle"
+}, {
+"color": [0.4, 0.35, 0.25, 1.0],
+"layer": 9,
+"position": [22.0, 36.0],
+"rotation": 0.0,
+"size": [20.0, 4.0],
+"type": "rectangle"
+}, {
+"color": [0.35, 0.25, 0.15, 1.0],
+"layer": 7,
+"position": [29.0, 40.0],
+"rotation": 0.0,
+"size": [6.0, 12.0],
+"type": "rectangle"
+}]
+created_at = "2026-01-15T17:57:06"
+tags = PackedStringArray("weapon", "sword", "melee")

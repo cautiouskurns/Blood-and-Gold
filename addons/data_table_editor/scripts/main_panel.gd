@@ -24,11 +24,21 @@ const SCHEMA_PATH: String = "res://data/_schemas/"
 @onready var table_name_label: Label = $Margin/HSplit/RightPanel/TableNameLabel
 @onready var data_grid: Tree = %DataGrid
 
+# Detail Panel
+@onready var detail_panel: PanelContainer = %DetailPanel
+
+# Filter bar
+@onready var filter_edit: LineEdit = %FilterEdit
+@onready var filter_count_label: Label = %FilterCountLabel
+
 # Status bar
 @onready var row_count_label: Label = %RowCountLabel
 @onready var selection_label: Label = %SelectionLabel
 @onready var modified_label: Label = %ModifiedLabel
 @onready var error_label: Label = %ErrorLabel
+
+# ===== TIMERS =====
+var _success_message_timer: Timer = null
 
 # ===== STATE =====
 var _current_table_path: String = ""
@@ -44,11 +54,21 @@ func _ready() -> void:
 	set_v_size_flags(Control.SIZE_EXPAND_FILL)
 	custom_minimum_size = Vector2(800, 600)
 
+	_setup_timers()
 	_connect_signals()
 	_update_toolbar_state()
 	_update_status_bar()
 
 	print("[DataTableEditor] Ready")
+
+
+func _setup_timers() -> void:
+	# Timer for clearing success messages
+	_success_message_timer = Timer.new()
+	_success_message_timer.one_shot = true
+	_success_message_timer.wait_time = 2.0
+	_success_message_timer.timeout.connect(_on_success_message_timeout)
+	add_child(_success_message_timer)
 
 
 func _connect_signals() -> void:
@@ -80,6 +100,16 @@ func _connect_signals() -> void:
 		data_grid.row_selected.connect(_on_row_selected)
 		data_grid.cell_edited.connect(_on_cell_edited)
 		data_grid.selection_changed.connect(_on_selection_changed)
+		data_grid.validation_error.connect(_on_validation_error)
+		data_grid.filter_changed.connect(_on_filter_changed)
+
+	# Detail panel signals
+	if detail_panel:
+		detail_panel.field_changed.connect(_on_detail_field_changed)
+
+	# Filter bar signals
+	if filter_edit:
+		filter_edit.text_changed.connect(_on_filter_text_changed)
 
 
 # ===== TABLE PARSING =====
@@ -132,9 +162,17 @@ func _load_table(path: String) -> void:
 		# Infer schema from data
 		_infer_schema_from_data()
 
+	# Clear any existing filter
+	_clear_filter()
+
 	# Load data into grid component
 	if data_grid:
 		data_grid.load_data(_current_table_data, _current_schema)
+
+	# Set schema on detail panel and clear display
+	if detail_panel:
+		detail_panel.set_schema(_current_schema)
+		detail_panel.clear_display()
 
 	_update_table_name_label()
 	_update_toolbar_state()
@@ -229,11 +267,85 @@ func _mark_dirty() -> void:
 		table_sidebar.mark_modified(_current_table_path, true)
 
 
+## Generate a unique ID for a new row.
+func _generate_unique_id() -> String:
+	# Use table name as prefix and find next available number
+	var table_name = _current_table_path.get_file().get_basename()
+	var prefix = table_name.to_lower().replace(" ", "_")
+
+	# Find highest existing numeric suffix
+	var max_num := 0
+	for row in _current_table_data:
+		var id = row.get("id", "")
+		if id is String and id.begins_with(prefix + "_"):
+			var suffix = id.substr(prefix.length() + 1)
+			if suffix.is_valid_int():
+				var num = int(suffix)
+				if num > max_num:
+					max_num = num
+
+	return "%s_%03d" % [prefix, max_num + 1]
+
+
+# ===== STATE FOR PENDING OPERATIONS =====
+var _pending_table_path: String = ""
+
 # ===== SIGNAL HANDLERS =====
 func _on_table_selected(path: String) -> void:
 	if path.is_empty():
 		return
+
+	# Check for unsaved changes before switching
+	if _is_dirty and path != _current_table_path:
+		_pending_table_path = path
+		_show_unsaved_changes_dialog()
+		return
+
 	_load_table(path)
+
+
+## Show confirmation dialog for unsaved changes.
+func _show_unsaved_changes_dialog() -> void:
+	var dialog := ConfirmationDialog.new()
+	dialog.title = "Unsaved Changes"
+	dialog.dialog_text = "You have unsaved changes. Do you want to save before switching tables?"
+	dialog.ok_button_text = "Save"
+	dialog.cancel_button_text = "Don't Save"
+
+	# Add a third button to cancel the switch entirely
+	dialog.add_button("Cancel", false, "cancel_switch")
+
+	dialog.confirmed.connect(_on_unsaved_dialog_save.bind(dialog))
+	dialog.canceled.connect(_on_unsaved_dialog_discard.bind(dialog))
+	dialog.custom_action.connect(_on_unsaved_dialog_custom.bind(dialog))
+
+	add_child(dialog)
+	dialog.popup_centered()
+
+
+func _on_unsaved_dialog_save(dialog: ConfirmationDialog) -> void:
+	# Save current table then switch
+	_save_table(_current_table_path)
+	dialog.queue_free()
+	if not _pending_table_path.is_empty():
+		_load_table(_pending_table_path)
+		_pending_table_path = ""
+
+
+func _on_unsaved_dialog_discard(dialog: ConfirmationDialog) -> void:
+	# Discard changes and switch
+	dialog.queue_free()
+	_is_dirty = false
+	if not _pending_table_path.is_empty():
+		_load_table(_pending_table_path)
+		_pending_table_path = ""
+
+
+func _on_unsaved_dialog_custom(action: StringName, dialog: ConfirmationDialog) -> void:
+	if action == "cancel_switch":
+		# Cancel - stay on current table
+		_pending_table_path = ""
+		dialog.queue_free()
 
 
 func _on_new_table_pressed() -> void:
@@ -292,11 +404,23 @@ func _on_add_row_pressed() -> void:
 		var default_value = SchemaLoader.get_column_default(col)
 		new_row[col_name] = default_value
 
+	# Generate unique ID if schema has an 'id' column
+	if new_row.has("id") and new_row.id == "":
+		new_row.id = _generate_unique_id()
+
 	_current_table_data.append(new_row)
 	_refresh_data_grid()
 	_mark_dirty()
 
-	print("[DataTableEditor] Added new row")
+	# Select the newly added row
+	var new_row_index = _current_table_data.size() - 1
+	if data_grid:
+		data_grid.select_row(new_row_index)
+
+	_update_toolbar_state()
+	_update_status_bar()
+
+	print("[DataTableEditor] Added new row at index %d" % new_row_index)
 
 
 func _on_duplicate_pressed() -> void:
@@ -310,30 +434,46 @@ func _on_duplicate_pressed() -> void:
 	var original_row = _current_table_data[row_index]
 	var new_row = original_row.duplicate(true)
 
-	# Update ID if present
+	# Update ID if present to make it unique
 	if new_row.has("id"):
-		new_row.id = new_row.id + "_copy"
+		new_row.id = _generate_unique_id()
 
 	_current_table_data.insert(row_index + 1, new_row)
 	_refresh_data_grid()
 	_mark_dirty()
 
-	print("[DataTableEditor] Duplicated row %d" % row_index)
+	# Select the duplicated row
+	if data_grid:
+		data_grid.select_row(row_index + 1)
+
+	_update_toolbar_state()
+	_update_status_bar()
+
+	print("[DataTableEditor] Duplicated row %d to row %d" % [row_index, row_index + 1])
 
 
 func _on_delete_pressed() -> void:
 	if not data_grid:
 		return
 
-	var row_index = data_grid.get_selected_row_index()
-	if row_index < 0 or row_index >= _current_table_data.size():
+	# Get all selected row indices
+	var selected_indices = data_grid.get_selected_row_indices()
+	if selected_indices.is_empty():
 		return
 
-	_current_table_data.remove_at(row_index)
+	# Sort in descending order to delete from end first (preserves indices)
+	selected_indices.sort()
+	selected_indices.reverse()
+
+	# Delete rows in reverse order
+	for row_index in selected_indices:
+		if row_index >= 0 and row_index < _current_table_data.size():
+			_current_table_data.remove_at(row_index)
+
 	_refresh_data_grid()
 	_mark_dirty()
 
-	print("[DataTableEditor] Deleted row %d" % row_index)
+	print("[DataTableEditor] Deleted %d row(s)" % selected_indices.size())
 
 
 func _on_move_up_pressed() -> void:
@@ -433,16 +573,55 @@ func _save_table(path: String) -> void:
 	_update_toolbar_state()
 	_update_status_bar()
 
+	# Clear modified indicators in grid
+	if data_grid:
+		data_grid.clear_modified_indicators()
+
 	# Clear modified indicator in sidebar
 	if table_sidebar:
 		table_sidebar.mark_modified(path, false)
 
+	# Show success feedback
+	_show_success_message("Saved!")
+
 	print("[DataTableEditor] Saved table: %s" % path)
+
+
+## Show a brief success message in the status bar.
+func _show_success_message(message: String) -> void:
+	if modified_label:
+		modified_label.add_theme_color_override("font_color", Color(0.4, 0.8, 0.4))  # Green
+		modified_label.text = message
+
+	# Clear any error messages
+	if error_label:
+		error_label.text = ""
+
+	# Start timer to clear message
+	if _success_message_timer:
+		_success_message_timer.start()
+
+
+func _on_success_message_timeout() -> void:
+	# Reset modified label to normal state
+	if modified_label:
+		modified_label.remove_theme_color_override("font_color")
+		modified_label.text = "Modified" if _is_dirty else ""
 
 
 func _on_row_selected(row_index: int) -> void:
 	_update_toolbar_state()
 	_update_status_bar()
+
+	# Update detail panel with selected row data
+	if detail_panel:
+		print("[DataTableEditor] Row selected: %d, displaying in detail panel" % row_index)
+		if row_index >= 0 and row_index < _current_table_data.size():
+			detail_panel.display_row(_current_table_data[row_index], row_index)
+		else:
+			detail_panel.clear_display()
+	else:
+		push_error("[DataTableEditor] detail_panel is null! Check %DetailPanel reference")
 
 
 func _on_cell_edited(row_index: int, column_name: String, new_value: Variant) -> void:
@@ -453,12 +632,78 @@ func _on_cell_edited(row_index: int, column_name: String, new_value: Variant) ->
 	_current_table_data[row_index][column_name] = new_value
 	_mark_dirty()
 
+	# Sync detail panel if this is the currently displayed row
+	if detail_panel and detail_panel.get_current_row_index() == row_index:
+		detail_panel.update_field(column_name, new_value)
+
+	# Clear any previous validation error
+	if error_label:
+		error_label.text = ""
+
 	print("[DataTableEditor] Edited row %d, col '%s' = %s" % [row_index, column_name, new_value])
+
+
+func _on_detail_field_changed(column_name: String, new_value: Variant) -> void:
+	var row_index = detail_panel.get_current_row_index() if detail_panel else -1
+	if row_index < 0 or row_index >= _current_table_data.size():
+		return
+
+	# Update the data
+	_current_table_data[row_index][column_name] = new_value
+	_mark_dirty()
+
+	# Sync the grid cell
+	if data_grid:
+		data_grid.update_cell(row_index, column_name, new_value)
+
+	# Clear any previous validation error
+	if error_label:
+		error_label.text = ""
+
+	print("[DataTableEditor] Detail panel edited row %d, col '%s' = %s" % [row_index, column_name, new_value])
 
 
 func _on_selection_changed(selected_count: int) -> void:
 	_update_toolbar_state()
 	_update_status_bar()
+
+
+func _on_validation_error(row_index: int, column_name: String, error_message: String) -> void:
+	# Display validation error in status bar
+	if error_label:
+		error_label.text = "Row %d, %s: %s" % [row_index + 1, column_name, error_message]
+	print("[DataTableEditor] Validation error - Row %d, %s: %s" % [row_index, column_name, error_message])
+
+
+# ===== FILTER HANDLERS =====
+
+func _on_filter_text_changed(new_text: String) -> void:
+	# Apply filter as user types
+	if data_grid:
+		data_grid.filter_rows(new_text)
+
+
+func _on_filter_changed(visible_count: int, total_count: int) -> void:
+	# Update the filter count label
+	_update_filter_count_label(visible_count, total_count)
+
+
+func _update_filter_count_label(visible_count: int, total_count: int) -> void:
+	if not filter_count_label:
+		return
+
+	if visible_count == total_count or total_count == 0:
+		# No filter active or no data
+		filter_count_label.text = ""
+	else:
+		filter_count_label.text = "%d of %d rows" % [visible_count, total_count]
+
+
+func _clear_filter() -> void:
+	if filter_edit:
+		filter_edit.text = ""
+	if data_grid:
+		data_grid.clear_filter()
 
 
 # ===== INPUT HANDLING =====
@@ -479,6 +724,12 @@ func _input(event: InputEvent) -> void:
 			_on_delete_pressed()
 			handled = true
 
+		# Escape - Clear filter
+		if event.keycode == KEY_ESCAPE and not event.ctrl_pressed:
+			if filter_edit and not filter_edit.text.is_empty():
+				_clear_filter()
+				handled = true
+
 		if event.ctrl_pressed:
 			match event.keycode:
 				KEY_N:  # Ctrl+N - Add row
@@ -489,6 +740,11 @@ func _input(event: InputEvent) -> void:
 					handled = true
 				KEY_S:  # Ctrl+S - Save
 					_on_save_pressed()
+					handled = true
+				KEY_F:  # Ctrl+F - Focus filter
+					if filter_edit:
+						filter_edit.grab_focus()
+						filter_edit.select_all()
 					handled = true
 				KEY_UP:  # Ctrl+Up - Move up
 					_on_move_up_pressed()

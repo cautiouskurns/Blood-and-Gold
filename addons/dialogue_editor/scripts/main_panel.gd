@@ -24,8 +24,8 @@ const DEFAULT_DIALOGUE_DIR := "res://data/dialogue/"
 @onready var dialogue_id_label: Label = $Margin/HSplit/RightPanel/StatusBar/DialogueIdLabel
 @onready var node_count_label: Label = $Margin/HSplit/RightPanel/StatusBar/NodeCountLabel
 @onready var zoom_label: Label = $Margin/HSplit/RightPanel/StatusBar/ZoomLabel
-@onready var node_palette: VBoxContainer = $Margin/HSplit/LeftPanel/VBox/Scroll/NodeList
-@onready var template_library: VBoxContainer = $Margin/HSplit/LeftPanel/VBox/TemplateScroll/TemplateLibrary
+@onready var node_palette: VBoxContainer = $Margin/HSplit/LeftPanel/LeftScroll/VBox/Scroll/NodeList
+@onready var template_library: VBoxContainer = $Margin/HSplit/LeftPanel/LeftScroll/VBox/TemplateScroll/TemplateLibrary
 
 # Toolbar buttons
 @onready var new_btn: Button = $Margin/HSplit/RightPanel/Toolbar/NewBtn
@@ -292,7 +292,7 @@ func _setup_variable_browser_panel() -> void:
 	_variable_browser_panel.test_value_changed.connect(_on_variable_test_value_changed)
 
 	# Add to the left panel, below the template library
-	var left_panel = get_node_or_null("Margin/HSplit/LeftPanel/VBox")
+	var left_panel = get_node_or_null("Margin/HSplit/LeftPanel/LeftScroll/VBox")
 	if left_panel:
 		# Add a separator
 		var sep = HSeparator.new()
@@ -577,7 +577,7 @@ func _on_property_panel_request_variable_browser_focus() -> void:
 			_variable_browser_panel.set_collapsed(false)
 
 		# Scroll to make it visible (if in a scroll container)
-		var left_panel = get_node_or_null("Margin/HSplit/LeftPanel/VBox")
+		var left_panel = get_node_or_null("Margin/HSplit/LeftPanel/LeftScroll/VBox")
 		if left_panel:
 			# Find the scroll container if any
 			var scroll = left_panel.get_parent()

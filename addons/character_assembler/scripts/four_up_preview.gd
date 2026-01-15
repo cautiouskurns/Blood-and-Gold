@@ -109,11 +109,11 @@ func _draw_direction_preview(cell_rect: Rect2, view: DirectionView) -> void:
 	var sorted_shapes := view.shapes.duplicate()
 	sorted_shapes.sort_custom(func(a, b): return a.get("layer", 0) < b.get("layer", 0))
 
-	var scale := min(cell_rect.size.x, cell_rect.size.y) / float(canvas_size)
+	var scale: float = min(cell_rect.size.x, cell_rect.size.y) / float(canvas_size)
 
 	for shape in sorted_shapes:
-		var pos := Vector2(shape.position[0], shape.position[1]) * scale + cell_rect.position
-		var shape_size := Vector2(shape.size[0], shape.size[1]) * scale
+		var pos: Vector2 = Vector2(shape.position[0], shape.position[1]) * scale + cell_rect.position
+		var shape_size: Vector2 = Vector2(shape.size[0], shape.size[1]) * scale
 		var color := Color(shape.color[0], shape.color[1], shape.color[2], shape.color[3])
 		var rotation: float = shape.get("rotation", 0.0)
 

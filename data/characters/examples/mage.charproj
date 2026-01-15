@@ -1,0 +1,363 @@
+{
+	"file_version": 1,
+	"character_id": "mage",
+	"version": "1.0",
+	"canvas_size": 64,
+	"reference_image_path": "",
+	"reference_opacity": 0.5,
+	"shapes": [
+		{
+			"type": "circle",
+			"position": [26, 6],
+			"size": [12, 12],
+			"color": [0.85, 0.75, 0.65, 1.0],
+			"rotation": 0.0,
+			"layer": 10
+		},
+		{
+			"type": "triangle",
+			"position": [20, 0],
+			"size": [24, 18],
+			"color": [0.4, 0.25, 0.5, 1.0],
+			"rotation": 0.0,
+			"layer": 11
+		},
+		{
+			"type": "rectangle",
+			"position": [22, 16],
+			"size": [20, 24],
+			"color": [0.5, 0.3, 0.6, 1.0],
+			"rotation": 0.0,
+			"layer": 5
+		},
+		{
+			"type": "rectangle",
+			"position": [24, 18],
+			"size": [16, 20],
+			"color": [0.45, 0.25, 0.55, 1.0],
+			"rotation": 0.0,
+			"layer": 6
+		},
+		{
+			"type": "rectangle",
+			"position": [12, 18],
+			"size": [10, 6],
+			"color": [0.5, 0.3, 0.6, 1.0],
+			"rotation": 0.0,
+			"layer": 4
+		},
+		{
+			"type": "rectangle",
+			"position": [6, 22],
+			"size": [8, 12],
+			"color": [0.5, 0.3, 0.6, 1.0],
+			"rotation": 0.0,
+			"layer": 3
+		},
+		{
+			"type": "circle",
+			"position": [4, 32],
+			"size": [8, 8],
+			"color": [0.85, 0.75, 0.65, 1.0],
+			"rotation": 0.0,
+			"layer": 2
+		},
+		{
+			"type": "rectangle",
+			"position": [42, 18],
+			"size": [10, 6],
+			"color": [0.5, 0.3, 0.6, 1.0],
+			"rotation": 0.0,
+			"layer": 4
+		},
+		{
+			"type": "rectangle",
+			"position": [50, 22],
+			"size": [8, 12],
+			"color": [0.5, 0.3, 0.6, 1.0],
+			"rotation": 0.0,
+			"layer": 3
+		},
+		{
+			"type": "circle",
+			"position": [52, 32],
+			"size": [8, 8],
+			"color": [0.85, 0.75, 0.65, 1.0],
+			"rotation": 0.0,
+			"layer": 2
+		},
+		{
+			"type": "triangle",
+			"position": [18, 38],
+			"size": [28, 24],
+			"color": [0.5, 0.3, 0.6, 1.0],
+			"rotation": 180.0,
+			"layer": 1
+		},
+		{
+			"type": "rectangle",
+			"position": [24, 52],
+			"size": [8, 8],
+			"color": [0.35, 0.25, 0.3, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		},
+		{
+			"type": "rectangle",
+			"position": [32, 52],
+			"size": [8, 8],
+			"color": [0.35, 0.25, 0.3, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		},
+		{
+			"type": "rectangle",
+			"position": [0, 8],
+			"size": [4, 48],
+			"color": [0.55, 0.4, 0.25, 1.0],
+			"rotation": 0.0,
+			"layer": 8
+		},
+		{
+			"type": "circle",
+			"position": [-2, 0],
+			"size": [10, 10],
+			"color": [0.3, 0.6, 0.9, 1.0],
+			"rotation": 0.0,
+			"layer": 12
+		},
+		{
+			"type": "circle",
+			"position": [0, 2],
+			"size": [6, 6],
+			"color": [0.5, 0.8, 1.0, 1.0],
+			"rotation": 0.0,
+			"layer": 13
+		},
+		{
+			"type": "ellipse",
+			"position": [26, 26],
+			"size": [12, 6],
+			"color": [0.6, 0.5, 0.3, 1.0],
+			"rotation": 0.0,
+			"layer": 7
+		},
+		{
+			"type": "circle",
+			"position": [28, 8],
+			"size": [4, 4],
+			"color": [0.9, 0.9, 0.95, 1.0],
+			"rotation": 0.0,
+			"layer": 14
+		},
+		{
+			"type": "circle",
+			"position": [34, 10],
+			"size": [3, 3],
+			"color": [0.9, 0.9, 0.95, 1.0],
+			"rotation": 0.0,
+			"layer": 14
+		}
+	],
+	"body_parts": {
+		"Head": {
+			"name": "Head",
+			"shapes": [0, 1, 17, 18],
+			"pivot": [32, 14],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"Torso": {
+			"name": "Torso",
+			"shapes": [2, 3, 16],
+			"pivot": [32, 28],
+			"pivot_set": true,
+			"parent": ""
+		},
+		"L Upper Arm": {
+			"name": "L Upper Arm",
+			"shapes": [4],
+			"pivot": [18, 20],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"L Lower Arm": {
+			"name": "L Lower Arm",
+			"shapes": [5],
+			"pivot": [10, 24],
+			"pivot_set": true,
+			"parent": "L Upper Arm"
+		},
+		"L Hand": {
+			"name": "L Hand",
+			"shapes": [6, 13, 14, 15],
+			"pivot": [8, 34],
+			"pivot_set": true,
+			"parent": "L Lower Arm"
+		},
+		"R Upper Arm": {
+			"name": "R Upper Arm",
+			"shapes": [7],
+			"pivot": [46, 20],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"R Lower Arm": {
+			"name": "R Lower Arm",
+			"shapes": [8],
+			"pivot": [54, 24],
+			"pivot_set": true,
+			"parent": "R Upper Arm"
+		},
+		"R Hand": {
+			"name": "R Hand",
+			"shapes": [9],
+			"pivot": [56, 34],
+			"pivot_set": true,
+			"parent": "R Lower Arm"
+		},
+		"L Upper Leg": {
+			"name": "L Upper Leg",
+			"shapes": [],
+			"pivot": [28, 42],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"L Lower Leg": {
+			"name": "L Lower Leg",
+			"shapes": [10],
+			"pivot": [28, 50],
+			"pivot_set": true,
+			"parent": "L Upper Leg"
+		},
+		"L Foot": {
+			"name": "L Foot",
+			"shapes": [11],
+			"pivot": [28, 56],
+			"pivot_set": true,
+			"parent": "L Lower Leg"
+		},
+		"R Upper Leg": {
+			"name": "R Upper Leg",
+			"shapes": [],
+			"pivot": [36, 42],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"R Lower Leg": {
+			"name": "R Lower Leg",
+			"shapes": [],
+			"pivot": [36, 50],
+			"pivot_set": true,
+			"parent": "R Upper Leg"
+		},
+		"R Foot": {
+			"name": "R Foot",
+			"shapes": [12],
+			"pivot": [36, 56],
+			"pivot_set": true,
+			"parent": "R Lower Leg"
+		}
+	},
+	"poses": [
+		{
+			"pose_name": "Idle",
+			"rotations": {},
+			"description": "Standing with staff, ready to cast"
+		},
+		{
+			"pose_name": "Walk_L",
+			"rotations": {
+				"L Upper Arm": -10.0,
+				"L Lower Arm": 5.0,
+				"R Upper Arm": 10.0,
+				"R Lower Arm": -5.0,
+				"L Lower Leg": 15.0,
+				"R Lower Leg": -10.0
+			},
+			"description": "Walking - left foot forward"
+		},
+		{
+			"pose_name": "Walk_R",
+			"rotations": {
+				"L Upper Arm": 10.0,
+				"L Lower Arm": -5.0,
+				"R Upper Arm": -10.0,
+				"R Lower Arm": 5.0,
+				"L Lower Leg": -10.0,
+				"R Lower Leg": 15.0
+			},
+			"description": "Walking - right foot forward"
+		},
+		{
+			"pose_name": "Cast_Charge",
+			"rotations": {
+				"Torso": -5.0,
+				"Head": -10.0,
+				"L Upper Arm": -70.0,
+				"L Lower Arm": -20.0,
+				"R Upper Arm": 20.0,
+				"R Lower Arm": 30.0
+			},
+			"description": "Charging magical energy"
+		},
+		{
+			"pose_name": "Cast_Release",
+			"rotations": {
+				"Torso": 10.0,
+				"Head": 5.0,
+				"L Upper Arm": -90.0,
+				"L Lower Arm": 0.0,
+				"R Upper Arm": 70.0,
+				"R Lower Arm": 25.0
+			},
+			"description": "Releasing spell"
+		},
+		{
+			"pose_name": "Channel",
+			"rotations": {
+				"L Upper Arm": -45.0,
+				"L Lower Arm": -15.0,
+				"R Upper Arm": 45.0,
+				"R Lower Arm": 15.0
+			},
+			"description": "Channeling sustained magic"
+		},
+		{
+			"pose_name": "Shield",
+			"rotations": {
+				"Torso": -10.0,
+				"L Upper Arm": -60.0,
+				"L Lower Arm": -30.0,
+				"R Upper Arm": 60.0,
+				"R Lower Arm": 30.0
+			},
+			"description": "Creating magical barrier"
+		},
+		{
+			"pose_name": "Hurt",
+			"rotations": {
+				"Torso": -20.0,
+				"Head": 30.0,
+				"L Upper Arm": 25.0,
+				"R Upper Arm": 30.0
+			},
+			"description": "Taking damage"
+		},
+		{
+			"pose_name": "Death",
+			"rotations": {
+				"Torso": 90.0,
+				"Head": 50.0,
+				"L Upper Arm": 60.0,
+				"L Lower Arm": 35.0,
+				"R Upper Arm": 55.0,
+				"R Lower Arm": 25.0,
+				"L Lower Leg": 20.0
+			},
+			"description": "Fallen in battle"
+		}
+	],
+	"animations": {},
+	"directions": ["south"]
+}

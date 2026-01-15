@@ -79,6 +79,7 @@ func _setup_ui() -> void:
 	_color_picker_btn.custom_minimum_size = Vector2(60, 30)
 	_color_picker_btn.color = current_color
 	_color_picker_btn.edit_alpha = true
+	_color_picker_btn.tooltip_text = "Click to open full color picker with alpha support"
 	color_row.add_child(_color_picker_btn)
 
 	add_child(Control.new())  # Spacer
@@ -89,6 +90,7 @@ func _setup_ui() -> void:
 	add_child(palette_label)
 
 	_palette_dropdown = OptionButton.new()
+	_palette_dropdown.tooltip_text = "Choose from built-in color palettes optimized for pixel art"
 	add_child(_palette_dropdown)
 
 	add_child(Control.new())  # Spacer
@@ -107,6 +109,20 @@ func _create_tool_button(text: String, tool_id: int, parent: Node) -> Button:
 	btn.toggle_mode = true
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.pressed.connect(_on_tool_button_pressed.bind(tool_id))
+
+	# Add descriptive tooltips
+	match tool_id:
+		0:
+			btn.tooltip_text = "Select Tool (V)\nClick to select shapes, drag to move, Ctrl+click for multi-select"
+		1:
+			btn.tooltip_text = "Rectangle Tool (R)\nDraw rectangular shapes by clicking and dragging"
+		2:
+			btn.tooltip_text = "Circle Tool (C)\nDraw perfect circles by clicking and dragging"
+		3:
+			btn.tooltip_text = "Ellipse Tool (E)\nDraw elliptical/oval shapes by clicking and dragging"
+		4:
+			btn.tooltip_text = "Triangle Tool (T)\nDraw triangular shapes by clicking and dragging"
+
 	parent.add_child(btn)
 	return btn
 

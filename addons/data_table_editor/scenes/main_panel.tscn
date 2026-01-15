@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://data_table_editor_main"]
+[gd_scene load_steps=5 format=3 uid="uid://data_table_editor_main"]
 
 [ext_resource type="Script" path="res://addons/data_table_editor/scripts/main_panel.gd" id="1_main"]
 [ext_resource type="Script" path="res://addons/data_table_editor/scripts/table_sidebar.gd" id="2_sidebar"]
 [ext_resource type="Script" path="res://addons/data_table_editor/scripts/table_grid.gd" id="3_grid"]
+[ext_resource type="Script" path="res://addons/data_table_editor/scripts/detail_panel.gd" id="4_detail"]
 
 [node name="MainPanel" type="Control"]
 script = ExtResource("1_main")
@@ -149,11 +150,70 @@ layout_mode = 2
 text = "No table selected"
 theme_override_font_sizes/font_size = 16
 
-[node name="DataGrid" type="Tree" parent="Margin/HSplit/RightPanel"]
+[node name="FilterBar" type="HBoxContainer" parent="Margin/HSplit/RightPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="FilterIcon" type="Label" parent="Margin/HSplit/RightPanel/FilterBar"]
+layout_mode = 2
+text = "Filter:"
+
+[node name="FilterEdit" type="LineEdit" parent="Margin/HSplit/RightPanel/FilterBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+placeholder_text = "Type to filter rows..."
+clear_button_enabled = true
+
+[node name="FilterCountLabel" type="Label" parent="Margin/HSplit/RightPanel/FilterBar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+
+[node name="VSplit" type="VSplitContainer" parent="Margin/HSplit/RightPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+split_offset = -350
+
+[node name="DataGrid" type="Tree" parent="Margin/HSplit/RightPanel/VSplit"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 script = ExtResource("3_grid")
+
+[node name="DetailPanel" type="PanelContainer" parent="Margin/HSplit/RightPanel/VSplit"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 1500)
+layout_mode = 2
+script = ExtResource("4_detail")
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Margin/HSplit/RightPanel/VSplit/DetailPanel"]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="FieldsContainer" type="VBoxContainer" parent="Margin/HSplit/RightPanel/VSplit/DetailPanel/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="TitleLabel" type="Label" parent="Margin/HSplit/RightPanel/VSplit/DetailPanel/ScrollContainer/FieldsContainer"]
+layout_mode = 2
+text = "Row Details"
+theme_override_font_sizes/font_size = 14
+
+[node name="Sep" type="HSeparator" parent="Margin/HSplit/RightPanel/VSplit/DetailPanel/ScrollContainer/FieldsContainer"]
+layout_mode = 2
+
+[node name="NoSelectionLabel" type="Label" parent="Margin/HSplit/RightPanel/VSplit/DetailPanel/ScrollContainer/FieldsContainer"]
+layout_mode = 2
+text = "Select a row to view details"
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
 
 [node name="StatusBar" type="HBoxContainer" parent="Margin/HSplit/RightPanel"]
 layout_mode = 2

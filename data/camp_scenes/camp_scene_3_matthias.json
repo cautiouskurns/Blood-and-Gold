@@ -1,0 +1,93 @@
+{
+  "id": "camp_scene_3_matthias",
+  "title": "After the Border Dispute",
+  "trigger_contract": "border_dispute",
+  "nodes": {
+    "start_1": {
+      "type": "Start",
+      "connections": [{"to": "speaker_1", "port": 0}]
+    },
+    "speaker_1": {
+      "type": "Speaker",
+      "speaker": "matthias",
+      "portrait": "matthias_brooding",
+      "text": "Captain... I've been thinking about what happened at the border. Those refugees...",
+      "connections": [{"to": "speaker_2", "port": 0}]
+    },
+    "speaker_2": {
+      "type": "Speaker",
+      "speaker": "matthias",
+      "portrait": "matthias_serious",
+      "text": "I know we're mercenaries. We do what we're paid to do. But sometimes the job asks too much.",
+      "connections": [
+        {"to": "choice_1", "port": 0},
+        {"to": "choice_2", "port": 1},
+        {"to": "choice_3", "port": 2}
+      ]
+    },
+    "choice_1": {
+      "type": "Choice",
+      "text": "A contract is a contract. Our reputation depends on completing the job.",
+      "loyalty_changes": {"matthias": -5, "thorne": 5},
+      "connections": [{"to": "speaker_3a", "port": 0}]
+    },
+    "choice_2": {
+      "type": "Choice",
+      "text": "Some lines shouldn't be crossed, even for gold. I agree with you.",
+      "loyalty_changes": {"matthias": 5, "thorne": -5},
+      "connections": [{"to": "speaker_3b", "port": 0}]
+    },
+    "choice_3": {
+      "type": "Choice",
+      "text": "Every choice has consequences. We live with ours.",
+      "loyalty_changes": {},
+      "connections": [{"to": "speaker_3c", "port": 0}]
+    },
+    "speaker_3a": {
+      "type": "Speaker",
+      "speaker": "matthias",
+      "portrait": "matthias_angry",
+      "text": "*scowls* So that's who we are now? Just blades for hire, no matter who suffers?",
+      "connections": [{"to": "speaker_4a", "port": 0}]
+    },
+    "speaker_3b": {
+      "type": "Speaker",
+      "speaker": "matthias",
+      "portrait": "matthias_relieved",
+      "text": "*exhales* I'm glad to hear you say that, Captain. I was worried I'd signed on with the wrong company.",
+      "connections": [{"to": "speaker_4b", "port": 0}]
+    },
+    "speaker_3c": {
+      "type": "Speaker",
+      "speaker": "matthias",
+      "portrait": "matthias_thoughtful",
+      "text": "*nods slowly* That's a heavy truth. At least you're honest about it.",
+      "connections": [{"to": "speaker_4c", "port": 0}]
+    },
+    "speaker_4a": {
+      "type": "Speaker",
+      "speaker": "matthias",
+      "portrait": "matthias_resigned",
+      "text": "I'll follow orders, Captain. But don't expect me to like every one of them.",
+      "connections": [{"to": "end_1", "port": 0}]
+    },
+    "speaker_4b": {
+      "type": "Speaker",
+      "speaker": "matthias",
+      "portrait": "matthias_hopeful",
+      "text": "Maybe we can be more than just sellswords. Maybe we can make a real difference.",
+      "connections": [{"to": "end_1", "port": 0}]
+    },
+    "speaker_4c": {
+      "type": "Speaker",
+      "speaker": "matthias",
+      "portrait": "matthias_neutral",
+      "text": "I appreciate a captain who speaks plainly. We'll see what the next job brings.",
+      "connections": [{"to": "end_1", "port": 0}]
+    },
+    "end_1": {
+      "type": "End",
+      "end_type": "normal"
+    }
+  }
+}

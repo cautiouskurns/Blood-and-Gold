@@ -1,0 +1,86 @@
+{
+  "id": "camp_scene_2_lyra",
+  "title": "After Clearing the Ruins",
+  "trigger_contract": "clear_the_ruins",
+  "nodes": {
+    "start_1": {
+      "type": "Start",
+      "connections": [{"to": "speaker_1", "port": 0}]
+    },
+    "speaker_1": {
+      "type": "Speaker",
+      "speaker": "lyra",
+      "portrait": "lyra_concerned",
+      "text": "Captain, may I speak with you? Those ruins... there was something wrong about them. The Light felt distant there.",
+      "connections": [{"to": "speaker_2", "port": 0}]
+    },
+    "speaker_2": {
+      "type": "Speaker",
+      "speaker": "lyra",
+      "portrait": "lyra_neutral",
+      "text": "I've heard whispers in Ironmark about dark forces stirring. The undead we faced today were just the beginning.",
+      "connections": [
+        {"to": "choice_1", "port": 0},
+        {"to": "choice_2", "port": 1},
+        {"to": "choice_3", "port": 2}
+      ]
+    },
+    "choice_1": {
+      "type": "Choice",
+      "text": "Dark forces or not, we deal with threats as they come. That's our job.",
+      "loyalty_changes": {"lyra": -5},
+      "connections": [{"to": "speaker_3a", "port": 0}]
+    },
+    "choice_2": {
+      "type": "Choice",
+      "text": "Tell me more. If something threatens the region, we should know about it.",
+      "loyalty_changes": {"lyra": 5},
+      "connections": [{"to": "speaker_3b", "port": 0}]
+    },
+    "choice_3": {
+      "type": "Choice",
+      "text": "Can your faith protect us from such things?",
+      "loyalty_changes": {},
+      "connections": [{"to": "speaker_3c", "port": 0}]
+    },
+    "speaker_3a": {
+      "type": "Speaker",
+      "speaker": "lyra",
+      "portrait": "lyra_disappointed",
+      "text": "I understand pragmatism, Captain. But some threats require more than steel to defeat.",
+      "connections": [{"to": "speaker_4", "port": 0}]
+    },
+    "speaker_3b": {
+      "type": "Speaker",
+      "speaker": "lyra",
+      "portrait": "lyra_grateful",
+      "text": "There's a necromancer. I don't know who, but someone is raising the dead. The church has been investigating.",
+      "connections": [{"to": "speaker_4b", "port": 0}]
+    },
+    "speaker_3c": {
+      "type": "Speaker",
+      "speaker": "lyra",
+      "portrait": "lyra_confident",
+      "text": "The Light protects those who walk in its grace. As long as I stand with this company, you have its blessing.",
+      "connections": [{"to": "speaker_4", "port": 0}]
+    },
+    "speaker_4": {
+      "type": "Speaker",
+      "speaker": "lyra",
+      "portrait": "lyra_neutral",
+      "text": "I'll pray for guidance tonight. May the Light illuminate our path forward.",
+      "connections": [{"to": "end_1", "port": 0}]
+    },
+    "speaker_4b": {
+      "type": "Speaker",
+      "speaker": "lyra",
+      "portrait": "lyra_neutral",
+      "text": "I'm glad you're willing to listen, Captain. When I learn more, you'll be the first to know.",
+      "connections": [{"to": "end_1", "port": 0}]
+    },
+    "end_1": {
+      "type": "End",
+      "end_type": "normal"
+    }
+  }
+}

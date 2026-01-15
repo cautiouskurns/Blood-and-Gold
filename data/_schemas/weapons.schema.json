@@ -16,7 +16,7 @@
     },
     {
       "name": "damage",
-      "type": "string",
+      "type": "dice",
       "required": true,
       "default": "1d4"
     },
@@ -56,7 +56,7 @@
     }
   ],
   "display": {
-    "grid_columns": ["id", "name", "damage", "damage_type", "value", "rarity"],
+    "grid_columns": ["id", "name", "damage", "damage_type", "value", "rarity", "two_handed"],
     "sort_default": "name"
   }
 }

@@ -152,49 +152,59 @@ graph LR
 
 ---
 
-### Feature 1.5: Inline Cell Editing
+### Feature 1.5: Inline Cell Editing ✅
 
 **Description:** Double-click a cell to edit its value inline with appropriate input control.
 
 **Dependencies:** Feature 1.4 (Table Grid View)
 
 **Implementation Tasks:**
-- [ ] Connect `item_edited` signal on Tree
-- [ ] Make columns editable in Tree configuration
-- [ ] Implement cell editing for basic types:
+- [x] Connect `item_edited` signal on Tree
+- [x] Make columns editable in Tree configuration
+- [x] Implement cell editing for basic types:
   - String: LineEdit (default Tree behavior)
   - Integer: Text input with validation
-  - Boolean: Checkbox toggle
-- [ ] Validate input on edit complete
-- [ ] Update internal data model on valid edit
-- [ ] Mark row as modified (visual indicator)
+  - Boolean: Checkbox toggle (CELL_MODE_CHECK)
+- [x] Validate input on edit complete using SchemaLoader
+- [x] Update internal data model on valid edit
+- [x] Mark row as modified (visual indicator with * suffix and background tint)
+- [x] Emit validation_error signal for invalid input
+- [x] Revert to original value on validation failure
 
 **Files to Create/Modify:**
 - `addons/data_table_editor/scripts/table_grid.gd`
+- `addons/data_table_editor/scripts/main_panel.gd`
 
 **Success Criteria:**
-- [ ] Double-click cell enables editing
-- [ ] String cells show text input
-- [ ] Boolean cells toggle on click
-- [ ] Integer cells accept only numbers
-- [ ] Modified cells show visual indicator
+- [x] Double-click cell enables editing
+- [x] String cells show text input
+- [x] Boolean cells toggle on click (checkbox mode)
+- [x] Integer cells accept only numbers (validated)
+- [x] Modified rows show visual indicator (* and yellow tint)
+- [x] Validation errors display in status bar
 
 ---
 
-### Feature 1.6: Add/Delete Rows
+### Feature 1.6: Add/Delete Rows ✅
 
 **Description:** Toolbar buttons to add new rows and delete selected rows.
 
 **Dependencies:** Feature 1.5 (Inline Cell Editing)
 
 **Implementation Tasks:**
-- [ ] Create toolbar HBoxContainer above grid
-- [ ] Add "Add Row" button with icon
-- [ ] Add "Delete" button with icon
-- [ ] Implement `add_row()` - creates row with default values from schema
-- [ ] Implement `delete_selected_rows()` - removes selected rows
-- [ ] Update internal data model
-- [ ] Refresh grid display after changes
+- [x] Create toolbar HBoxContainer above grid
+- [x] Add "Add Row" button with tooltip
+- [x] Add "Delete" button with tooltip
+- [x] Add "Duplicate" button with tooltip
+- [x] Add "Move Up/Down" buttons with tooltips
+- [x] Implement `_on_add_row_pressed()` - creates row with default values from schema
+- [x] Implement `_on_delete_pressed()` - removes selected rows (supports multi-select)
+- [x] Implement `_on_duplicate_pressed()` - duplicates selected row with unique ID
+- [x] Auto-generate unique IDs for new/duplicated rows
+- [x] Update internal data model
+- [x] Refresh grid display after changes
+- [x] Select newly added/duplicated rows
+- [x] Enable multi-select mode (Ctrl/Shift+click)
 
 **Files to Create/Modify:**
 - `addons/data_table_editor/scenes/main_panel.tscn`
@@ -202,48 +212,54 @@ graph LR
 - `addons/data_table_editor/scripts/table_grid.gd`
 
 **Success Criteria:**
-- [ ] "Add Row" creates new row at end of table
-- [ ] New row has default values from schema
-- [ ] "Delete" removes selected row(s)
-- [ ] Grid updates immediately after add/delete
+- [x] "Add Row" creates new row at end of table
+- [x] New row has default values from schema
+- [x] New rows get auto-generated unique IDs
+- [x] "Delete" removes selected row(s) - supports multi-select
+- [x] "Duplicate" creates copy with unique ID
+- [x] Grid updates immediately after add/delete
+- [x] Newly added/duplicated rows are auto-selected
 
 ---
 
-### Feature 1.7: Save to JSON
+### Feature 1.7: Save to JSON ✅
 
 **Description:** Save modified table data back to the original JSON file.
 
 **Dependencies:** Feature 1.6 (Add/Delete Rows)
 
 **Implementation Tasks:**
-- [ ] Add "Save" button to toolbar
-- [ ] Track dirty state (has unsaved changes)
-- [ ] Implement `save_table()` to write JSON
-- [ ] Format JSON with proper indentation for readability
-- [ ] Update dirty state after save
-- [ ] Show save success/failure feedback in status bar
-- [ ] Add confirmation before closing with unsaved changes
+- [x] Add "Save" button to toolbar
+- [x] Track dirty state (has unsaved changes)
+- [x] Implement `save_table()` to write JSON
+- [x] Format JSON with proper indentation for readability
+- [x] Update dirty state after save
+- [x] Show save success/failure feedback in status bar
+- [x] Add confirmation before switching tables with unsaved changes
+- [x] Keyboard shortcut Ctrl+S
 
 **Files to Create/Modify:**
 - `addons/data_table_editor/scripts/main_panel.gd`
 - `addons/data_table_editor/scripts/table_grid.gd`
 
 **Success Criteria:**
-- [ ] "Save" button writes changes to JSON file
-- [ ] JSON is properly formatted (indented)
-- [ ] Dirty indicator clears after save
-- [ ] File contains correct data when reopened
+- [x] "Save" button writes changes to JSON file
+- [x] JSON is properly formatted (indented)
+- [x] Dirty indicator clears after save
+- [x] File contains correct data when reopened
+- [x] Success feedback shown after save (green "Saved!" message)
+- [x] Confirmation dialog when switching tables with unsaved changes
 
 ---
 
-### Phase 1 Technical Setup
+### Phase 1 Technical Setup ✅
 
-- [ ] Create `addons/data_table_editor/` directory structure
-- [ ] Create `plugin.cfg` with metadata
-- [ ] Create `plugin.gd` EditorPlugin base
-- [ ] Create `data/` and `data/_schemas/` folders
-- [ ] Create example data: `data/items/weapons.json`
-- [ ] Enable plugin in Project Settings
+- [x] Create `addons/data_table_editor/` directory structure
+- [x] Create `plugin.cfg` with metadata
+- [x] Create `plugin.gd` EditorPlugin base
+- [x] Create `data/` and `data/_schemas/` folders
+- [x] Create example data: `data/items/weapons.json`
+- [x] Enable plugin in Project Settings
 
 ---
 
@@ -255,135 +271,145 @@ graph LR
 
 ---
 
-### Feature 2.1: Search/Filter
+### Feature 2.1: Search/Filter ✅
 
 **Description:** Search box to filter visible rows by text match across all columns.
 
 **Dependencies:** Feature 1.4 (Table Grid View)
 
 **Implementation Tasks:**
-- [ ] Add LineEdit search box to filter bar above grid
-- [ ] Implement `filter_rows(search_text: String)`
-- [ ] Filter as user types (live search)
-- [ ] Match against all visible columns
-- [ ] Case-insensitive matching
-- [ ] Show match count: "12 of 42 rows"
-- [ ] Clear button to reset filter
+- [x] Add LineEdit search box to filter bar above grid
+- [x] Implement `filter_rows(search_text: String)`
+- [x] Filter as user types (live search)
+- [x] Match against all visible columns
+- [x] Case-insensitive matching
+- [x] Show match count: "X of Y rows"
+- [x] Clear button to reset filter
+- [x] Escape key to clear filter
+- [x] Ctrl+F to focus filter box
 
 **Files to Create/Modify:**
 - `addons/data_table_editor/scenes/main_panel.tscn`
-- `addons/data_table_editor/scripts/filter_bar.gd`
 - `addons/data_table_editor/scripts/table_grid.gd`
+- `addons/data_table_editor/scripts/main_panel.gd`
 
 **Success Criteria:**
-- [ ] Typing in search box filters visible rows
-- [ ] Only matching rows display in grid
-- [ ] Match count updates in real-time
-- [ ] Clear button shows all rows again
+- [x] Typing in search box filters visible rows
+- [x] Only matching rows display in grid
+- [x] Match count updates in real-time
+- [x] Clear button shows all rows again
+- [x] Filter clears when switching tables
 
 ---
 
-### Feature 2.2: Column Sorting
+### Feature 2.2: Column Sorting ✅
 
 **Description:** Click column headers to sort ascending/descending.
 
 **Dependencies:** Feature 1.4 (Table Grid View)
 
 **Implementation Tasks:**
-- [ ] Connect column header click signal
-- [ ] Track current sort column and direction
-- [ ] Implement `sort_by_column(column: int, ascending: bool)`
-- [ ] Handle sorting for different types (string, int, float)
-- [ ] Show sort indicator arrow in column header
-- [ ] Click again to reverse sort direction
+- [x] Connect column header click signal
+- [x] Track current sort column and direction
+- [x] Implement `sort_by_column(column: int, ascending: bool)`
+- [x] Handle sorting for different types (string, int, float, boolean)
+- [x] Show sort indicator arrow in column header
+- [x] Click again to reverse sort direction
 
 **Files to Create/Modify:**
 - `addons/data_table_editor/scripts/table_grid.gd`
 
 **Success Criteria:**
-- [ ] Clicking column header sorts by that column
-- [ ] Sort direction toggles on repeated clicks
-- [ ] Sort indicator shows in active column header
-- [ ] Sorting works correctly for all data types
+- [x] Clicking column header sorts by that column
+- [x] Sort direction toggles on repeated clicks
+- [x] Sort indicator shows in active column header (▲/▼)
+- [x] Sorting works correctly for all data types
 
 ---
 
-### Feature 2.3: Enum Dropdown
+### Feature 2.3: Enum Dropdown ✅
 
 **Description:** Enum-type columns show dropdown with predefined options instead of free text.
 
 **Dependencies:** Feature 1.5 (Inline Cell Editing)
 
 **Implementation Tasks:**
-- [ ] Detect enum type columns from schema
-- [ ] Extract enum options from schema definition
-- [ ] Override edit behavior for enum columns
-- [ ] Create popup OptionButton on cell edit
-- [ ] Populate with enum options
-- [ ] Apply selection back to cell
+- [x] Detect enum type columns from schema
+- [x] Extract enum options from schema definition
+- [x] Override edit behavior for enum columns (disabled inline text edit)
+- [x] Create PopupMenu for enum cell editing
+- [x] Populate with enum options from schema
+- [x] Apply selection back to cell and emit cell_edited signal
+- [x] Show checkmark on currently selected option
 
 **Files to Create/Modify:**
 - `addons/data_table_editor/scripts/table_grid.gd`
-- `addons/data_table_editor/scripts/cell_editors/enum_editor.gd`
 
 **Success Criteria:**
-- [ ] Enum columns show dropdown on edit
-- [ ] Dropdown contains all options from schema
-- [ ] Selection updates cell value correctly
+- [x] Enum columns show dropdown popup on double-click
+- [x] Dropdown contains all options from schema
+- [x] Selection updates cell value correctly
+- [x] Row marked as modified after change
 
 ---
 
-### Feature 2.4: Dice Notation Validation
+### Feature 2.4: Dice Notation Validation ✅
 
 **Description:** Dice-type columns validate format (e.g., "1d8+2") and show calculated average.
 
 **Dependencies:** Feature 1.5 (Inline Cell Editing)
 
 **Implementation Tasks:**
-- [ ] Create `scripts/dice_parser.gd` utility
-- [ ] Implement regex validation: `\d+d\d+([\+\-]\d+)?`
-- [ ] Calculate average roll: (dice_count * (dice_sides + 1) / 2) + modifier
-- [ ] Show validation icon (checkmark/error) next to dice cells
-- [ ] Show average in tooltip: "avg: 5.5"
-- [ ] Highlight invalid entries with red border
+- [x] Create `scripts/dice_parser.gd` utility class
+- [x] Implement regex validation: `\d+d\d+([\+\-]\d+)?`
+- [x] Calculate average roll: (dice_count * (dice_sides + 1) / 2) + modifier
+- [x] Calculate min/max roll
+- [x] Show validation indicator (✓/✗) suffix on dice cells
+- [x] Show avg/min/max in tooltip on hover
+- [x] Highlight invalid entries with red text and background
+- [x] Update weapons schema to use "dice" type for damage column
 
-**Files to Create/Modify:**
-- `addons/data_table_editor/scripts/dice_parser.gd`
-- `addons/data_table_editor/scripts/cell_editors/dice_editor.gd`
+**Files Created/Modified:**
+- `addons/data_table_editor/scripts/dice_parser.gd` (NEW)
+- `addons/data_table_editor/scripts/table_grid.gd`
+- `addons/data_table_editor/scripts/schema_loader.gd`
+- `data/_schemas/weapons.schema.json`
 
 **Success Criteria:**
-- [ ] Valid dice notation shows green checkmark
-- [ ] Invalid notation shows red error icon
-- [ ] Tooltip shows calculated average
-- [ ] "1d8+2", "2d6", "1d20-1" all validate correctly
+- [x] Valid dice notation shows green text with ✓ suffix
+- [x] Invalid notation shows red text with ✗ suffix and red background
+- [x] Tooltip shows "Avg: X | Min: Y | Max: Z"
+- [x] "1d8+2", "2d6", "1d20-1" all validate correctly
 
 ---
 
-### Feature 2.5: Detail Panel
+### Feature 2.5: Detail Panel ✅
 
 **Description:** Bottom/right panel showing full editing form for selected row with all fields.
 
 **Dependencies:** Feature 1.4 (Table Grid View)
 
 **Implementation Tasks:**
-- [ ] Add VSplitContainer to right side for grid + detail
-- [ ] Create `scripts/detail_panel.gd`
-- [ ] Generate form fields from schema columns
-- [ ] Group fields into collapsible sections
-- [ ] Show field labels with validation feedback
-- [ ] Two-way binding: grid selection updates panel, panel edits update grid
-- [ ] Support multiline text (TextEdit) for text-type fields
+- [x] Add VSplitContainer to right side for grid + detail
+- [x] Create `scripts/detail_panel.gd`
+- [x] Generate form fields from schema columns
+- [x] Show field labels with validation feedback (required fields, dice validation)
+- [x] Two-way binding: grid selection updates panel, panel edits update grid
+- [x] Support multiline text (TextEdit) for description/notes fields
+- [x] Type-specific controls: CheckBox (boolean), SpinBox (int/float), OptionButton (enum)
 
-**Files to Create/Modify:**
-- `addons/data_table_editor/scenes/main_panel.tscn`
-- `addons/data_table_editor/scenes/detail_panel.tscn`
-- `addons/data_table_editor/scripts/detail_panel.gd`
+**Files Created/Modified:**
+- `addons/data_table_editor/scenes/main_panel.tscn` - Added VSplitContainer and DetailPanel
+- `addons/data_table_editor/scripts/detail_panel.gd` (NEW)
+- `addons/data_table_editor/scripts/main_panel.gd` - Added detail panel wiring
+- `addons/data_table_editor/scripts/table_grid.gd` - Added update_cell() method
 
 **Success Criteria:**
-- [ ] Selecting row shows details in panel
-- [ ] All columns appear as form fields
-- [ ] Editing in panel updates grid
-- [ ] Multiline fields expand for long text
+- [x] Selecting row shows details in panel
+- [x] All schema columns appear as form fields
+- [x] Editing in panel updates grid cell
+- [x] Editing in grid updates detail panel field
+- [x] Multiline fields expand for long text (description, notes, etc.)
 
 ---
 

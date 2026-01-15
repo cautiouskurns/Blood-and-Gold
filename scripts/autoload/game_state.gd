@@ -86,6 +86,11 @@ var character_equipment: Dictionary = {
 	"matthias": {"weapon": "", "armor": ""},
 }
 
+# ===== VIEWED SCENES =====
+# Tracks which one-time scenes have been viewed (camp dialogues, cutscenes, etc.)
+# Format: {"scene_id": true, ...}
+var viewed_scenes: Dictionary = {}
+
 # ===== LIFECYCLE =====
 func _ready() -> void:
 	_load_contracts()
@@ -373,6 +378,23 @@ func get_character_equipment(character_id: String) -> Dictionary:
 		return {"weapon": "", "armor": ""}
 	return character_equipment[character_id].duplicate()
 
+# ===== VIEWED SCENES MANAGEMENT =====
+func has_viewed_scene(scene_id: String) -> bool:
+	## Check if a one-time scene has been viewed
+	return scene_id in viewed_scenes
+
+func mark_scene_viewed(scene_id: String) -> void:
+	## Mark a scene as viewed (won't trigger again)
+	viewed_scenes[scene_id] = true
+	print("[GameState] Scene marked as viewed: %s" % scene_id)
+
+func get_all_viewed_scenes() -> Array[String]:
+	## Get list of all viewed scene IDs
+	var result: Array[String] = []
+	for scene_id in viewed_scenes.keys():
+		result.append(scene_id)
+	return result
+
 # ===== SAVE/LOAD (placeholder for future) =====
 func get_save_data() -> Dictionary:
 	## Get save data dictionary
@@ -388,6 +410,7 @@ func get_save_data() -> Dictionary:
 		"fort_upgrades": fort_upgrades.duplicate(),
 		"soldiers": soldiers.duplicate(),
 		"character_equipment": character_equipment.duplicate(true),
+		"viewed_scenes": viewed_scenes.duplicate(),
 	}
 
 func load_save_data(data: Dictionary) -> void:
@@ -439,6 +462,11 @@ func load_save_data(data: Dictionary) -> void:
 		else:
 			character_equipment[char_id] = {"weapon": "", "armor": ""}
 
+	# Load viewed scenes
+	viewed_scenes.clear()
+	for scene_id in data.get("viewed_scenes", {}).keys():
+		viewed_scenes[scene_id] = true
+
 	gold_changed.emit(gold)
 	contracts_updated.emit()
 	soldiers_changed.emit()
@@ -474,6 +502,9 @@ func reset_to_new_game() -> void:
 	# Reset character equipment
 	for char_id in character_equipment.keys():
 		character_equipment[char_id] = {"weapon": "", "armor": ""}
+
+	# Reset viewed scenes
+	viewed_scenes.clear()
 
 	gold_changed.emit(gold)
 	contracts_updated.emit()

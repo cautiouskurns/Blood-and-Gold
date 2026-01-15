@@ -1,7 +1,6 @@
 ## LoyaltyPopup - Shows loyalty change notifications
 ## Part of: Blood & Gold Prototype
 ## Task 3.5: Border Dispute
-class_name LoyaltyPopup
 extends CanvasLayer
 
 # ===== SIGNALS =====

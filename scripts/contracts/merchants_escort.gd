@@ -24,6 +24,11 @@ const BANDIT_ARCHER_SPAWN := [Vector2i(11, 5), Vector2i(11, 6)]
 const UnitScene = preload("res://scenes/combat/Unit.tscn")
 const BattleResultPopupScene = preload("res://scenes/UI/BattleResultPopup.tscn")
 const TutorialPopupScene = preload("res://scenes/tutorial/TutorialPopup.tscn")
+const CampDialogueScene = preload("res://scenes/camp/CampDialogue.tscn")
+
+# ===== CAMP SCENE CONFIG =====
+const TRIGGERED_CAMP_SCENE_ID: String = "thorne_camp_1"
+const TRIGGERED_CAMP_SCENE_PATH: String = "res://resources/dialogue/thorne_camp_1.json"
 
 # ===== NODE REFERENCES =====
 @onready var combat_grid: CombatGrid = $CombatGrid
@@ -42,6 +47,7 @@ var _wagon: Unit = null
 var _battle_result_popup: BattleResultPopup = null
 var _tutorial_manager: TutorialManager = null
 var _tutorial_popup: TutorialPopup = null
+var _camp_dialogue: Node = null
 var _is_briefing_shown: bool = true
 var _contract_active: bool = false
 var _last_hovered_tile: Vector2i = Vector2i(-1, -1)
@@ -276,15 +282,71 @@ func _setup_battle_result_popup() -> void:
 	_battle_result_popup.retry_pressed.connect(_on_retry_pressed)
 
 func _on_continue_pressed() -> void:
-	## Victory continue - check for camp scene
-	var contract = GameState.get_contract_by_id(CONTRACT_ID)
-	if contract and contract.triggers_camp_scene:
-		# Transition to camp scene
-		print("[MerchantsEscort] Transitioning to camp scene: %s" % contract.camp_scene_id)
-		# For now, return to hub - camp scene will be implemented in future task
-		get_tree().change_scene_to_file("res://scenes/hub/Hub.tscn")
+	## Victory continue - check for triggered camp scene
+	if _should_trigger_camp_scene():
+		_start_camp_scene()
 	else:
-		get_tree().change_scene_to_file("res://scenes/hub/Hub.tscn")
+		_return_to_hub()
+
+func _should_trigger_camp_scene() -> bool:
+	## Check if the post-contract camp scene should trigger
+	# Don't trigger if already viewed
+	if GameState.has_viewed_scene(TRIGGERED_CAMP_SCENE_ID):
+		print("[MerchantsEscort] Camp scene already viewed: %s" % TRIGGERED_CAMP_SCENE_ID)
+		return false
+
+	# Don't trigger if Thorne has departed (loyalty 0)
+	var thorne_loyalty = LoyaltyManager.get_loyalty("thorne")
+	if thorne_loyalty <= 0:
+		print("[MerchantsEscort] Thorne has departed, skipping camp scene")
+		return false
+
+	return true
+
+func _start_camp_scene() -> void:
+	## Load and start the camp dialogue scene
+	print("[MerchantsEscort] Starting camp scene: %s" % TRIGGERED_CAMP_SCENE_ID)
+
+	# Hide battle result popup
+	if _battle_result_popup:
+		_battle_result_popup.visible = false
+
+	# Create and add camp dialogue
+	_camp_dialogue = CampDialogueScene.instantiate()
+	add_child(_camp_dialogue)
+
+	# Load the dialogue JSON
+	if _camp_dialogue.load_scene(TRIGGERED_CAMP_SCENE_PATH):
+		# Connect scene ended signal
+		_camp_dialogue.scene_ended.connect(_on_camp_scene_ended)
+
+		# Start the dialogue
+		_camp_dialogue.start_dialogue()
+	else:
+		push_error("[MerchantsEscort] Failed to load camp scene: %s" % TRIGGERED_CAMP_SCENE_PATH)
+		_cleanup_camp_scene()
+		_return_to_hub()
+
+func _on_camp_scene_ended(_scene_id: String) -> void:
+	## Called when camp scene dialogue ends
+	print("[MerchantsEscort] Camp scene ended: %s" % _scene_id)
+
+	# Mark scene as viewed
+	GameState.mark_scene_viewed(TRIGGERED_CAMP_SCENE_ID)
+
+	# Clean up and return to hub
+	_cleanup_camp_scene()
+	_return_to_hub()
+
+func _cleanup_camp_scene() -> void:
+	## Clean up camp dialogue instance
+	if _camp_dialogue and is_instance_valid(_camp_dialogue):
+		_camp_dialogue.queue_free()
+		_camp_dialogue = null
+
+func _return_to_hub() -> void:
+	## Return to the hub scene
+	get_tree().change_scene_to_file("res://scenes/hub/Hub.tscn")
 
 func _on_retry_pressed() -> void:
 	## Retry battle

@@ -11,11 +11,23 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_script")
 
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.102, 0.102, 0.18, 1)
+
 [node name="TopBar" type="HBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 60.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 70.0
 grow_horizontal = 2
 
 [node name="BackButton" type="Button" parent="TopBar"]
@@ -26,7 +38,7 @@ text = "< BACK"
 [node name="TitleLabel" type="Label" parent="TopBar"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "CAMP"
+text = "CAMP - COMPANIONS"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -39,24 +51,67 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 70.0
+offset_left = 20.0
+offset_top = 80.0
+offset_right = -20.0
 offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="PlaceholderLabel" type="Label" parent="ContentPanel"]
+[node name="MainContent" type="VBoxContainer" parent="ContentPanel"]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -30.0
-offset_right = 200.0
-offset_bottom = 30.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = 30.0
+offset_right = -30.0
+offset_bottom = -30.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "Camp and companion interaction coming in Task 3.4"
+theme_override_constants/separation = 20
+
+[node name="PartyStatus" type="VBoxContainer" parent="ContentPanel/MainContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HeaderLabel" type="Label" parent="ContentPanel/MainContent/PartyStatus"]
+layout_mode = 2
+text = "YOUR COMPANIONS"
 horizontal_alignment = 1
-vertical_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="ContentPanel/MainContent/PartyStatus"]
+layout_mode = 2
+text = "3 companions in your company"
+horizontal_alignment = 1
+
+[node name="Separator" type="HSeparator" parent="ContentPanel/MainContent"]
+layout_mode = 2
+
+[node name="CompanionsContainer" type="HBoxContainer" parent="ContentPanel/MainContent"]
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+theme_override_constants/separation = 30
+
+[node name="LoyaltyLegend" type="VBoxContainer" parent="ContentPanel/MainContent"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="LegendTitle" type="Label" parent="ContentPanel/MainContent/LoyaltyLegend"]
+layout_mode = 2
+text = "LOYALTY TIERS:"
+horizontal_alignment = 1
+
+[node name="LegendText" type="Label" parent="ContentPanel/MainContent/LoyaltyLegend"]
+layout_mode = 2
+text = "Hostile (0-9): -20% | Disloyal (10-29): -10% | Neutral (30-49): 0% | Loyal (50-69): 0% | Devoted (70-89): +10% | Bonded (90-100): +20%"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="TalkHint" type="Label" parent="ContentPanel/MainContent/LoyaltyLegend"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.8, 0.6, 1)
+theme_override_font_sizes/font_size = 14
+text = "Click TALK to have a conversation with a companion"
+horizontal_alignment = 1

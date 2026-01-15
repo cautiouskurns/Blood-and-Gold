@@ -86,7 +86,7 @@ func _populate_soldier_cards() -> void:
 	_populate_card(archer_card, "archer")
 
 func _populate_card(card: PanelContainer, soldier_type: String) -> void:
-	var data := SOLDIER_DATA[soldier_type]
+	var data = SOLDIER_DATA[soldier_type]
 	var vbox := card.get_node("VBoxContainer")
 
 	# Set name
@@ -142,7 +142,7 @@ func _update_soldier_cards() -> void:
 	_update_card_button(archer_hire_btn, "archer")
 
 func _update_card_button(button: Button, soldier_type: String) -> void:
-	var data := SOLDIER_DATA[soldier_type]
+	var data = SOLDIER_DATA[soldier_type]
 	var cost: int = data.cost
 	var can_afford := GameState.can_afford(cost)
 	var has_room := can_hire()
@@ -188,7 +188,7 @@ func _create_roster_slot(index: int, soldiers: Array[String]) -> Control:
 
 	if index < soldiers.size():
 		var soldier_type := soldiers[index]
-		var data := SOLDIER_DATA[soldier_type]
+		var data = SOLDIER_DATA[soldier_type]
 		label.text = data.name.left(3).to_upper()  # "INF" or "ARC"
 		slot.modulate = data.color
 	else:
@@ -199,7 +199,7 @@ func _create_roster_slot(index: int, soldiers: Array[String]) -> Control:
 	return slot
 
 func _hire_soldier(soldier_type: String) -> void:
-	var data := SOLDIER_DATA[soldier_type]
+	var data = SOLDIER_DATA[soldier_type]
 	var cost: int = data.cost
 
 	if not GameState.can_afford(cost):

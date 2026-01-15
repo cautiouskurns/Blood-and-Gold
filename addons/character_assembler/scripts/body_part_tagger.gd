@@ -69,6 +69,7 @@ func _setup_ui() -> void:
 	_part_dropdown = OptionButton.new()
 	_part_dropdown.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_part_dropdown.add_theme_font_size_override("font_size", 28)
+	_part_dropdown.tooltip_text = "Select body part to assign selected shapes to"
 	for part_name in BodyPart.PART_NAMES:
 		_part_dropdown.add_item(part_name)
 	part_row.add_child(_part_dropdown)
@@ -94,6 +95,7 @@ func _setup_ui() -> void:
 	_pivot_x_spin.max_value = 128
 	_pivot_x_spin.step = 1
 	_pivot_x_spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_pivot_x_spin.tooltip_text = "Pivot X coordinate - rotation center point"
 	pivot_row.add_child(_pivot_x_spin)
 
 	var y_label := Label.new()
@@ -106,6 +108,7 @@ func _setup_ui() -> void:
 	_pivot_y_spin.max_value = 128
 	_pivot_y_spin.step = 1
 	_pivot_y_spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_pivot_y_spin.tooltip_text = "Pivot Y coordinate - rotation center point"
 	pivot_row.add_child(_pivot_y_spin)
 
 	_set_pivot_btn = Button.new()
@@ -134,6 +137,7 @@ func _setup_ui() -> void:
 	_parent_dropdown = OptionButton.new()
 	_parent_dropdown.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_parent_dropdown.add_theme_font_size_override("font_size", 28)
+	_parent_dropdown.tooltip_text = "Parent body part in the hierarchy - child rotates with parent"
 	_parent_dropdown.add_item("None (Root)")
 	for part_name in BodyPart.PART_NAMES:
 		_parent_dropdown.add_item(part_name)
@@ -149,11 +153,13 @@ func _setup_ui() -> void:
 	_apply_btn = Button.new()
 	_apply_btn.text = "Apply Tags"
 	_apply_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_apply_btn.tooltip_text = "Assign selected shapes to the chosen body part"
 	btn_row.add_child(_apply_btn)
 
 	_clear_btn = Button.new()
 	_clear_btn.text = "Clear Tags"
 	_clear_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_clear_btn.tooltip_text = "Remove all shapes from the chosen body part"
 	btn_row.add_child(_clear_btn)
 
 	add_child(HSeparator.new())
@@ -167,6 +173,7 @@ func _setup_ui() -> void:
 	_rig_tree = RigTreeView.new()
 	_rig_tree.custom_minimum_size = Vector2(0, 400)
 	_rig_tree.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_rig_tree.tooltip_text = "Rig hierarchy view - click to select body part"
 	add_child(_rig_tree)
 
 	add_child(HSeparator.new())
@@ -184,6 +191,7 @@ func _setup_ui() -> void:
 	_validation_label.scroll_active = true
 	_validation_label.add_theme_font_size_override("normal_font_size", 28)
 	_validation_label.add_theme_font_size_override("bold_font_size", 28)
+	_validation_label.tooltip_text = "Rig validation messages - errors must be fixed before export"
 	add_child(_validation_label)
 
 	add_child(HSeparator.new())
@@ -209,6 +217,7 @@ func _setup_ui() -> void:
 	_progress_bar.max_value = 14
 	_progress_bar.value = 0
 	_progress_bar.show_percentage = false
+	_progress_bar.tooltip_text = "Body part configuration progress - 14 parts total"
 	add_child(_progress_bar)
 
 

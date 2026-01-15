@@ -347,7 +347,5 @@ static func _infer_type(value: Variant) -> String:
 
 
 static func _is_valid_dice(text: String) -> bool:
-	# Match patterns like "1d6", "2d8+3", "1d20-2", "3d6"
-	var regex = RegEx.new()
-	regex.compile("^\\d+d\\d+([+-]\\d+)?$")
-	return regex.search(text) != null
+	# Use DiceParser for validation
+	return DiceParser.is_valid(text)

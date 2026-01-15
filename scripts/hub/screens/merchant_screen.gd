@@ -193,7 +193,7 @@ func _create_item_card(item: Dictionary) -> PanelContainer:
 	var stats_label := Label.new()
 	stats_label.name = "StatsLabel"
 	if item.type == EquipmentType.WEAPON:
-		var bonus_str := "" if item.damage_bonus == 0 else "+%d" % item.damage_bonus
+		var bonus_str: String = "" if item.damage_bonus == 0 else "+%d" % item.damage_bonus
 		stats_label.text = "Damage: 1d%d%s" % [item.damage_die, bonus_str]
 	else:
 		stats_label.text = "Defense: +%d | Move: %d" % [item.armor_bonus, item.movement]
@@ -240,8 +240,8 @@ func _refresh_item_states() -> void:
 		var cost_label: Label = vbox.get_node("CostLabel")
 		var equipped_label: Label = vbox.get_node("EquippedLabel")
 
-		var is_equipped := equipped_id == item.id
-		var can_afford := GameState.can_afford(item.cost)
+		var is_equipped: bool = equipped_id == item.id
+		var can_afford: bool = GameState.can_afford(item.cost)
 
 		# Update visual state
 		if is_equipped:
@@ -299,7 +299,7 @@ func _update_comparison() -> void:
 
 	comparison_panel.visible = true
 
-	var slot := "weapon" if _selected_item.type == EquipmentType.WEAPON else "armor"
+	var slot: String = "weapon" if _selected_item.type == EquipmentType.WEAPON else "armor"
 	var current_id := GameState.get_equipped(_selected_member, slot)
 	var current_item := _get_item_by_id(current_id)
 
@@ -309,15 +309,15 @@ func _update_comparison() -> void:
 		_clear_stats_container(current_stats)
 	else:
 		current_name.text = current_item.name
-		_populate_stats(current_stats, current_item, null)
+		_populate_stats(current_stats, current_item, {})
 
 	# New equipment
 	new_name.text = _selected_item.name
 	_populate_stats(new_stats, _selected_item, current_item)
 
 	# Purchase button
-	var is_equipped := current_id == _selected_item.id
-	var can_afford := GameState.can_afford(_selected_item.cost)
+	var is_equipped: bool = current_id == _selected_item.id
+	var can_afford: bool = GameState.can_afford(_selected_item.cost)
 
 	if is_equipped:
 		purchase_button.text = "EQUIPPED"
@@ -341,12 +341,12 @@ func _populate_stats(container: VBoxContainer, item: Dictionary, compare_to: Dic
 	if item.type == EquipmentType.WEAPON:
 		# Damage die
 		var die_label := Label.new()
-		var bonus_str := "" if item.damage_bonus == 0 else "+%d" % item.damage_bonus
+		var bonus_str: String = "" if item.damage_bonus == 0 else "+%d" % item.damage_bonus
 		die_label.text = "Damage: 1d%d%s" % [item.damage_die, bonus_str]
 
 		if compare_to and not compare_to.is_empty():
-			var old_total := compare_to.damage_die + compare_to.damage_bonus
-			var new_total := item.damage_die + item.damage_bonus
+			var old_total: int = compare_to.damage_die + compare_to.damage_bonus
+			var new_total: int = item.damage_die + item.damage_bonus
 			if new_total > old_total:
 				die_label.add_theme_color_override("font_color", COLOR_STAT_UP)
 				die_label.text += " ^"
@@ -415,7 +415,7 @@ func _on_purchase_pressed() -> void:
 
 	# Spend gold and equip
 	if GameState.spend_gold(cost):
-		var slot := "weapon" if _selected_item.type == EquipmentType.WEAPON else "armor"
+		var slot: String = "weapon" if _selected_item.type == EquipmentType.WEAPON else "armor"
 		GameState.equip_item(_selected_member, slot, _selected_item.id)
 		equipment_purchased.emit(_selected_member, _selected_item.id)
 
