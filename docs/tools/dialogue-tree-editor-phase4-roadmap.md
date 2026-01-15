@@ -659,29 +659,31 @@ graph LR
 
 ---
 
-### Feature 4C.6: Export with Tags
+### Feature 4C.6: Export with Tags ✅ COMPLETE
 
 **Description:** Update export format to properly include tagged text.
 
 **Dependencies:** Feature 4C.1
 
 **Implementation Tasks:**
-- [ ] Update dialogue_exporter.gd:
-  - [ ] Preserve tag syntax in exported text
-  - [ ] Add `variables_used` array to node data
-  - [ ] Add `has_conditionals` flag to node data
-- [ ] Update export validation:
-  - [ ] Warn if variables have no known source
-  - [ ] Validate all conditional expressions
-- [ ] Document tag syntax in export format
+- [x] Update dialogue_exporter.gd:
+  - [x] Preserve tag syntax in exported text (text is preserved as-is)
+  - [x] Add `variables_used` array to node data
+  - [x] Add `has_conditionals` flag to node data
+  - [x] Add `conditions` array with all conditional expressions
+- [x] Update export validation:
+  - [x] Warn if variables have no known source (checks flags, quests, reputation, common game vars)
+  - [x] Validate all conditional expressions (balanced parentheses, operator checks)
+- [x] Document tag syntax in export format (doc comments in exporter)
+- [x] Bump export version to 2 for tag metadata support
 
-**Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/dialogue_exporter.gd` (extend)
+**Files Modified:**
+- `addons/dialogue_editor/scripts/dialogue_exporter.gd` ✅
 
 **Success Criteria:**
-- [ ] Tags preserved exactly in JSON export
-- [ ] Game runtime can parse exported tags
-- [ ] Validation catches undefined variables
+- [x] Tags preserved exactly in JSON export
+- [x] Game runtime can parse exported tags (metadata provided for optimization)
+- [x] Validation catches undefined variables (warnings with source tracking)
 
 ---
 
@@ -1082,13 +1084,13 @@ graph LR
 - [x] Feature 4B.6: Variable Browser Panel ✅
 - [x] Feature 4B.7: Set Expression Node ✅
 
-### Phase 4C: Conditional Text
+### Phase 4C: Conditional Text ✅ COMPLETE
 - [x] Feature 4C.1: Variable Tag Parser ✅
 - [x] Feature 4C.2: Conditional Tag Parser ✅
 - [x] Feature 4C.3: Tag Renderer ✅
 - [x] Feature 4C.4: Formatting Tags ✅
 - [x] Feature 4C.5: Text Preview in Property Panel ✅
-- [ ] Feature 4C.6: Export with Tags
+- [x] Feature 4C.6: Export with Tags ✅
 
 ### Phase 4D: Node Grouping
 - [ ] Feature 4D.1: Visual Node Groups

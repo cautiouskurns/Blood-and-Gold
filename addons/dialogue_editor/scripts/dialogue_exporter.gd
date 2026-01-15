@@ -3,10 +3,33 @@ class_name DialogueExporter
 extends RefCounted
 ## Exports dialogue trees to game-readable JSON format.
 ## Strips editor-only data and converts to runtime format.
+##
+## ## Text Tag Support
+## Dialogue text (in Speaker and Choice nodes) can contain dynamic tags:
+##
+## ### Variable Tags
+## - `{variable_name}` - Substitutes variable value at runtime
+## - `{player.name}` - Supports dot notation for nested values
+##
+## ### Conditional Tags
+## - `{if condition}text{/if}` - Shows text only if condition is true
+## - `{if condition}text{else}other{/if}` - If/else branching
+## - `{if cond1}a{elif cond2}b{else}c{/if}` - Multiple conditions
+##
+## ### Formatting Tags (BBCode)
+## - `[b]bold[/b]`, `[i]italic[/i]`, `[color=red]colored[/color]`
+## - `[shake]`, `[wave]`, `[rainbow]` - Game-specific effects
+## - `[pause=1.5]`, `[speed=0.5]` - Timing control
+##
+## Export adds `variables_used` and `has_conditionals` metadata to nodes
+## containing tags, enabling runtime optimization and validation.
 
-const EXPORT_VERSION := 1
+const EXPORT_VERSION := 2  # Bumped for tag metadata support
 const FILE_EXTENSION := "json"
 const DEFAULT_EXPORT_DIR := "res://data/dialogue/"
+
+# Tag parser for extracting variable/conditional metadata
+const TagParserScript = preload("res://addons/dialogue_editor/scripts/text_tags/tag_parser.gd")
 
 
 ## Export a dialogue tree from canvas data to game-readable JSON.
@@ -100,9 +123,25 @@ static func _convert_node_to_runtime(node_data: Dictionary) -> Dictionary:
 			runtime["text"] = node_data.get("text", "")
 			if node_data.has("portrait") and not node_data.portrait.is_empty():
 				runtime["portrait"] = node_data.portrait
+			# Extract tag metadata from text
+			var tag_meta = _extract_tag_metadata(runtime["text"])
+			if tag_meta.has("variables_used"):
+				runtime["variables_used"] = tag_meta["variables_used"]
+			if tag_meta.has("has_conditionals"):
+				runtime["has_conditionals"] = tag_meta["has_conditionals"]
+			if tag_meta.has("conditions"):
+				runtime["conditions"] = tag_meta["conditions"]
 
 		"Choice":
 			runtime["text"] = node_data.get("text", "")
+			# Extract tag metadata from text
+			var choice_tag_meta = _extract_tag_metadata(runtime["text"])
+			if choice_tag_meta.has("variables_used"):
+				runtime["variables_used"] = choice_tag_meta["variables_used"]
+			if choice_tag_meta.has("has_conditionals"):
+				runtime["has_conditionals"] = choice_tag_meta["has_conditionals"]
+			if choice_tag_meta.has("conditions"):
+				runtime["conditions"] = choice_tag_meta["conditions"]
 
 		"Branch":
 			# Export as expression (unified runtime format)
@@ -207,6 +246,45 @@ static func _get_end_type_name(end_type: int) -> String:
 		_: return "normal"
 
 
+## Extract tag metadata from text content.
+## Returns a dictionary with tag information for export.
+static func _extract_tag_metadata(text: String) -> Dictionary:
+	if text.is_empty():
+		return {}
+
+	# Quick check - if no braces, no tags
+	if "{" not in text:
+		return {}
+
+	var result := {}
+	var parser = TagParserScript.new()
+	var parse_result = parser.parse(text)
+
+	# Extract variable names
+	var variables = parse_result.get_variable_names()
+	if not variables.is_empty():
+		result["variables_used"] = variables
+
+	# Check for conditionals
+	if parse_result.has_conditionals:
+		result["has_conditionals"] = true
+		# Also include condition expressions for validation
+		var conditions = parse_result.get_conditions()
+		if not conditions.is_empty():
+			result["conditions"] = conditions
+
+	# Check for parse errors (useful for debugging)
+	if parse_result.has_errors():
+		result["tag_errors"] = []
+		for error in parse_result.errors:
+			result["tag_errors"].append({
+				"message": error.message,
+				"position": error.position
+			})
+
+	return result
+
+
 ## Export dialogue to a JSON file.
 static func export_to_file(canvas: GraphEdit, dialogue_id: String, path: String) -> Error:
 	var export_data = export_from_canvas(canvas, dialogue_id)
@@ -303,4 +381,137 @@ static func validate_export(export_data: Dictionary) -> Array[String]:
 			if "missing" not in next_conditions:
 				errors.append("Node '%s' (item check) missing 'missing' branch connection" % node_id)
 
+	# Validate tags in dialogue text
+	var warnings = _validate_tags(export_data)
+	errors.append_array(warnings)
+
 	return errors
+
+
+## Validate tags in dialogue text (variables and conditionals).
+## Returns warnings for undefined variables and invalid conditionals.
+static func _validate_tags(export_data: Dictionary) -> Array[String]:
+	var warnings: Array[String] = []
+
+	# Collect all variables used across all nodes
+	var all_variables_used: Dictionary = {}  # variable_name -> Array of node_ids using it
+
+	# Collect known variable sources (flags set, items given, etc.)
+	var known_variables: Dictionary = {}  # variable_name -> source description
+
+	# First pass: collect known variable sources and variables used
+	for node_id in export_data.get("nodes", {}):
+		var node = export_data.nodes[node_id]
+		var node_type = node.get("type", "")
+
+		# Track variables set by nodes
+		match node_type:
+			"flagset":
+				var flag_name = node.get("flag_name", "")
+				if not flag_name.is_empty():
+					known_variables[flag_name] = "set by FlagSet node '%s'" % node_id
+
+			"setexpression":
+				for assignment in node.get("assignments", []):
+					var var_name = assignment.get("variable", "")
+					if not var_name.is_empty():
+						known_variables[var_name] = "set by SetExpression node '%s'" % node_id
+
+			"quest":
+				var quest_id = node.get("quest_id", "")
+				if not quest_id.is_empty():
+					# Quest-related flags
+					known_variables["quest." + quest_id + ".active"] = "quest state"
+					known_variables["quest." + quest_id + ".complete"] = "quest state"
+
+			"reputation":
+				var faction = node.get("faction", "").to_lower().replace(" ", "_")
+				if not faction.is_empty() and faction != "custom":
+					known_variables["reputation." + faction] = "reputation"
+				var custom_faction = node.get("custom_faction", "").to_lower().replace(" ", "_")
+				if not custom_faction.is_empty():
+					known_variables["reputation." + custom_faction] = "reputation"
+
+		# Track variables used in text
+		if node.has("variables_used"):
+			for var_name in node.variables_used:
+				if not all_variables_used.has(var_name):
+					all_variables_used[var_name] = []
+				all_variables_used[var_name].append(node_id)
+
+	# Add common game context variables (these are typically provided by runtime)
+	var common_variables := [
+		"player", "player.name", "player.gold", "player.level",
+		"player.stats", "player.stats.strength", "player.stats.dexterity",
+		"player.stats.intelligence", "player.stats.charisma",
+		"npc", "npc.name", "npc.faction",
+		"time", "time.day", "time.hour"
+	]
+	for common_var in common_variables:
+		known_variables[common_var] = "common game context"
+
+	# Check for undefined variables (warn, don't error - runtime may provide them)
+	for var_name in all_variables_used.keys():
+		# Check if variable or its parent is known
+		var is_known := false
+
+		if known_variables.has(var_name):
+			is_known = true
+		else:
+			# Check for parent (e.g., "player.name" is valid if "player" is known)
+			var parts = var_name.split(".")
+			for i in range(parts.size()):
+				var parent = ".".join(parts.slice(0, i + 1))
+				if known_variables.has(parent):
+					is_known = true
+					break
+
+		if not is_known:
+			var using_nodes = all_variables_used[var_name]
+			warnings.append("Warning: Variable '{%s}' used in nodes %s has no known source (may be provided by game runtime)" % [
+				var_name,
+				str(using_nodes)
+			])
+
+	# Validate conditional expressions
+	for node_id in export_data.get("nodes", {}):
+		var node = export_data.nodes[node_id]
+
+		if node.has("has_conditionals") and node.has_conditionals:
+			var conditions = node.get("conditions", [])
+			for condition in conditions:
+				var validation_error = _validate_condition_expression(condition)
+				if not validation_error.is_empty():
+					warnings.append("Warning: Node '%s' has invalid condition '%s': %s" % [
+						node_id, condition, validation_error
+					])
+
+	return warnings
+
+
+## Validate a condition expression for basic syntax errors.
+static func _validate_condition_expression(condition: String) -> String:
+	if condition.strip_edges().is_empty():
+		return "Empty condition"
+
+	# Check for balanced parentheses
+	var paren_depth := 0
+	for c in condition:
+		if c == "(":
+			paren_depth += 1
+		elif c == ")":
+			paren_depth -= 1
+			if paren_depth < 0:
+				return "Unbalanced parentheses (extra ')')"
+
+	if paren_depth != 0:
+		return "Unbalanced parentheses (missing ')')"
+
+	# Check for common issues
+	if condition.strip_edges().ends_with(" and") or condition.strip_edges().ends_with(" or"):
+		return "Condition ends with incomplete operator"
+
+	if condition.strip_edges().begins_with("and ") or condition.strip_edges().begins_with("or "):
+		return "Condition starts with operator"
+
+	return ""  # No errors
