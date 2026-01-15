@@ -521,28 +521,29 @@ graph LR
 
 ---
 
-### Feature 4C.1: Variable Tag Parser
+### Feature 4C.1: Variable Tag Parser ✅ COMPLETE
 
 **Description:** Parse `{variable_name}` tags in dialogue text.
 
 **Implementation Tasks:**
-- [ ] Create `tag_parser.gd` with:
-  - [ ] `parse_tags(text: String) -> Array[Tag]`
-  - [ ] Tag types: VARIABLE, CONDITIONAL_START, CONDITIONAL_ELSE, CONDITIONAL_END, TEXT
-  - [ ] Handle nested tags
-  - [ ] Handle escape sequences `\{` for literal braces
-- [ ] Support dot notation: `{player.stats.strength}`
-- [ ] Validate variable names
-- [ ] Report parse errors with position
+- [x] Create `tag_parser.gd` with:
+  - [x] `parse_tags(text: String) -> Array[Tag]`
+  - [x] Tag types: VARIABLE, CONDITIONAL_START, CONDITIONAL_ELSE, CONDITIONAL_END, TEXT
+  - [x] Handle nested tags (stub for Phase 4C.2)
+  - [x] Handle escape sequences `\{` for literal braces
+- [x] Support dot notation: `{player.stats.strength}`
+- [x] Validate variable names
+- [x] Report parse errors with position
 
-**Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/text_tags/tag_parser.gd` (new)
+**Files Created:**
+- `addons/dialogue_editor/scripts/text_tags/tag_parser.gd` ✅
+- `addons/dialogue_editor/scripts/text_tags/test_tag_parser.gd` ✅ (test script)
 
 **Success Criteria:**
-- [ ] Parses `Hello, {player_name}!` correctly
-- [ ] Parses `{player.gold}` with dot notation
-- [ ] Handles escaped braces
-- [ ] Reports error for unclosed tags
+- [x] Parses `Hello, {player_name}!` correctly
+- [x] Parses `{player.gold}` with dot notation
+- [x] Handles escaped braces
+- [x] Reports error for unclosed tags
 
 ---
 
@@ -1076,7 +1077,7 @@ graph LR
 - [x] Feature 4B.7: Set Expression Node ✅
 
 ### Phase 4C: Conditional Text
-- [ ] Feature 4C.1: Variable Tag Parser
+- [x] Feature 4C.1: Variable Tag Parser ✅
 - [ ] Feature 4C.2: Conditional Tag Parser
 - [ ] Feature 4C.3: Tag Renderer
 - [ ] Feature 4C.4: Formatting Tags
