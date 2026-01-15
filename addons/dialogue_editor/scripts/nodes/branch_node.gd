@@ -228,12 +228,14 @@ func _setup_expression_mode_ui() -> void:
 	_expression_container = VBoxContainer.new()
 	_expression_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-	# Expression field (use class_name directly to avoid @tool preload timing issues)
-	_expression_field = ExpressionField.new()
-	_expression_field.placeholder_text = "condition expression..."
-	_expression_field.expression_changed.connect(_on_expression_changed)
-	_expression_field.validation_changed.connect(_on_expression_validation_changed)
-	_expression_container.add_child(_expression_field)
+	# Use simple LineEdit for expression input (avoids @tool script compilation issues)
+	# TODO: Replace with ExpressionField when expression system is stable
+	var expr_edit = LineEdit.new()
+	expr_edit.placeholder_text = "e.g., has_flag(\"talked\") AND gold >= 100"
+	expr_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	expr_edit.text_changed.connect(_on_expression_text_changed_fallback)
+	_expression_field = expr_edit
+	_expression_container.add_child(expr_edit)
 
 	# Status/test row
 	var status_row = HBoxContainer.new()
@@ -530,6 +532,12 @@ func _on_additional_value_changed(new_text: String, cond_index: int) -> void:
 
 func _on_expression_changed(new_expression: String) -> void:
 	expression_text = new_expression
+	_emit_data_changed()
+
+
+func _on_expression_text_changed_fallback(new_text: String) -> void:
+	# Fallback handler for simple LineEdit when ExpressionField isn't available
+	expression_text = new_text
 	_emit_data_changed()
 
 

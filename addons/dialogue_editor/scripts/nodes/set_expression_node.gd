@@ -112,14 +112,14 @@ func _add_assignment_row(variable: String, expression: String) -> void:
 	equals.text = " = "
 	row.add_child(equals)
 
-	# Expression field (use class_name directly to avoid @tool preload timing issues)
-	var expr_field = ExpressionField.new()
+	# Expression field - use simple LineEdit to avoid @tool compilation issues
+	# TODO: Replace with ExpressionField when expression system is stable
+	var expr_field = LineEdit.new()
 	expr_field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	expr_field.custom_minimum_size = Vector2(120, 0)
 	expr_field.placeholder_text = "expression"
-	expr_field.set_expression(expression)
-	expr_field.expression_changed.connect(_on_expression_changed.bind(row))
-	expr_field.validation_changed.connect(_on_validation_changed.bind(row))
+	expr_field.text = expression
+	expr_field.text_changed.connect(_on_expression_changed.bind(row))
 	row.add_child(expr_field)
 
 	# Remove button
