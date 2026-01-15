@@ -1,0 +1,41 @@
+[gd_scene load_steps=2 format=3 uid="uid://tutorial_popup_scene"]
+
+[ext_resource type="Script" path="res://scripts/tutorial/tutorial_popup.gd" id="1_script"]
+
+[node name="TutorialPopup" type="CanvasLayer"]
+layer = 100
+script = ExtResource("1_script")
+
+[node name="Panel" type="PanelContainer" parent="."]
+offset_left = 100.0
+offset_top = 100.0
+offset_right = 500.0
+offset_bottom = 200.0
+
+[node name="MarginContainer" type="MarginContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 15
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="MessageLabel" type="Label" parent="Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Tutorial message here"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="DismissButton" type="Button" parent="Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Got it"
+
+[node name="ArrowIndicator" type="Sprite2D" parent="."]
+visible = false
+position = Vector2(50, 300)
+scale = Vector2(0.5, 0.5)

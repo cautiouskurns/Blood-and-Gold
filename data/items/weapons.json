@@ -1,0 +1,72 @@
+{
+  "rows": [
+    {
+      "damage": "1d8",
+      "damage_type": "slashing",
+      "description": "A simple iron blade, standard issue for town guards.",
+      "id": "w_001",
+      "name": "Iron Sword",
+      "rarity": "common",
+      "two_handed": false,
+      "value": 50.0,
+      "weight": 3.0
+    },
+    {
+      "damage": "1d8+1",
+      "damage_type": "slashing",
+      "description": "Well-crafted steel blade. Standard military issue in Ironmark.",
+      "id": "w_002",
+      "name": "Steel Sword",
+      "rarity": "uncommon",
+      "two_handed": false,
+      "value": 150.0,
+      "weight": 3.0
+    },
+    {
+      "damage": "1d8+2",
+      "damage_type": "fire",
+      "description": "A blade enchanted with eternal flames. Burns hot to the touch.",
+      "id": "w_003",
+      "name": "Flame Blade",
+      "rarity": "rare",
+      "two_handed": false,
+      "value": 800.0,
+      "weight": 2.5
+    },
+    {
+      "damage": "2d6",
+      "damage_type": "slashing",
+      "description": "A massive two-handed sword requiring considerable strength to wield.",
+      "id": "w_004",
+      "name": "Greatsword",
+      "rarity": "uncommon",
+      "two_handed": true,
+      "value": 120.0,
+      "weight": 6.0
+    },
+    {
+      "damage": "1d4",
+      "damage_type": "piercing",
+      "description": "A small blade, easily concealed.",
+      "id": "w_005",
+      "name": "Dagger",
+      "rarity": "common",
+      "two_handed": false,
+      "value": 15.0,
+      "weight": 1.0
+    },
+    {
+      "damage": "1d10",
+      "damage_type": "bludgeoning",
+      "description": "A heavy hammer designed to crush armor and bone.",
+      "id": "w_006",
+      "name": "Warhammer",
+      "rarity": "uncommon",
+      "two_handed": false,
+      "value": 100.0,
+      "weight": 5.0
+    }
+  ],
+  "schema": "weapons",
+  "version": "1.0"
+}

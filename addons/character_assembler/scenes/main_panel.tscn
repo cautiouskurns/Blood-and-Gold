@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://dh4j6xqk5rn2c"]
+[gd_scene load_steps=10 format=3 uid="uid://dh4j6xqk5rn2c"]
 
 [ext_resource type="Script" path="res://addons/character_assembler/scripts/main_panel.gd" id="1_main_panel"]
 [ext_resource type="Script" path="res://addons/character_assembler/scripts/canvas_viewport.gd" id="2_canvas"]
@@ -7,6 +7,9 @@
 [ext_resource type="Script" path="res://addons/character_assembler/scripts/shape_properties_panel.gd" id="5_properties"]
 [ext_resource type="Script" path="res://addons/character_assembler/scripts/body_part_tagger.gd" id="6_tagger"]
 [ext_resource type="Script" path="res://addons/character_assembler/scripts/pose_editor.gd" id="7_pose_editor"]
+[ext_resource type="Script" path="res://addons/character_assembler/scripts/animation_generator.gd" id="8_animation_generator"]
+[ext_resource type="Script" path="res://addons/character_assembler/scripts/direction_manager.gd" id="9_direction_manager"]
+[ext_resource type="Script" path="res://addons/character_assembler/scripts/export_manager.gd" id="10_export_manager"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_canvas"]
 bg_color = Color(0.12, 0.12, 0.12, 1)
@@ -234,6 +237,15 @@ script = ExtResource("5_properties")
 [node name="Sep2" type="HSeparator" parent="Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox"]
 layout_mode = 2
 
+[node name="DirectionManager" type="VBoxContainer" parent="Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_constants/separation = 4
+script = ExtResource("9_direction_manager")
+
+[node name="SepDir" type="HSeparator" parent="Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox"]
+layout_mode = 2
+
 [node name="BodyPartTagger" type="VBoxContainer" parent="Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -248,6 +260,24 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 4
 script = ExtResource("7_pose_editor")
+
+[node name="Sep4" type="HSeparator" parent="Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox"]
+layout_mode = 2
+
+[node name="AnimationGenerator" type="VBoxContainer" parent="Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+script = ExtResource("8_animation_generator")
+
+[node name="Sep5" type="HSeparator" parent="Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox"]
+layout_mode = 2
+
+[node name="ExportManager" type="VBoxContainer" parent="Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_constants/separation = 4
+script = ExtResource("10_export_manager")
 
 [node name="StatusBar" type="HBoxContainer" parent="Margin/VBox"]
 layout_mode = 2

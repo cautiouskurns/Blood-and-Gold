@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="Contract" load_steps=2 format=3 uid="uid://merchants_escort"]
+
+[ext_resource type="Script" path="res://scripts/resources/contract.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = "merchants_escort"
+display_name = "Merchant's Escort"
+brief_description = "Protect a merchant caravan from bandit ambush on the forest road."
+full_briefing = "A wealthy merchant has hired our company to escort his trade caravan through the Darkwood Pass. Intelligence suggests bandits have been preying on travelers along this route. We are to ensure the safe passage of the merchant and his goods.
+
+The bandits are poorly equipped but numerous. Expect hit-and-run tactics. The merchant has requested we minimize damage to his cargo, so careful positioning will be key."
+difficulty = 0
+gold_reward = 300
+gold_reward_max = 0
+primary_objective = "Defeat all bandits while protecting the wagon"
+secondary_objective = "Keep the merchant wagon undamaged"
+map_scene = "res://scenes/contracts/MerchantsEscort.tscn"
+enemy_description = "Forest Bandits (4 Melee, 2 Archers)"
+enemy_count = 6
+contract_type = 0
+has_pre_combat_dialogue = false
+pre_combat_scene = ""
+triggers_camp_scene = true
+camp_scene_id = "thorne_camp_1"

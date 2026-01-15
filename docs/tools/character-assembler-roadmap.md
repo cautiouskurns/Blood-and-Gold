@@ -285,26 +285,26 @@ addons/character_assembler/
 
 ---
 
-### Feature 1.4: Pose System
+### Feature 1.4: Pose System ✅ COMPLETE
 
 **Description:** Define key poses by rotating body parts, with live preview on canvas.
 
 **Dependencies:** Feature 1.3 (Body Part Tagging)
 
 **Implementation Tasks:**
-- [ ] Create Pose class (name, rotations dictionary)
-- [ ] Create pose list panel (saved poses)
-- [ ] Implement "New Pose" with name input
-- [ ] Create rotation slider for each body part (-180° to +180°)
-- [ ] Implement hierarchical rotation (parent pulls children)
-- [ ] Create live preview renderer on canvas
-- [ ] Implement "Reset" button (all rotations to 0°)
-- [ ] Implement "Reset Part" button (single part to 0°)
-- [ ] Implement "Duplicate Pose" feature
-- [ ] Implement "Mirror Pose" (swap L/R rotations)
-- [ ] Implement "Delete Pose" with confirmation
-- [ ] Add pose quick-select buttons at bottom
-- [ ] Create default poses: Idle, Walk_L, Walk_R, Attack_Windup, Attack_Swing, Hurt, Death
+- [x] Create Pose class (name, rotations dictionary)
+- [x] Create pose list panel (saved poses)
+- [x] Implement "New Pose" with name input
+- [x] Create rotation slider for each body part (-180° to +180°)
+- [x] Implement hierarchical rotation (parent pulls children)
+- [x] Create live preview renderer on canvas
+- [x] Implement "Reset" button (all rotations to 0°)
+- [x] Implement "Reset Part" button (single part to 0°)
+- [x] Implement "Duplicate Pose" feature
+- [x] Implement "Mirror Pose" (swap L/R rotations)
+- [x] Implement "Delete Pose" with confirmation
+- [x] Add pose quick-select buttons at bottom
+- [x] Create default poses: Idle, Walk_L, Walk_R, Attack_Windup, Attack_Swing, Hurt, Death
 
 **Rotation Algorithm:**
 ```gdscript
@@ -332,27 +332,23 @@ func _apply_rotation_recursive(part_name: String, parent_rotation: float, proces
         _apply_rotation_recursive(child_name, world_rotation, processed, pose)
 ```
 
-**Files to Create/Modify:**
+**Files Created/Modified:**
 ```
 addons/character_assembler/
 ├── scenes/
-│   ├── main_panel.tscn (modify - add pose panel)
-│   └── pose_editor.tscn
+│   └── main_panel.tscn                ✅ (modified - pose tab added)
 ├── scripts/
-│   ├── pose_editor.gd
-│   ├── pose.gd (Pose class)
-│   ├── pose_renderer.gd
-│   └── rotation_slider.gd
-└── resources/
-    └── default_poses/
-        ├── idle.tres
-        ├── walk_left.tres
-        ├── walk_right.tres
-        ├── attack_windup.tres
-        ├── attack_swing.tres
-        ├── hurt.tres
-        └── death.tres
+│   ├── pose_editor.gd                 ✅ (pose list + rotation sliders)
+│   ├── pose.gd                        ✅ (Pose class with serialization)
+│   ├── pose_renderer.gd               ✅ (hierarchical rotation algorithm)
+│   └── canvas_viewport.gd             ✅ (modified - pose preview rendering)
 ```
+
+**Implementation Notes:**
+- PoseRenderer uses hierarchical algorithm: when a part rotates, all descendants rotate with it around that part's pivot
+- Rotation sliders from -180° to +180° for each body part
+- Live preview updates canvas as sliders change
+- Pose serialization to/from dictionary for save/load
 
 **UI Layout:**
 ```
@@ -387,27 +383,27 @@ addons/character_assembler/
 ```
 
 **Success Criteria:**
-- [ ] Can create new pose with custom name
-- [ ] Rotation sliders work for all body parts
-- [ ] Preview updates live as sliders move
-- [ ] Hierarchical rotation works (rotate torso moves arms)
-- [ ] Can duplicate existing pose
-- [ ] Mirror pose swaps left/right correctly
-- [ ] Can switch between saved poses instantly
-- [ ] Default poses load correctly
+- [x] Can create new pose with custom name
+- [x] Rotation sliders work for all body parts
+- [x] Preview updates live as sliders move
+- [x] Hierarchical rotation works (rotate torso moves arms)
+- [x] Can duplicate existing pose
+- [x] Mirror pose swaps left/right correctly
+- [x] Can switch between saved poses instantly
+- [x] Default poses load correctly
 
 ---
 
-### Phase 1 Complete Checklist
+### Phase 1 Complete Checklist ✅ ALL COMPLETE
 
-- [ ] Plugin installs and enables without errors
-- [ ] Can load reference image with opacity control
-- [ ] Can draw and manipulate all 4 shape types
-- [ ] Can tag shapes to 14 body parts
-- [ ] Can set pivot points for all body parts
-- [ ] Can create and edit poses with rotation sliders
-- [ ] Live preview shows posed character
-- [ ] Can save/load CharacterProject
+- [x] Plugin installs and enables without errors
+- [x] Can load reference image with opacity control
+- [x] Can draw and manipulate all 4 shape types
+- [x] Can tag shapes to 14 body parts
+- [x] Can set pivot points for all body parts
+- [x] Can create and edit poses with rotation sliders
+- [x] Live preview shows posed character
+- [x] Can save/load CharacterProject
 
 **Phase 1 Exit Test:**
 Create a simple stick figure character (20 shapes), tag all body parts, create Idle and Walk_Left poses, see character animate between them in preview.
@@ -422,17 +418,17 @@ Create a simple stick figure character (20 shapes), tag all body parts, create I
 
 ---
 
-### Feature 2.1: Animation Templates
+### Feature 2.1: Animation Templates ✅ COMPLETE
 
 **Description:** Pre-built animation logic that interpolates between poses to generate frame sequences.
 
 **Dependencies:** Feature 1.4 (Pose System)
 
 **Implementation Tasks:**
-- [ ] Create Animation class (name, template, frames, fps, loop, pose_assignments)
-- [ ] Create AnimationTemplate class (name, required_poses[], frame_sequence[])
-- [ ] Implement linear interpolation between poses
-- [ ] Create 8 built-in templates:
+- [x] Create Animation class (name, template, frames, fps, loop, pose_assignments)
+- [x] Create AnimationTemplate class (name, required_poses[], frame_sequence[])
+- [x] Implement linear interpolation between poses
+- [x] Create 8 built-in templates:
   - Walk Cycle (8 frames): Idle → Walk_L → Walk_R → Idle
   - Run Cycle (8 frames): Same but faster transitions
   - Idle Breathing (4 frames): Subtle torso movement
@@ -441,14 +437,14 @@ Create a simple stick figure character (20 shapes), tag all body parts, create I
   - Death (6 frames): Idle → Death (no loop)
   - Victory (4 frames): Subtle celebration
   - Jump (6 frames): Crouch → Up → Down → Land
-- [ ] Create template selector UI
-- [ ] Create pose assignment UI (map user poses to template slots)
-- [ ] Implement frame count adjustment
-- [ ] Implement FPS adjustment (8, 12, 15, 24)
-- [ ] Create animation preview player (play/pause/scrub)
-- [ ] Add timeline with frame indicators
-- [ ] Implement "Generate Animation" button
-- [ ] Store generated frame data for export
+- [x] Create template selector UI
+- [x] Create pose assignment UI (map user poses to template slots)
+- [x] Implement frame count adjustment
+- [x] Implement FPS adjustment (8, 12, 15, 24)
+- [x] Create animation preview player (play/pause/scrub)
+- [x] Add timeline with frame indicators
+- [x] Implement "Generate Animation" button
+- [x] Store generated frame data for export
 
 **Interpolation Algorithm:**
 ```gdscript
@@ -494,29 +490,24 @@ var walk_cycle_template = {
 }
 ```
 
-**Files to Create/Modify:**
+**Files Created/Modified:**
 ```
 addons/character_assembler/
 ├── scenes/
-│   ├── main_panel.tscn (modify - add animation panel)
-│   └── animation_generator.tscn
+│   └── main_panel.tscn                ✅ (modified - animation tab added)
 ├── scripts/
-│   ├── animation_generator.gd
-│   ├── animation.gd (Animation class)
-│   ├── animation_template.gd (AnimationTemplate class)
-│   ├── pose_interpolator.gd
-│   └── animation_preview.gd
-└── resources/
-    └── animation_templates/
-        ├── walk_cycle.tres
-        ├── run_cycle.tres
-        ├── idle_breathing.tres
-        ├── attack.tres
-        ├── hurt_recoil.tres
-        ├── death.tres
-        ├── victory.tres
-        └── jump.tres
+│   ├── animation_generator.gd         ✅ (full UI with template selector)
+│   ├── animation_data.gd              ✅ (AnimationData class)
+│   ├── animation_template.gd          ✅ (AnimationTemplate class + 8 templates)
+│   ├── pose_interpolator.gd           ✅ (weighted pose blending + easing)
+│   └── animation_preview.gd           ✅ (play/pause/scrub controls)
 ```
+
+**Implementation Notes:**
+- AnimationTemplate provides static factory methods for all 8 templates
+- PoseInterpolator supports linear, ease_in, ease_out, and ease_in_out easing
+- AnimationGenerator UI includes template dropdown, pose assignment, timeline
+- Templates define frame sequences with weighted pose blending
 
 **UI Layout:**
 ```
@@ -552,34 +543,34 @@ addons/character_assembler/
 ```
 
 **Success Criteria:**
-- [ ] Can select animation template
-- [ ] Can assign user poses to template slots
-- [ ] Can adjust frame count and FPS
-- [ ] Animation preview plays smoothly
-- [ ] Can scrub through timeline
-- [ ] Generated animations store correctly
-- [ ] All 8 templates work correctly
+- [x] Can select animation template
+- [x] Can assign user poses to template slots
+- [x] Can adjust frame count and FPS
+- [x] Animation preview plays smoothly
+- [x] Can scrub through timeline
+- [x] Generated animations store correctly
+- [x] All 8 templates work correctly
 
 ---
 
-### Feature 2.2: Multi-Direction Support
+### Feature 2.2: Multi-Direction Support ✅ COMPLETE
 
 **Description:** Generate 4 directional variants (South, North, East, West) from base character.
 
 **Dependencies:** Feature 2.1 (Animation Templates)
 
 **Implementation Tasks:**
-- [ ] Create DirectionView class (direction, shapes[], overrides)
-- [ ] Implement view switcher tabs (South, North, East, West)
-- [ ] Implement "Copy from South" for body part tags and pivots
-- [ ] Implement auto-flip horizontal (East → West)
-- [ ] Implement auto-flip vertical (South → North) with adjustments
-- [ ] Create semi-manual mode (copy tags, adjust shapes)
-- [ ] Create full-manual mode (design each view separately)
-- [ ] Add "Generate All Directions" batch button
-- [ ] Implement direction-specific pose overrides (optional)
-- [ ] Create 4-up preview showing all directions
-- [ ] Implement per-direction animation generation
+- [x] Create DirectionView class (direction, shapes[], overrides)
+- [x] Implement view switcher tabs (South, North, East, West)
+- [x] Implement "Copy from South" for body part tags and pivots
+- [x] Implement auto-flip horizontal (East → West)
+- [x] Implement auto-flip vertical (South → North) with adjustments
+- [x] Create semi-manual mode (copy tags, adjust shapes)
+- [x] Create full-manual mode (design each view separately)
+- [x] Add "Generate All Directions" batch button
+- [x] Implement direction-specific pose overrides (optional)
+- [x] Create 4-up preview showing all directions
+- [x] Implement per-direction animation generation
 
 **Generation Methods:**
 | Method | Quality | Workflow |
@@ -588,18 +579,26 @@ addons/character_assembler/
 | Semi-manual | Medium | Design South & East, auto-generate North & West |
 | Full-manual | High | Design all 4 views separately |
 
-**Files to Create/Modify:**
+**Files Created/Modified:**
 ```
 addons/character_assembler/
 ├── scenes/
-│   ├── main_panel.tscn (modify - add direction tabs)
-│   └── direction_manager.tscn
+│   └── main_panel.tscn              ✅ (modified - added DirectionManager)
 ├── scripts/
-│   ├── direction_manager.gd
-│   ├── direction_view.gd (DirectionView class)
-│   ├── auto_flip.gd
-│   └── four_up_preview.gd
+│   ├── direction_manager.gd         ✅ (main UI panel with tabs & modes)
+│   ├── direction_view.gd            ✅ (DirectionView class for per-direction data)
+│   ├── auto_flip.gd                 ✅ (horizontal/vertical flip algorithms)
+│   ├── four_up_preview.gd           ✅ (2x2 grid preview of all directions)
+│   ├── character_project.gd         ✅ (modified - direction view storage)
+│   └── main_panel.gd                ✅ (modified - DirectionManager integration)
 ```
+
+**Implementation Notes:**
+- DirectionView class stores shapes, body_parts, pose_overrides per direction
+- AutoFlip provides horizontal (East ↔ West) and vertical (South ↔ North) flip utilities
+- FourUpPreview displays clickable 2x2 grid with direction status indicators
+- DirectionManager has 3 modes: Auto-Flip, Semi-Manual, Full Manual
+- CharacterProject updated with direction_views Dictionary and sync_primary_direction()
 
 **UI Layout:**
 ```
@@ -634,33 +633,33 @@ addons/character_assembler/
 ```
 
 **Success Criteria:**
-- [ ] Can switch between 4 direction views
-- [ ] Body part tags copy to other views
-- [ ] Auto-flip generates reasonable results
-- [ ] Can manually adjust shapes per view
-- [ ] 4-up preview shows all directions
-- [ ] Animations generate for all directions
+- [x] Can switch between 4 direction views
+- [x] Body part tags copy to other views
+- [x] Auto-flip generates reasonable results
+- [x] Can manually adjust shapes per view
+- [x] 4-up preview shows all directions
+- [x] Animations generate for all directions
 
 ---
 
-### Feature 2.3: Export System
+### Feature 2.3: Export System ✅ COMPLETE
 
 **Description:** Output game-ready assets in multiple formats (sprite sheets, PNGs, Godot scenes).
 
 **Dependencies:** Feature 2.1 (Animation Templates), Feature 2.2 (Multi-Direction)
 
 **Implementation Tasks:**
-- [ ] Create export settings panel
-- [ ] Implement sprite sheet generator (grid layout PNG)
-- [ ] Implement individual frame exporter (named PNGs)
-- [ ] Implement Godot AnimatedSprite2D scene generator (.tscn)
-- [ ] Implement JSON project save/load
-- [ ] Add background options (transparent, solid color)
-- [ ] Add scale options (1x, 2x, 4x)
-- [ ] Add naming convention settings
-- [ ] Create export progress dialog
-- [ ] Implement batch export (all directions, all animations)
-- [ ] Add export to project assets folder option
+- [x] Create export settings panel
+- [x] Implement sprite sheet generator (grid layout PNG)
+- [x] Implement individual frame exporter (named PNGs)
+- [x] Implement Godot AnimatedSprite2D scene generator (.tscn)
+- [x] Implement JSON project save/load
+- [x] Add background options (transparent, solid color)
+- [x] Add scale options (1x, 2x, 4x, 8x)
+- [x] Add naming convention settings
+- [x] Create export progress dialog
+- [x] Implement batch export (all directions, all animations)
+- [x] Add export to project assets folder option
 
 **Export Formats:**
 
@@ -723,19 +722,29 @@ animation = "idle_south"
 }
 ```
 
-**Files to Create/Modify:**
+**Files Created/Modified:**
 ```
 addons/character_assembler/
 ├── scenes/
-│   ├── main_panel.tscn (modify - add export panel)
-│   └── export_dialog.tscn
+│   └── main_panel.tscn              ✅ (modified - added ExportManager panel)
 ├── scripts/
-│   ├── export_manager.gd
-│   ├── sprite_sheet_generator.gd
-│   ├── frame_exporter.gd
-│   ├── godot_scene_generator.gd
-│   └── project_serializer.gd
+│   ├── export_manager.gd            ✅ (main export UI panel with options)
+│   ├── export_dialog.gd             ✅ (progress dialog with status feedback)
+│   ├── frame_renderer.gd            ✅ (core rendering with scale/background)
+│   ├── sprite_sheet_generator.gd    ✅ (grid layout PNG generation)
+│   ├── frame_exporter.gd            ✅ (individual frame PNG export)
+│   ├── godot_scene_generator.gd     ✅ (AnimatedSprite2D .tscn/.tres export)
+│   └── main_panel.gd                ✅ (modified - export integration)
 ```
+
+**Implementation Notes:**
+- FrameRenderer handles single frame rendering with scale (1x-8x) and background options
+- SpriteSheetGenerator creates grid-layout PNGs with each animation on its own row
+- FrameExporter saves individual PNGs with naming convention: {char}_{dir}_{anim}_{frame:03d}.png
+- GodotSceneGenerator creates SpriteFrames resource and AnimatedSprite2D scene
+- ExportManager UI provides format checkboxes, scale dropdown, background options
+- ExportDialog shows progress with rich text status and cancel support
+- Supports batch export for all directions and animations
 
 **UI Layout:**
 ```
@@ -781,24 +790,24 @@ addons/character_assembler/
 ```
 
 **Success Criteria:**
-- [ ] Can export sprite sheet PNG
-- [ ] Can export individual frame PNGs
-- [ ] Can export Godot AnimatedSprite2D scene
-- [ ] Can save/load project JSON
-- [ ] Scale options work correctly
-- [ ] Batch export for all directions works
-- [ ] Exported assets work in Godot without modification
+- [x] Can export sprite sheet PNG
+- [x] Can export individual frame PNGs
+- [x] Can export Godot AnimatedSprite2D scene
+- [x] Can save/load project JSON
+- [x] Scale options work correctly
+- [x] Batch export for all directions works
+- [x] Exported assets work in Godot without modification
 
 ---
 
-### Phase 2 Complete Checklist
+### Phase 2 Complete Checklist ✅ ALL COMPLETE
 
-- [ ] Animation templates generate correct frame sequences
-- [ ] Animation preview plays smoothly at correct FPS
-- [ ] All 4 directions can be created/generated
-- [ ] Export produces usable sprite sheets
-- [ ] Godot scene imports and works correctly
-- [ ] Project can be saved and reloaded
+- [x] Animation templates generate correct frame sequences
+- [x] Animation preview plays smoothly at correct FPS
+- [x] All 4 directions can be created/generated
+- [x] Export produces usable sprite sheets
+- [x] Godot scene imports and works correctly
+- [x] Project can be saved and reloaded
 
 **Phase 2 Exit Test:**
 Create character with 6 animations, 4 directions. Export to Godot scene. Import into Blood & Gold project. Character animates correctly in all directions.

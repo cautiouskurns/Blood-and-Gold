@@ -1,0 +1,140 @@
+{
+	"dialogue_id": "lyra_camp_1",
+	"version": 1,
+	"start_node": "start_1",
+	"nodes": {
+		"start_1": {
+			"type": "start",
+			"next": [{"target": "narrator_intro"}]
+		},
+		"narrator_intro": {
+			"type": "speaker",
+			"speaker": "Narrator",
+			"text": "As the company makes camp for the night, Lyra approaches you by the fire. Her expression is troubled.",
+			"next": [{"target": "lyra_opening"}]
+		},
+		"lyra_opening": {
+			"type": "speaker",
+			"speaker": "Lyra",
+			"text": "Commander, a word? I've been thinking about our recent work... these contracts from Ironmark.",
+			"portrait": "lyra",
+			"next": [{"target": "lyra_concern"}]
+		},
+		"lyra_concern": {
+			"type": "speaker",
+			"speaker": "Lyra",
+			"text": "Those bandits in the ruins - some of them were just farmers and tradesmen. Driven to desperation. Ironmark's taxes have been crushing the common folk.",
+			"portrait": "lyra",
+			"next": [{"target": "lyra_accusation"}]
+		},
+		"lyra_accusation": {
+			"type": "speaker",
+			"speaker": "Lyra",
+			"text": "We're being used as his enforcers. Clearing out anyone who resists his rule. Is this really the kind of work our company should be taking?",
+			"portrait": "lyra",
+			"next": [
+				{"target": "choice_defend_ironmark"},
+				{"target": "choice_agree_lyra"},
+				{"target": "choice_neutral"}
+			]
+		},
+		"choice_defend_ironmark": {
+			"type": "choice",
+			"text": "[Defend Ironmark] The law is the law. These men chose banditry.",
+			"next": [{"target": "lyra_response_defend"}]
+		},
+		"choice_agree_lyra": {
+			"type": "choice",
+			"text": "[Agree] You're right. I'm having doubts about Ironmark too.",
+			"next": [{"target": "lyra_response_agree"}]
+		},
+		"choice_neutral": {
+			"type": "choice",
+			"text": "[Neutral] We're mercenaries. We go where the gold is.",
+			"next": [{"target": "lyra_response_neutral"}]
+		},
+		"lyra_response_defend": {
+			"type": "speaker",
+			"speaker": "Lyra",
+			"text": "The law? Ironmark IS the law in these parts. He writes it to serve himself. I expected more from you, Commander.",
+			"portrait": "lyra",
+			"next": [{"target": "thorne_interject_defend"}]
+		},
+		"thorne_interject_defend": {
+			"type": "speaker",
+			"speaker": "Thorne",
+			"text": "The Commander's right, Lyra. Order must be maintained. Without it, chaos consumes everything. I've seen it before.",
+			"portrait": "thorne",
+			"next": [{"target": "loyalty_defend"}]
+		},
+		"loyalty_defend": {
+			"type": "loyalty_change",
+			"companion": "lyra",
+			"amount": -5,
+			"next": [{"target": "loyalty_defend_thorne"}]
+		},
+		"loyalty_defend_thorne": {
+			"type": "loyalty_change",
+			"companion": "thorne",
+			"amount": 5,
+			"next": [{"target": "narrator_closing"}]
+		},
+		"lyra_response_agree": {
+			"type": "speaker",
+			"speaker": "Lyra",
+			"text": "I'm glad you see it too. The next contract... we should be careful about what we're really being asked to do.",
+			"portrait": "lyra",
+			"next": [{"target": "thorne_interject_agree"}]
+		},
+		"thorne_interject_agree": {
+			"type": "speaker",
+			"speaker": "Thorne",
+			"text": "Commander, with respect - Ironmark has been a reliable employer. Don't let sentiment cloud our judgment. War isn't pretty.",
+			"portrait": "thorne",
+			"next": [{"target": "loyalty_agree"}]
+		},
+		"loyalty_agree": {
+			"type": "loyalty_change",
+			"companion": "lyra",
+			"amount": 5,
+			"next": [{"target": "loyalty_agree_thorne"}]
+		},
+		"loyalty_agree_thorne": {
+			"type": "loyalty_change",
+			"companion": "thorne",
+			"amount": -5,
+			"next": [{"target": "narrator_closing"}]
+		},
+		"lyra_response_neutral": {
+			"type": "speaker",
+			"speaker": "Lyra",
+			"text": "Mercenaries... is that all we are? I thought this company stood for something more. Maybe I was wrong.",
+			"portrait": "lyra",
+			"next": [{"target": "thorne_interject_neutral"}]
+		},
+		"thorne_interject_neutral": {
+			"type": "speaker",
+			"speaker": "Thorne",
+			"text": "The Commander keeps us fed and paid. That's what matters in uncertain times.",
+			"portrait": "thorne",
+			"next": [{"target": "narrator_closing"}]
+		},
+		"narrator_closing": {
+			"type": "speaker",
+			"speaker": "Narrator",
+			"text": "The tension lingers in the air as the fire crackles. Your next contract may force you to make a difficult choice.",
+			"next": [{"target": "flag_set_scene_complete"}]
+		},
+		"flag_set_scene_complete": {
+			"type": "flag_set",
+			"flag_name": "lyra_camp_1_complete",
+			"flag_value": "true",
+			"next": [{"target": "end_1"}]
+		},
+		"end_1": {
+			"type": "end",
+			"end_type": "normal",
+			"next": []
+		}
+	}
+}

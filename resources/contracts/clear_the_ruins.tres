@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="Contract" load_steps=2 format=3 uid="uid://clear_the_ruins"]
+
+[ext_resource type="Script" path="res://scripts/resources/contract.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = "clear_the_ruins"
+display_name = "Clear the Ruins"
+brief_description = "Clear the bandit infestation from the old watchtower ruins."
+full_briefing = "Bandits have fortified the old watchtower ruins north of town. Our scouts report archers positioned on the tower with height advantage, and their leader rallies them in battle.
+
+Intelligence suggests 10 enemies total: 6 melee fighters, 3 archers on the tower, and their leader. The leader uses a rallying cry that strengthens nearby bandits - prioritize eliminating him early.
+
+Rumors persist of a hidden cache somewhere in the ruins. Find it for a bonus reward."
+difficulty = 1
+gold_reward = 500
+gold_reward_max = 0
+primary_objective = "Eliminate all bandits"
+secondary_objective = "Find the hidden cache (+200g)"
+map_scene = "res://scenes/contracts/ClearTheRuins.tscn"
+enemy_description = "Bandits (6 Melee, 3 Archers, 1 Leader)"
+enemy_count = 10
+contract_type = 1
+has_pre_combat_dialogue = false
+pre_combat_scene = ""
+triggers_camp_scene = true
+camp_scene_id = "lyra_camp_1"

@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="Contract" load_steps=2 format=3 uid="uid://border_dispute"]
+
+[ext_resource type="Script" path="res://scripts/resources/contract.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = "border_dispute"
+display_name = "The Border Dispute"
+brief_description = "Ironmark border patrol requests assistance with a sensitive matter involving refugees."
+full_briefing = "Commander Harwick of the Ironmark Border Guard has hired your company for a delicate task. Refugees from the eastern territories are attempting to cross into Ironmark lands without authorization.
+
+The Commander wants them 'removed' but refuses to dirty his own hands. Upon arrival, you discover these are not invaders - they're families fleeing some unknown threat. Women, children, the elderly.
+
+How you handle this situation will define what kind of company you lead."
+difficulty = 1
+gold_reward = 300
+gold_reward_max = 600
+primary_objective = "Resolve the refugee situation"
+secondary_objective = "Maintain company morale"
+map_scene = "res://scenes/contracts/BorderDispute.tscn"
+enemy_description = "Refugee Defenders (if combat chosen)"
+enemy_count = 4
+contract_type = 2
+has_pre_combat_dialogue = true
+pre_combat_scene = ""
+triggers_camp_scene = true
+camp_scene_id = "difficult_decisions"

@@ -19,93 +19,78 @@ static func apply_pose(
 	for shape in shapes:
 		transformed_shapes.append(shape.duplicate(true))
 
-	# Track which shapes have been processed
-	var processed_shapes: Dictionary = {}
-
-	# Start from root (Torso) and process hierarchically
-	_apply_rotation_recursive(
+	# Process each body part in hierarchy order (parents before children)
+	# When a part rotates, rotate its shapes AND all descendant shapes around its pivot
+	_apply_rotations_hierarchically(
 		"Torso",
-		0.0,
-		Vector2.ZERO,
-		{},
+		{},  # processed_parts
 		transformed_shapes,
 		body_parts,
-		pose,
-		processed_shapes,
-		canvas_size
+		pose
 	)
 
 	return transformed_shapes
 
 
-## Recursively apply rotations through the body part hierarchy.
-static func _apply_rotation_recursive(
+## Process body parts hierarchically, applying rotations from parent to children.
+## When a part has rotation, ALL its descendants also rotate around that part's pivot.
+static func _apply_rotations_hierarchically(
 	part_name: String,
-	parent_world_rotation: float,
-	parent_pivot_offset: Vector2,
 	processed_parts: Dictionary,
 	shapes: Array,
 	body_parts: Dictionary,
-	pose: Pose,
-	processed_shapes: Dictionary,
-	canvas_size: int
+	pose: Pose
 ) -> void:
 	if part_name in processed_parts:
 		return
 	processed_parts[part_name] = true
 
-	# Skip if this body part doesn't exist
-	if part_name not in body_parts:
-		# Still process children
-		var children := BodyPart.get_children(part_name)
-		for child_name in children:
-			_apply_rotation_recursive(
-				child_name,
-				parent_world_rotation,
-				parent_pivot_offset,
-				processed_parts,
-				shapes,
-				body_parts,
-				pose,
-				processed_shapes,
-				canvas_size
-			)
-		return
-
-	var body_part: BodyPart = body_parts[part_name]
+	# Get rotation for this part
 	var local_rotation: float = pose.get_rotation(part_name)
-	var world_rotation: float = parent_world_rotation + local_rotation
 
-	# Get pivot point for this body part
-	var pivot: Vector2 = body_part.pivot
+	# If this part has rotation and exists in body_parts, rotate it and all descendants
+	if abs(local_rotation) > 0.01 and part_name in body_parts:
+		var body_part: BodyPart = body_parts[part_name]
+		var pivot: Vector2 = body_part.pivot
 
-	# Rotate all shapes belonging to this body part around the pivot
-	for shape_idx in body_part.shape_indices:
-		if shape_idx < 0 or shape_idx >= shapes.size():
-			continue
-		if shape_idx in processed_shapes:
-			continue
+		# Get all shape indices for this part AND all descendants
+		var all_shape_indices: Array[int] = []
+		_collect_descendant_shapes(part_name, body_parts, all_shape_indices)
 
-		processed_shapes[shape_idx] = true
-		var shape = shapes[shape_idx]
-
-		# Apply rotation around pivot
-		_rotate_shape_around_pivot(shape, pivot, world_rotation)
+		# Rotate all these shapes around THIS part's pivot
+		for shape_idx in all_shape_indices:
+			if shape_idx >= 0 and shape_idx < shapes.size():
+				_rotate_shape_around_pivot(shapes[shape_idx], pivot, local_rotation)
 
 	# Process children
 	var children := BodyPart.get_children(part_name)
 	for child_name in children:
-		_apply_rotation_recursive(
+		_apply_rotations_hierarchically(
 			child_name,
-			world_rotation,
-			pivot,
 			processed_parts,
 			shapes,
 			body_parts,
-			pose,
-			processed_shapes,
-			canvas_size
+			pose
 		)
+
+
+## Collect all shape indices belonging to a body part and all its descendants.
+static func _collect_descendant_shapes(
+	part_name: String,
+	body_parts: Dictionary,
+	result: Array[int]
+) -> void:
+	# Add this part's shapes
+	if part_name in body_parts:
+		var body_part: BodyPart = body_parts[part_name]
+		for idx in body_part.shape_indices:
+			if idx not in result:
+				result.append(idx)
+
+	# Recursively add children's shapes
+	var children := BodyPart.get_children(part_name)
+	for child_name in children:
+		_collect_descendant_shapes(child_name, body_parts, result)
 
 
 ## Rotate a shape around a pivot point.
@@ -173,7 +158,7 @@ static func _get_rotated_corners(pos: Vector2, size: Vector2, rotation_degrees: 
 	var rotation_rad := deg_to_rad(rotation_degrees)
 
 	var corners: Array[Vector2] = []
-	var offsets := [
+	var offsets: Array[Vector2] = [
 		Vector2(-half_size.x, -half_size.y),
 		Vector2(half_size.x, -half_size.y),
 		Vector2(half_size.x, half_size.y),
@@ -181,7 +166,7 @@ static func _get_rotated_corners(pos: Vector2, size: Vector2, rotation_degrees: 
 	]
 
 	for offset in offsets:
-		var rotated := offset.rotated(rotation_rad)
+		var rotated: Vector2 = offset.rotated(rotation_rad)
 		corners.append(center + rotated)
 
 	return corners

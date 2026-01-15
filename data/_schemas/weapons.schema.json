@@ -1,0 +1,62 @@
+{
+  "name": "weapons",
+  "display_name": "Weapons",
+  "category": "items",
+  "columns": [
+    {
+      "name": "id",
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    {
+      "name": "name",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "damage",
+      "type": "string",
+      "required": true,
+      "default": "1d4"
+    },
+    {
+      "name": "damage_type",
+      "type": "enum",
+      "options": ["slashing", "piercing", "bludgeoning", "fire", "cold", "lightning"],
+      "default": "slashing"
+    },
+    {
+      "name": "value",
+      "type": "integer",
+      "min": 0,
+      "default": 0
+    },
+    {
+      "name": "weight",
+      "type": "float",
+      "min": 0,
+      "default": 1.0
+    },
+    {
+      "name": "rarity",
+      "type": "enum",
+      "options": ["common", "uncommon", "rare", "legendary"],
+      "default": "common"
+    },
+    {
+      "name": "two_handed",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "name": "description",
+      "type": "string",
+      "default": ""
+    }
+  ],
+  "display": {
+    "grid_columns": ["id", "name", "damage", "damage_type", "value", "rarity"],
+    "sort_default": "name"
+  }
+}

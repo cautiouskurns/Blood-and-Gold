@@ -1,0 +1,167 @@
+[gd_scene load_steps=9 format=3 uid="uid://clear_the_ruins_scene"]
+
+[ext_resource type="Script" path="res://scripts/contracts/clear_the_ruins.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://c1combatgrid" path="res://scenes/combat/CombatGrid.tscn" id="2_combat_grid"]
+[ext_resource type="PackedScene" uid="uid://turn_order_panel" path="res://scenes/UI/TurnOrderPanel.tscn" id="3_turn_order"]
+[ext_resource type="PackedScene" uid="uid://ability_bar_scene" path="res://scenes/UI/AbilityBar.tscn" id="4_ability_bar"]
+[ext_resource type="PackedScene" uid="uid://selection_panel_scene" path="res://scenes/UI/SelectionPanel.tscn" id="5_selection_panel"]
+[ext_resource type="PackedScene" uid="uid://combat_log_scene" path="res://scenes/UI/CombatLog.tscn" id="6_combat_log"]
+[ext_resource type="PackedScene" uid="uid://order_panel_scene" path="res://scenes/UI/OrderPanel.tscn" id="7_order_panel"]
+
+[node name="ClearTheRuins" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+z_index = -100
+custom_minimum_size = Vector2(1920, 1080)
+offset_right = 1920.0
+offset_bottom = 1080.0
+mouse_filter = 2
+color = Color(0.0392157, 0.0509804, 0.0705882, 1)
+
+[node name="CombatGrid" parent="." instance=ExtResource("2_combat_grid")]
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="TurnOrderPanel" parent="UILayer" instance=ExtResource("3_turn_order")]
+layout_mode = 1
+offset_top = 10.0
+offset_bottom = 70.0
+
+[node name="AbilityBar" parent="UILayer" instance=ExtResource("4_ability_bar")]
+layout_mode = 1
+
+[node name="SelectionPanel" parent="UILayer" instance=ExtResource("5_selection_panel")]
+layout_mode = 1
+
+[node name="CombatLog" parent="UILayer" instance=ExtResource("6_combat_log")]
+layout_mode = 1
+
+[node name="OrderPanel" parent="UILayer" instance=ExtResource("7_order_panel")]
+layout_mode = 1
+
+[node name="BriefingLayer" type="CanvasLayer" parent="."]
+layer = 50
+
+[node name="DimBackground" type="ColorRect" parent="BriefingLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.6)
+
+[node name="BriefingPanel" type="PanelContainer" parent="BriefingLayer"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -350.0
+offset_top = -280.0
+offset_right = 350.0
+offset_bottom = 280.0
+
+[node name="MarginContainer" type="MarginContainer" parent="BriefingLayer/BriefingPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 30
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 30
+
+[node name="VBoxContainer" type="VBoxContainer" parent="BriefingLayer/BriefingPanel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="TitleLabel" type="Label" parent="BriefingLayer/BriefingPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "CONTRACT: CLEAR THE RUINS"
+horizontal_alignment = 1
+
+[node name="DifficultyLabel" type="Label" parent="BriefingLayer/BriefingPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.956863, 0.764706, 0.0705882, 1)
+theme_override_font_sizes/font_size = 16
+text = "Difficulty: Medium (★★☆)"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="BriefingLayer/BriefingPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="IntelHeader" type="Label" parent="BriefingLayer/BriefingPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 14
+text = "TACTICAL INTEL:"
+
+[node name="BriefingText" type="RichTextLabel" parent="BriefingLayer/BriefingPanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+text = "Bandits have fortified the old watchtower ruins north of town. Our scouts report archers positioned on the tower with height advantage.
+
+Their leader rallies them in battle - prioritize taking him out early. Expect 10 enemies: melee fighters, archers, and their leader.
+
+Rumors suggest a hidden cache somewhere in the ruins..."
+fit_content = true
+
+[node name="ObjectivesContainer" type="VBoxContainer" parent="BriefingLayer/BriefingPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ObjectivesLabel" type="Label" parent="BriefingLayer/BriefingPanel/MarginContainer/VBoxContainer/ObjectivesContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "OBJECTIVES:"
+
+[node name="PrimaryObjective" type="Label" parent="BriefingLayer/BriefingPanel/MarginContainer/VBoxContainer/ObjectivesContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.956863, 0.764706, 0.0705882, 1)
+text = "  [!] PRIMARY: Eliminate all bandits"
+
+[node name="SecondaryObjective" type="Label" parent="BriefingLayer/BriefingPanel/MarginContainer/VBoxContainer/ObjectivesContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+text = "  [?] OPTIONAL: Find the hidden cache"
+
+[node name="EnemyInfoContainer" type="HBoxContainer" parent="BriefingLayer/BriefingPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 10
+
+[node name="EnemyLabel" type="Label" parent="BriefingLayer/BriefingPanel/MarginContainer/VBoxContainer/EnemyInfoContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "EXPECTED ENEMIES:"
+
+[node name="EnemyCount" type="Label" parent="BriefingLayer/BriefingPanel/MarginContainer/VBoxContainer/EnemyInfoContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "6 Melee, 3 Archers, 1 Leader"
+
+[node name="RewardContainer" type="HBoxContainer" parent="BriefingLayer/BriefingPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="RewardLabel" type="Label" parent="BriefingLayer/BriefingPanel/MarginContainer/VBoxContainer/RewardContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "REWARD: "
+
+[node name="GoldAmount" type="Label" parent="BriefingLayer/BriefingPanel/MarginContainer/VBoxContainer/RewardContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.956863, 0.764706, 0.0705882, 1)
+theme_override_font_sizes/font_size = 18
+text = "500 gold"
+
+[node name="BonusNote" type="Label" parent="BriefingLayer/BriefingPanel/MarginContainer/VBoxContainer/RewardContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_font_sizes/font_size = 14
+text = " (+200g if cache found)"
+
+[node name="AcceptButton" type="Button" parent="BriefingLayer/BriefingPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 18
+text = "BEGIN BATTLE"

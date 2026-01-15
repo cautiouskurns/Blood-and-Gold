@@ -15,7 +15,10 @@ script = ExtResource("1_script")
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 60.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 70.0
 grow_horizontal = 2
 
 [node name="BackButton" type="Button" parent="TopBar"]
@@ -30,33 +33,113 @@ text = "MERCHANT"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Spacer" type="Control" parent="TopBar"]
-custom_minimum_size = Vector2(120, 0)
+[node name="GoldDisplay" type="HBoxContainer" parent="TopBar"]
 layout_mode = 2
+
+[node name="GoldLabel" type="Label" parent="TopBar/GoldDisplay"]
+layout_mode = 2
+text = "GOLD:"
+vertical_alignment = 1
+
+[node name="GoldAmount" type="Label" parent="TopBar/GoldDisplay"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "500"
+horizontal_alignment = 2
+vertical_alignment = 1
 
 [node name="ContentPanel" type="Panel" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 70.0
+offset_left = 20.0
+offset_top = 80.0
+offset_right = -20.0
 offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="PlaceholderLabel" type="Label" parent="ContentPanel"]
+[node name="VBoxContainer" type="VBoxContainer" parent="ContentPanel"]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -30.0
-offset_right = 200.0
-offset_bottom = 30.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "Equipment shop coming in future task"
+theme_override_constants/separation = 15
+
+[node name="PartySelector" type="HBoxContainer" parent="ContentPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CategoryTabs" type="HBoxContainer" parent="ContentPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ItemsContainer" type="GridContainer" parent="ContentPanel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 15
+columns = 2
+
+[node name="ComparisonPanel" type="PanelContainer" parent="ContentPanel/VBoxContainer"]
+visible = false
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ContentPanel/VBoxContainer/ComparisonPanel"]
+layout_mode = 2
+theme_override_constants/separation = 30
+
+[node name="CurrentEquipment" type="VBoxContainer" parent="ContentPanel/VBoxContainer/ComparisonPanel/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="CurrentLabel" type="Label" parent="ContentPanel/VBoxContainer/ComparisonPanel/HBoxContainer/CurrentEquipment"]
+layout_mode = 2
+text = "CURRENT"
 horizontal_alignment = 1
-vertical_alignment = 1
+
+[node name="CurrentName" type="Label" parent="ContentPanel/VBoxContainer/ComparisonPanel/HBoxContainer/CurrentEquipment"]
+layout_mode = 2
+text = "(None)"
+horizontal_alignment = 1
+
+[node name="CurrentStats" type="VBoxContainer" parent="ContentPanel/VBoxContainer/ComparisonPanel/HBoxContainer/CurrentEquipment"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="VSeparator" type="VSeparator" parent="ContentPanel/VBoxContainer/ComparisonPanel/HBoxContainer"]
+layout_mode = 2
+
+[node name="NewEquipment" type="VBoxContainer" parent="ContentPanel/VBoxContainer/ComparisonPanel/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="NewLabel" type="Label" parent="ContentPanel/VBoxContainer/ComparisonPanel/HBoxContainer/NewEquipment"]
+layout_mode = 2
+text = "NEW"
+horizontal_alignment = 1
+
+[node name="NewName" type="Label" parent="ContentPanel/VBoxContainer/ComparisonPanel/HBoxContainer/NewEquipment"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+
+[node name="NewStats" type="VBoxContainer" parent="ContentPanel/VBoxContainer/ComparisonPanel/HBoxContainer/NewEquipment"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="PurchaseButton" type="Button" parent="ContentPanel/VBoxContainer/ComparisonPanel/HBoxContainer/NewEquipment"]
+custom_minimum_size = Vector2(200, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "PURCHASE"

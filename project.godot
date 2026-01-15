@@ -20,6 +20,8 @@ config/icon="res://icon.svg"
 GameState="*res://scripts/autoload/game_state.gd"
 CombatManager="*res://scripts/autoload/combat_manager.gd"
 StatusEffectManager="*res://scripts/autoload/status_effect_manager.gd"
+LoyaltyManager="*res://scripts/autoload/loyalty_manager.gd"
+SkillCheckManager="*res://scripts/autoload/skill_check_manager.gd"
 
 [display]
 
@@ -30,4 +32,4 @@ window/stretch/mode="canvas_items"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/character_assembler/plugin.cfg", "res://addons/dialogue_editor/plugin.cfg")
+enabled=PackedStringArray("res://addons/character_assembler/plugin.cfg", "res://addons/data_table_editor/plugin.cfg", "res://addons/dialogue_editor/plugin.cfg")

@@ -14,9 +14,11 @@ signal movement_finished(unit: Unit)
 signal attack_initiated(attacker: Unit, target: Unit)
 signal attack_received(attacker: Unit, damage: int)
 signal order_changed(unit: Unit, new_order: int)  # Task 2.8: Soldier order changed
+signal wagon_damaged(current_hp: int, max_hp: int)  # Task 3.3: Wagon health changed
+signal wagon_destroyed()  # Task 3.3: Wagon was destroyed
 
 # ===== ENUMS =====
-enum UnitType { PLAYER, THORNE, LYRA, MATTHIAS, ENEMY, INFANTRY, ARCHER, BANDIT_ARCHER, BANDIT_LEADER, IRONMARK_SOLDIER, IRONMARK_KNIGHT }
+enum UnitType { PLAYER, THORNE, LYRA, MATTHIAS, ENEMY, INFANTRY, ARCHER, BANDIT_ARCHER, BANDIT_LEADER, IRONMARK_SOLDIER, IRONMARK_KNIGHT, WAGON }
 
 # ===== CONSTANTS =====
 const SPRITE_SIZE: int = 56
@@ -69,6 +71,7 @@ const UNIT_COLORS: Dictionary = {
 	UnitType.BANDIT_LEADER: Color("#c0392b"),   # Crimson Red (Task 2.15)
 	UnitType.IRONMARK_SOLDIER: Color("#2980b9"),  # Royal Blue (Task 2.15)
 	UnitType.IRONMARK_KNIGHT: Color("#2980b9"),   # Royal Blue (Task 2.15)
+	UnitType.WAGON: Color("#8b4513"),     # Brown (Task 3.3: Merchant wagon)
 }
 
 const UNIT_BORDER_COLORS: Dictionary = {
@@ -83,6 +86,7 @@ const UNIT_BORDER_COLORS: Dictionary = {
 	UnitType.BANDIT_LEADER: Color("#922b21"),     # Dark Red (Task 2.15)
 	UnitType.IRONMARK_SOLDIER: Color("#1f618d"),  # Dark Blue (Task 2.15)
 	UnitType.IRONMARK_KNIGHT: Color("#1a5276"),   # Deep Blue (Task 2.15)
+	UnitType.WAGON: Color("#5d3619"),             # Dark Brown (Task 3.3)
 }
 
 const UNIT_LETTERS: Dictionary = {
@@ -97,6 +101,7 @@ const UNIT_LETTERS: Dictionary = {
 	UnitType.BANDIT_LEADER: "C",     # Task 2.15: C for Captain (avoid conflict with Lyra)
 	UnitType.IRONMARK_SOLDIER: "S",  # Task 2.15: S for Soldier
 	UnitType.IRONMARK_KNIGHT: "K",   # Task 2.15: K for Knight
+	UnitType.WAGON: "W",             # Task 3.3: W for Wagon
 }
 
 # ===== EXPORTED PROPERTIES =====
@@ -106,6 +111,7 @@ const UNIT_LETTERS: Dictionary = {
 @export var is_soldier: bool = false  # Soldiers dying doesn't trigger defeat (Task 1.9)
 @export var is_bandit: bool = false   # Task 2.15: For Rally Bandits targeting
 @export var is_ironmark: bool = false # Task 2.15: For Shield Wall calculation
+@export var is_objective: bool = false  # Task 3.3: Objective units (wagon) cannot move/attack
 @export var max_hp: int = 30
 @export var movement_range: int = 5  # Tiles per turn (Task 1.5)
 
@@ -431,6 +437,24 @@ func _configure_stats_for_type() -> void:
 			uses_finesse = false
 			skill_rank = 2
 
+		UnitType.WAGON:
+			# Task 3.3: Merchant wagon objective unit
+			# Role: Protect objective - cannot move or attack
+			# Stats: HP 50, no attacks, no movement
+			strength = 1
+			dexterity = 1
+			constitution = 20  # Sturdy wagon
+			intelligence = 1
+			wisdom = 1
+			charisma = 1
+			max_hp = 50
+			armor_bonus = 2  # Some protection from wood
+			movement_range = 0  # Cannot move
+			weapon_damage_die = 0  # Cannot attack
+			uses_finesse = false
+			skill_rank = 0
+			is_objective = true  # Special objective unit
+
 # ===== ABILITY CONFIGURATION (Task 2.2) =====
 func _init_abilities() -> void:
 	## Initialize abilities based on unit type (from GDD)
@@ -524,6 +548,15 @@ func _init_abilities() -> void:
 				{"id": "charge", "name": "Charge", "icon": ""},
 				{"id": "intimidate", "name": "Intimidate", "icon": ""},
 				{"id": "none1", "name": "", "icon": ""},
+			]
+
+		UnitType.WAGON:
+			# Task 3.3: Wagon cannot attack - no abilities
+			_abilities = [
+				{"id": "none1", "name": "", "icon": ""},
+				{"id": "none2", "name": "", "icon": ""},
+				{"id": "none3", "name": "", "icon": ""},
+				{"id": "none4", "name": "", "icon": ""},
 			]
 
 		_:
@@ -1150,7 +1183,14 @@ func take_damage(amount: int) -> void:
 	_update_hp_bar()
 	unit_damaged.emit(self, amount)
 
+	# Task 3.3: Emit wagon-specific signals
+	if is_objective:
+		wagon_damaged.emit(current_hp, max_hp)
+
 	if current_hp <= 0:
+		# Task 3.3: Emit wagon destroyed signal before death
+		if is_objective:
+			wagon_destroyed.emit()
 		_die()
 
 func heal(amount: int) -> void:
@@ -1222,6 +1262,20 @@ func is_friendly() -> bool:
 	## Check if unit is friendly (not enemy)
 	return not is_enemy
 
+func can_move() -> bool:
+	## Task 3.3: Check if this unit is capable of moving
+	## Objective units (wagon) cannot move
+	if is_objective:
+		return false
+	return movement_range > 0
+
+func can_perform_attacks() -> bool:
+	## Task 3.3: Check if this unit is capable of attacking
+	## Objective units (wagon) cannot attack
+	if is_objective:
+		return false
+	return true
+
 # ===== MOVEMENT (Task 1.5) =====
 func is_moving() -> bool:
 	## Check if unit is currently animating movement
@@ -1274,6 +1328,10 @@ func can_attack(target: Unit) -> bool:
 		return false
 	if target.is_friendly() == is_friendly():
 		return false  # No friendly fire
+
+	# Task 3.3: Objective units (wagon) cannot attack
+	if not can_perform_attacks():
+		return false
 
 	# Task 2.7: Use ranged attack check for range and LoS
 	if not AttackResolver.can_attack_at_range(self, target):

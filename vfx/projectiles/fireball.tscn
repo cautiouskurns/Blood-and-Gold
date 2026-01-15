@@ -1,0 +1,56 @@
+[gd_scene load_steps=5 format=3 uid="uid://dnfcw2ar2b5g0"]
+
+[ext_resource type="Script" uid="uid://byljik1gosu00" path="res://vfx/projectiles/fireball.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://vfx/impacts/fire_explosion.tscn" id="2_skexy"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_trail"]
+particle_flag_disable_z = true
+direction = Vector3(-1, 0, 0)
+spread = 25.0
+initial_velocity_min = 80.0
+initial_velocity_max = 120.0
+gravity = Vector3(0, 0, 0)
+damping_min = 1.0
+damping_max = 2.0
+scale_min = 0.3
+scale_max = 0.8
+color = Color(1, 0.255, 0.212, 1)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hitbox"]
+radius = 12.0
+
+[node name="Fireball" type="Node2D" groups=["projectile"]]
+position = Vector2(118, 164)
+script = ExtResource("1_script")
+impact_effect = ExtResource("2_skexy")
+
+[node name="Visual" type="Node2D" parent="."]
+
+[node name="OuterGlow" type="Polygon2D" parent="Visual"]
+color = Color(1, 0.259, 0.129, 0.4)
+polygon = PackedVector2Array(-18, 0, -15.6, -9, -9, -15.6, 0, -18, 9, -15.6, 15.6, -9, 18, 0, 15.6, 9, 9, 15.6, 0, 18, -9, 15.6, -15.6, 9)
+
+[node name="MidGlow" type="Polygon2D" parent="Visual"]
+color = Color(1, 0.42, 0.21, 0.7)
+polygon = PackedVector2Array(-12, 0, -10.4, -6, -6, -10.4, 0, -12, 6, -10.4, 10.4, -6, 12, 0, 10.4, 6, 6, 10.4, 0, 12, -6, 10.4, -10.4, 6)
+
+[node name="Core" type="Polygon2D" parent="Visual"]
+color = Color(1, 0.863, 0, 1)
+polygon = PackedVector2Array(-6, 0, -5.2, -3, -3, -5.2, 0, -6, 3, -5.2, 5.2, -3, 6, 0, 5.2, 3, 3, 5.2, 0, 6, -3, 5.2, -5.2, 3)
+
+[node name="Trail" type="GPUParticles2D" parent="."]
+amount = 25
+lifetime = 0.4
+process_material = SubResource("ParticleProcessMaterial_trail")
+
+[node name="Glow" type="PointLight2D" parent="."]
+color = Color(1, 0.55, 0.26, 1)
+energy = 1.8
+texture_scale = 2.0
+
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+shape = SubResource("CircleShape2D_hitbox")

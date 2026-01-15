@@ -1,0 +1,191 @@
+[gd_scene load_steps=4 format=3 uid="uid://data_table_editor_main"]
+
+[ext_resource type="Script" path="res://addons/data_table_editor/scripts/main_panel.gd" id="1_main"]
+[ext_resource type="Script" path="res://addons/data_table_editor/scripts/table_sidebar.gd" id="2_sidebar"]
+[ext_resource type="Script" path="res://addons/data_table_editor/scripts/table_grid.gd" id="3_grid"]
+
+[node name="MainPanel" type="Control"]
+script = ExtResource("1_main")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="HSplit" type="HSplitContainer" parent="Margin"]
+layout_mode = 2
+size_flags_vertical = 3
+split_offset = 200
+
+[node name="LeftPanel" type="PanelContainer" parent="Margin/HSplit"]
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TableSidebar" type="VBoxContainer" parent="Margin/HSplit/LeftPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+script = ExtResource("2_sidebar")
+
+[node name="Title" type="Label" parent="Margin/HSplit/LeftPanel/TableSidebar"]
+layout_mode = 2
+text = "DATA TABLES"
+horizontal_alignment = 1
+
+[node name="Sep" type="HSeparator" parent="Margin/HSplit/LeftPanel/TableSidebar"]
+layout_mode = 2
+
+[node name="SearchEdit" type="LineEdit" parent="Margin/HSplit/LeftPanel/TableSidebar"]
+layout_mode = 2
+placeholder_text = "Search tables..."
+clear_button_enabled = true
+
+[node name="TableTree" type="Tree" parent="Margin/HSplit/LeftPanel/TableSidebar"]
+layout_mode = 2
+size_flags_vertical = 3
+hide_root = true
+allow_rmb_select = true
+
+[node name="Sep2" type="HSeparator" parent="Margin/HSplit/LeftPanel/TableSidebar"]
+layout_mode = 2
+
+[node name="ButtonBox" type="HBoxContainer" parent="Margin/HSplit/LeftPanel/TableSidebar"]
+layout_mode = 2
+
+[node name="NewTableBtn" type="Button" parent="Margin/HSplit/LeftPanel/TableSidebar/ButtonBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "+ New Table"
+tooltip_text = "Create a new data table"
+
+[node name="ManageSchemasBtn" type="Button" parent="Margin/HSplit/LeftPanel/TableSidebar/ButtonBox"]
+layout_mode = 2
+text = "Schemas"
+tooltip_text = "Manage table schemas"
+icon_alignment = 1
+
+[node name="RightPanel" type="VBoxContainer" parent="Margin/HSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Toolbar" type="HBoxContainer" parent="Margin/HSplit/RightPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="AddRowBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "+ Add Row"
+tooltip_text = "Add a new row to the table (Ctrl+N)"
+
+[node name="DuplicateBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Duplicate"
+tooltip_text = "Duplicate selected row(s) (Ctrl+D)"
+
+[node name="DeleteBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Delete"
+tooltip_text = "Delete selected row(s) (Delete)"
+
+[node name="Sep1" type="VSeparator" parent="Margin/HSplit/RightPanel/Toolbar"]
+layout_mode = 2
+
+[node name="MoveUpBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Up"
+tooltip_text = "Move row up (Ctrl+Up)"
+
+[node name="MoveDownBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Down"
+tooltip_text = "Move row down (Ctrl+Down)"
+
+[node name="Sep2" type="VSeparator" parent="Margin/HSplit/RightPanel/Toolbar"]
+layout_mode = 2
+
+[node name="RefreshBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Refresh"
+tooltip_text = "Reload table from disk (F5)"
+
+[node name="Spacer" type="Control" parent="Margin/HSplit/RightPanel/Toolbar"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Sep3" type="VSeparator" parent="Margin/HSplit/RightPanel/Toolbar"]
+layout_mode = 2
+
+[node name="SaveBtn" type="Button" parent="Margin/HSplit/RightPanel/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Save"
+tooltip_text = "Save changes to file (Ctrl+S)"
+
+[node name="TableNameLabel" type="Label" parent="Margin/HSplit/RightPanel"]
+layout_mode = 2
+text = "No table selected"
+theme_override_font_sizes/font_size = 16
+
+[node name="DataGrid" type="Tree" parent="Margin/HSplit/RightPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("3_grid")
+
+[node name="StatusBar" type="HBoxContainer" parent="Margin/HSplit/RightPanel"]
+layout_mode = 2
+
+[node name="RowCountLabel" type="Label" parent="Margin/HSplit/RightPanel/StatusBar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0 rows"
+
+[node name="Sep1" type="VSeparator" parent="Margin/HSplit/RightPanel/StatusBar"]
+layout_mode = 2
+
+[node name="SelectionLabel" type="Label" parent="Margin/HSplit/RightPanel/StatusBar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0 selected"
+
+[node name="Sep2" type="VSeparator" parent="Margin/HSplit/RightPanel/StatusBar"]
+layout_mode = 2
+
+[node name="ModifiedLabel" type="Label" parent="Margin/HSplit/RightPanel/StatusBar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+
+[node name="Spacer" type="Control" parent="Margin/HSplit/RightPanel/StatusBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="ErrorLabel" type="Label" parent="Margin/HSplit/RightPanel/StatusBar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+theme_override_colors/font_color = Color(0.9, 0.3, 0.3, 1)

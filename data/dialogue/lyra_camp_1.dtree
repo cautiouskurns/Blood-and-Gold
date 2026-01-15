@@ -1,0 +1,215 @@
+{
+	"version": 1,
+	"metadata": {
+		"dialogue_id": "lyra_camp_1",
+		"display_name": "Lyra Camp Scene - After Clear the Ruins",
+		"description": "Post-contract camp scene where Lyra questions the player's decision to work for Ironmark. Foreshadows Contract 3 moral choice.",
+		"author": "Claude Code",
+		"created_date": "2026-01-14T12:00:00",
+		"modified_date": "2026-01-14T12:00:00"
+	},
+	"canvas": {
+		"scroll_offset_x": 0,
+		"scroll_offset_y": 0,
+		"zoom": 0.8
+	},
+	"nodes": [
+		{
+			"id": "start_1",
+			"type": "Start",
+			"position_x": 0,
+			"position_y": 200
+		},
+		{
+			"id": "narrator_intro",
+			"type": "Speaker",
+			"position_x": 200,
+			"position_y": 200,
+			"speaker": "Narrator",
+			"text": "As the company makes camp for the night, Lyra approaches you by the fire. Her expression is troubled.",
+			"portrait": ""
+		},
+		{
+			"id": "lyra_opening",
+			"type": "Speaker",
+			"position_x": 500,
+			"position_y": 200,
+			"speaker": "Lyra",
+			"text": "Commander, a word? I've been thinking about our recent work... these contracts from Ironmark.",
+			"portrait": "lyra"
+		},
+		{
+			"id": "lyra_concern",
+			"type": "Speaker",
+			"position_x": 800,
+			"position_y": 200,
+			"speaker": "Lyra",
+			"text": "Those bandits in the ruins - some of them were just farmers and tradesmen. Driven to desperation. Ironmark's taxes have been crushing the common folk.",
+			"portrait": "lyra"
+		},
+		{
+			"id": "lyra_accusation",
+			"type": "Speaker",
+			"position_x": 1100,
+			"position_y": 200,
+			"speaker": "Lyra",
+			"text": "We're being used as his enforcers. Clearing out anyone who resists his rule. Is this really the kind of work our company should be taking?",
+			"portrait": "lyra"
+		},
+		{
+			"id": "choice_defend_ironmark",
+			"type": "Choice",
+			"position_x": 1400,
+			"position_y": 100,
+			"text": "[Defend Ironmark] The law is the law. These men chose banditry."
+		},
+		{
+			"id": "choice_agree_lyra",
+			"type": "Choice",
+			"position_x": 1400,
+			"position_y": 200,
+			"text": "[Agree] You're right. I'm having doubts about Ironmark too."
+		},
+		{
+			"id": "choice_neutral",
+			"type": "Choice",
+			"position_x": 1400,
+			"position_y": 300,
+			"text": "[Neutral] We're mercenaries. We go where the gold is."
+		},
+		{
+			"id": "lyra_response_defend",
+			"type": "Speaker",
+			"position_x": 1700,
+			"position_y": 100,
+			"speaker": "Lyra",
+			"text": "The law? Ironmark IS the law in these parts. He writes it to serve himself. I expected more from you, Commander.",
+			"portrait": "lyra"
+		},
+		{
+			"id": "thorne_interject_defend",
+			"type": "Speaker",
+			"position_x": 2000,
+			"position_y": 100,
+			"speaker": "Thorne",
+			"text": "The Commander's right, Lyra. Order must be maintained. Without it, chaos consumes everything. I've seen it before.",
+			"portrait": "thorne"
+		},
+		{
+			"id": "lyra_response_agree",
+			"type": "Speaker",
+			"position_x": 1700,
+			"position_y": 200,
+			"speaker": "Lyra",
+			"text": "I'm glad you see it too. The next contract... we should be careful about what we're really being asked to do.",
+			"portrait": "lyra"
+		},
+		{
+			"id": "thorne_interject_agree",
+			"type": "Speaker",
+			"position_x": 2000,
+			"position_y": 200,
+			"speaker": "Thorne",
+			"text": "Commander, with respect - Ironmark has been a reliable employer. Don't let sentiment cloud our judgment. War isn't pretty.",
+			"portrait": "thorne"
+		},
+		{
+			"id": "lyra_response_neutral",
+			"type": "Speaker",
+			"position_x": 1700,
+			"position_y": 300,
+			"speaker": "Lyra",
+			"text": "Mercenaries... is that all we are? I thought this company stood for something more. Maybe I was wrong.",
+			"portrait": "lyra"
+		},
+		{
+			"id": "thorne_interject_neutral",
+			"type": "Speaker",
+			"position_x": 2000,
+			"position_y": 300,
+			"speaker": "Thorne",
+			"text": "The Commander keeps us fed and paid. That's what matters in uncertain times.",
+			"portrait": "thorne"
+		},
+		{
+			"id": "loyalty_defend",
+			"type": "LoyaltyChange",
+			"position_x": 2300,
+			"position_y": 100,
+			"companion": "lyra",
+			"amount": -5
+		},
+		{
+			"id": "loyalty_defend_thorne",
+			"type": "LoyaltyChange",
+			"position_x": 2450,
+			"position_y": 100,
+			"companion": "thorne",
+			"amount": 5
+		},
+		{
+			"id": "loyalty_agree",
+			"type": "LoyaltyChange",
+			"position_x": 2300,
+			"position_y": 200,
+			"companion": "lyra",
+			"amount": 5
+		},
+		{
+			"id": "loyalty_agree_thorne",
+			"type": "LoyaltyChange",
+			"position_x": 2450,
+			"position_y": 200,
+			"companion": "thorne",
+			"amount": -5
+		},
+		{
+			"id": "narrator_closing",
+			"type": "Speaker",
+			"position_x": 2700,
+			"position_y": 200,
+			"speaker": "Narrator",
+			"text": "The tension lingers in the air as the fire crackles. Your next contract may force you to make a difficult choice.",
+			"portrait": ""
+		},
+		{
+			"id": "flag_set_scene_complete",
+			"type": "FlagSet",
+			"position_x": 3000,
+			"position_y": 200,
+			"flag_name": "lyra_camp_1_complete",
+			"flag_value": "true"
+		},
+		{
+			"id": "end_1",
+			"type": "End",
+			"position_x": 3200,
+			"position_y": 200,
+			"end_type": 0
+		}
+	],
+	"connections": [
+		{"from_node": "start_1", "from_port": 0, "to_node": "narrator_intro", "to_port": 0},
+		{"from_node": "narrator_intro", "from_port": 0, "to_node": "lyra_opening", "to_port": 0},
+		{"from_node": "lyra_opening", "from_port": 0, "to_node": "lyra_concern", "to_port": 0},
+		{"from_node": "lyra_concern", "from_port": 0, "to_node": "lyra_accusation", "to_port": 0},
+		{"from_node": "lyra_accusation", "from_port": 0, "to_node": "choice_defend_ironmark", "to_port": 0},
+		{"from_node": "lyra_accusation", "from_port": 0, "to_node": "choice_agree_lyra", "to_port": 0},
+		{"from_node": "lyra_accusation", "from_port": 0, "to_node": "choice_neutral", "to_port": 0},
+		{"from_node": "choice_defend_ironmark", "from_port": 0, "to_node": "lyra_response_defend", "to_port": 0},
+		{"from_node": "lyra_response_defend", "from_port": 0, "to_node": "thorne_interject_defend", "to_port": 0},
+		{"from_node": "thorne_interject_defend", "from_port": 0, "to_node": "loyalty_defend", "to_port": 0},
+		{"from_node": "loyalty_defend", "from_port": 0, "to_node": "loyalty_defend_thorne", "to_port": 0},
+		{"from_node": "loyalty_defend_thorne", "from_port": 0, "to_node": "narrator_closing", "to_port": 0},
+		{"from_node": "choice_agree_lyra", "from_port": 0, "to_node": "lyra_response_agree", "to_port": 0},
+		{"from_node": "lyra_response_agree", "from_port": 0, "to_node": "thorne_interject_agree", "to_port": 0},
+		{"from_node": "thorne_interject_agree", "from_port": 0, "to_node": "loyalty_agree", "to_port": 0},
+		{"from_node": "loyalty_agree", "from_port": 0, "to_node": "loyalty_agree_thorne", "to_port": 0},
+		{"from_node": "loyalty_agree_thorne", "from_port": 0, "to_node": "narrator_closing", "to_port": 0},
+		{"from_node": "choice_neutral", "from_port": 0, "to_node": "lyra_response_neutral", "to_port": 0},
+		{"from_node": "lyra_response_neutral", "from_port": 0, "to_node": "thorne_interject_neutral", "to_port": 0},
+		{"from_node": "thorne_interject_neutral", "from_port": 0, "to_node": "narrator_closing", "to_port": 0},
+		{"from_node": "narrator_closing", "from_port": 0, "to_node": "flag_set_scene_complete", "to_port": 0},
+		{"from_node": "flag_set_scene_complete", "from_port": 0, "to_node": "end_1", "to_port": 0}
+	]
+}

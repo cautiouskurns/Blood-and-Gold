@@ -43,6 +43,7 @@ Create a tool spec using the tool-spec-generator skill
 Create roadmap using tool-roadmap-planner skill for editor 
 Implement [feature] from dialogue editor roadmap using tool-feature-implementer skill
 Implement [feature] from Procedural Character Assembler editor roadmap using tool-feature-implementer skill
+Implement [feature] from data table editor roadmap using tool-feature-implementer skill
 
 
 ## Notes
@@ -50,6 +51,7 @@ Implement [feature] from Procedural Character Assembler editor roadmap using too
 - For roadmap skill, ensure a lot more detial is provided for each feature. 
 - Create editors and tools for everything
 - Create map editor
+- Decide when to create data architecture
 
 
 ## Known Issues

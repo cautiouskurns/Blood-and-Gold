@@ -34,8 +34,11 @@ const DEFAULT_PROJECT_DIR := "res://data/characters/"
 @onready var shape_tools_panel = $Margin/VBox/OuterHSplit/LeftPanel/LeftScroll/ShapeToolsPanel
 @onready var layer_panel = $Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox/LayerPanel
 @onready var shape_properties_panel = $Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox/ShapePropertiesPanel
+@onready var direction_manager = $Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox/DirectionManager
 @onready var body_part_tagger = $Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox/BodyPartTagger
 @onready var pose_editor = $Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox/PoseEditor
+@onready var animation_generator = $Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox/AnimationGenerator
+@onready var export_manager = $Margin/VBox/OuterHSplit/InnerHSplit/RightPanel/RightScroll/RightVBox/ExportManager
 
 # Node references - Status bar
 @onready var project_name_label: Label = $Margin/VBox/StatusBar/ProjectNameLabel
@@ -198,6 +201,14 @@ func _connect_panel_signals() -> void:
 	else:
 		push_warning("CharacterAssembler: shape_properties_panel is null!")
 
+	if direction_manager:
+		direction_manager.direction_changed.connect(_on_direction_changed)
+		direction_manager.shapes_updated.connect(_on_direction_shapes_updated)
+		direction_manager.request_copy_from_current.connect(_on_direction_copy_request)
+		print("CharacterAssembler: Connected direction_manager signals")
+	else:
+		push_warning("CharacterAssembler: direction_manager is null!")
+
 	if body_part_tagger:
 		body_part_tagger.body_parts_changed.connect(_on_body_parts_changed)
 		body_part_tagger.pivot_mode_changed.connect(_on_pivot_mode_changed)
@@ -213,6 +224,20 @@ func _connect_panel_signals() -> void:
 		print("CharacterAssembler: Connected pose_editor signals")
 	else:
 		push_warning("CharacterAssembler: pose_editor is null!")
+
+	if animation_generator:
+		animation_generator.animation_generated.connect(_on_animation_generated)
+		animation_generator.animation_selected.connect(_on_animation_selected)
+		animation_generator.preview_frame_changed.connect(_on_animation_preview_frame_changed)
+		print("CharacterAssembler: Connected animation_generator signals")
+	else:
+		push_warning("CharacterAssembler: animation_generator is null!")
+
+	if export_manager:
+		export_manager.export_requested.connect(_on_export_requested)
+		print("CharacterAssembler: Connected export_manager signals")
+	else:
+		push_warning("CharacterAssembler: export_manager is null!")
 
 
 func _input(event: InputEvent) -> void:
@@ -273,6 +298,15 @@ func _new_project() -> void:
 	if pose_editor:
 		pose_editor.load_from_project([])
 
+	if animation_generator:
+		animation_generator.load_from_project({})
+		_update_animation_generator()
+
+	if direction_manager:
+		direction_manager.load_direction_views({})
+		_update_direction_manager()
+
+	_update_export_manager()
 	_update_layers()
 	_update_status_bar()
 	print("CharacterAssembler: New project created")
@@ -349,6 +383,7 @@ func _on_canvas_size_changed(value: float) -> void:
 		character_canvas.canvas_size = int(value)
 		current_project.canvas_size = int(value)
 		mark_dirty()
+	_update_direction_manager()
 	_update_status_bar()
 
 
@@ -406,6 +441,12 @@ func _on_canvas_changed() -> void:
 	_sync_to_project()
 	_update_layers()
 	_update_status_bar()
+	# Update current direction view with canvas changes
+	if direction_manager and character_canvas and body_part_tagger:
+		direction_manager.update_from_editor(
+			character_canvas.shapes,
+			body_part_tagger.save_to_project()
+		)
 
 
 func _on_zoom_changed(zoom: float) -> void:
@@ -496,6 +537,7 @@ func _on_body_parts_changed() -> void:
 	_sync_body_parts_to_project()
 	_update_canvas_pivots()
 	_update_status_bar()
+	_update_animation_generator()  # Update body parts in animation generator
 
 
 func _on_pivot_mode_changed(enabled: bool) -> void:
@@ -526,6 +568,67 @@ func _update_canvas_pivots() -> void:
 
 
 # =============================================================================
+# DIRECTION MANAGER SIGNALS
+# =============================================================================
+
+func _on_direction_changed(direction: DirectionView.Direction) -> void:
+	# When direction changes, load that direction's data into the canvas
+	if not direction_manager or not character_canvas:
+		return
+
+	var view := direction_manager.get_direction_view(direction)
+	if view and view.is_configured:
+		# Load direction-specific shapes
+		character_canvas.shapes = view.shapes.duplicate(true)
+		if not view.body_parts.is_empty():
+			if body_part_tagger:
+				body_part_tagger.load_from_project(view.body_parts)
+		character_canvas.queue_redraw()
+		_update_layers()
+	else:
+		# If direction not configured, show empty canvas (or keep current?)
+		pass
+
+	_update_status_bar()
+
+
+func _on_direction_shapes_updated(direction: DirectionView.Direction, shapes: Array) -> void:
+	# When a direction's shapes are updated (e.g., auto-generated)
+	mark_dirty()
+
+	# If this is the current direction, update the canvas
+	if direction_manager and direction_manager.get_current_direction() == direction:
+		if character_canvas:
+			character_canvas.shapes = shapes.duplicate(true)
+			character_canvas.queue_redraw()
+			_update_layers()
+
+
+func _on_direction_copy_request() -> void:
+	# Copy current canvas shapes to the selected direction
+	if not direction_manager or not character_canvas:
+		return
+
+	var current_shapes = character_canvas.shapes.duplicate(true)
+	var current_body_parts = {}
+	if body_part_tagger:
+		current_body_parts = body_part_tagger.save_to_project()
+
+	direction_manager.update_from_editor(current_shapes, current_body_parts)
+	mark_dirty()
+
+
+func _update_direction_manager() -> void:
+	if direction_manager and character_canvas:
+		direction_manager.set_canvas_size(character_canvas.canvas_size)
+
+
+func _sync_direction_views_to_project() -> void:
+	if current_project and direction_manager:
+		current_project.direction_views = direction_manager.save_direction_views()
+
+
+# =============================================================================
 # POSE EDITOR SIGNALS
 # =============================================================================
 
@@ -533,6 +636,7 @@ func _on_pose_changed(pose: Pose) -> void:
 	mark_dirty()
 	_sync_poses_to_project()
 	_update_pose_preview()
+	_update_animation_generator()  # Update available poses in animation generator
 
 
 func _on_pose_selected(pose: Pose) -> void:
@@ -557,6 +661,154 @@ func _update_pose_preview() -> void:
 func _sync_poses_to_project() -> void:
 	if current_project and pose_editor:
 		current_project.poses = pose_editor.save_to_project()
+
+
+# =============================================================================
+# ANIMATION GENERATOR SIGNALS
+# =============================================================================
+
+func _on_animation_generated(animation: AnimationData) -> void:
+	mark_dirty()
+	_sync_animations_to_project()
+	print("CharacterAssembler: Animation generated: %s" % animation.animation_name)
+
+
+func _on_animation_selected(animation: AnimationData) -> void:
+	# When an animation is selected, preview its first frame
+	if animation and animation.is_generated and not animation.generated_frames.is_empty():
+		_preview_animation_frame(animation, 0)
+
+
+func _on_animation_preview_frame_changed(frame_index: int) -> void:
+	# Update canvas to show the current frame of the previewed animation
+	if animation_generator:
+		var current_anim = animation_generator.get_selected_animation()
+		if current_anim and current_anim.is_generated:
+			_preview_animation_frame(current_anim, frame_index)
+
+
+func _preview_animation_frame(animation: AnimationData, frame_index: int) -> void:
+	if not character_canvas or not body_part_tagger:
+		return
+
+	if frame_index < 0 or frame_index >= animation.generated_frames.size():
+		character_canvas.clear_pose_preview()
+		return
+
+	var frame_rotations = animation.generated_frames[frame_index]
+	var temp_pose = Pose.new("preview_frame", frame_rotations)
+	character_canvas.set_pose_preview(temp_pose, body_part_tagger.body_parts)
+
+
+func _sync_animations_to_project() -> void:
+	if current_project and animation_generator:
+		current_project.animations = animation_generator.save_to_project()
+
+
+func _update_animation_generator() -> void:
+	if animation_generator:
+		# Update character data for preview
+		if character_canvas:
+			animation_generator.set_character_data(
+				character_canvas.shapes,
+				body_part_tagger.body_parts if body_part_tagger else {},
+				character_canvas.canvas_size
+			)
+		# Update available poses
+		if pose_editor:
+			animation_generator.set_available_poses(pose_editor.get_all_poses())
+
+
+# =============================================================================
+# EXPORT MANAGER SIGNALS
+# =============================================================================
+
+func _on_export_requested(options: ExportManager.ExportOptions) -> void:
+	if not current_project:
+		if export_manager:
+			export_manager.set_status("No project to export", true)
+		return
+
+	# Collect all necessary data
+	var shapes: Array = []
+	var body_parts: Dictionary = {}
+	var animations: Array[AnimationData] = []
+	var direction_views: Dictionary = {}
+	var body_parts_per_direction: Dictionary = {}
+	var canvas_size: int = current_project.canvas_size
+
+	# Get current shapes and body parts
+	if character_canvas:
+		shapes = character_canvas.shapes.duplicate(true)
+
+	if body_part_tagger:
+		body_parts = body_part_tagger.save_to_project()
+
+	# Get animations
+	if animation_generator:
+		animations = animation_generator.get_all_animations()
+
+	# Get direction views if exporting all directions
+	if options.export_all_directions and direction_manager:
+		for dir_key in DirectionView.Direction.keys():
+			var dir_enum: DirectionView.Direction = DirectionView.Direction[dir_key]
+			var view := direction_manager.get_direction_view(dir_enum)
+			if view and view.is_configured:
+				direction_views[dir_key.to_lower()] = view
+				body_parts_per_direction[dir_key.to_lower()] = view.body_parts
+
+	# Validate we have something to export
+	if animations.is_empty():
+		if export_manager:
+			export_manager.set_status("No animations to export", true)
+		return
+
+	var has_generated := false
+	for anim in animations:
+		if anim.is_generated:
+			has_generated = true
+			break
+
+	if not has_generated:
+		if export_manager:
+			export_manager.set_status("No generated animations to export", true)
+		return
+
+	# Create and show export dialog
+	var dialog := ExportDialog.new()
+	dialog.export_finished.connect(_on_export_finished)
+	add_child(dialog)
+	dialog.popup_centered()
+
+	# Execute the export
+	dialog.execute_export(
+		options,
+		shapes,
+		body_parts,
+		animations,
+		canvas_size,
+		direction_views,
+		body_parts_per_direction
+	)
+
+
+func _on_export_finished(success: bool, results: Dictionary) -> void:
+	if export_manager:
+		if success:
+			var message := "Export complete"
+			if results.has("frames_exported") and results.frames_exported > 0:
+				message += " (%d frames)" % results.frames_exported
+			export_manager.set_status(message)
+		else:
+			export_manager.set_status("Export failed", true)
+
+
+func _update_export_manager() -> void:
+	if export_manager and current_project:
+		export_manager.set_character_name(current_project.character_id)
+		if not current_file_path.is_empty():
+			var export_dir := current_file_path.get_base_dir().path_join("exports")
+			export_manager.set_output_directory(export_dir)
 
 
 # =============================================================================
@@ -627,9 +879,20 @@ func _load_from_file(path: String) -> void:
 	if pose_editor:
 		pose_editor.load_from_project(current_project.poses)
 
+	# Load animations into generator
+	if animation_generator:
+		animation_generator.load_from_project(current_project.animations)
+		_update_animation_generator()
+
+	# Load direction views
+	if direction_manager:
+		direction_manager.load_direction_views(current_project.direction_views)
+		_update_direction_manager()
+
 	# Update canvas with pivot points
 	_update_canvas_pivots()
 
+	_update_export_manager()
 	_update_layers()
 	_update_status_bar()
 	print("CharacterAssembler: Loaded from %s" % path)
@@ -640,6 +903,11 @@ func _sync_to_project() -> void:
 		character_canvas.save_to_project(current_project)
 	_sync_body_parts_to_project()
 	_sync_poses_to_project()
+	_sync_animations_to_project()
+	_sync_direction_views_to_project()
+	# Also sync primary direction with main shapes
+	if current_project:
+		current_project.sync_primary_direction()
 
 
 # =============================================================================

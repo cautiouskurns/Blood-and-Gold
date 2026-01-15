@@ -1,0 +1,356 @@
+{
+	"file_version": 1,
+	"character_id": "skeleton",
+	"version": "1.0",
+	"canvas_size": 128,
+	"reference_image_path": "",
+	"reference_opacity": 0.5,
+	"shapes": [
+		{
+			"type": "ellipse",
+			"position": [50, 10],
+			"size": [28, 28],
+			"color": [0.9, 0.88, 0.8, 1.0],
+			"rotation": 0.0,
+			"layer": 10
+		},
+		{
+			"type": "ellipse",
+			"position": [54, 18],
+			"size": [8, 10],
+			"color": [0.1, 0.08, 0.05, 1.0],
+			"rotation": 0.0,
+			"layer": 11
+		},
+		{
+			"type": "ellipse",
+			"position": [66, 18],
+			"size": [8, 10],
+			"color": [0.1, 0.08, 0.05, 1.0],
+			"rotation": 0.0,
+			"layer": 11
+		},
+		{
+			"type": "rectangle",
+			"position": [58, 28],
+			"size": [12, 6],
+			"color": [0.15, 0.12, 0.1, 1.0],
+			"rotation": 0.0,
+			"layer": 11
+		},
+		{
+			"type": "rectangle",
+			"position": [56, 36],
+			"size": [16, 8],
+			"color": [0.85, 0.82, 0.75, 1.0],
+			"rotation": 0.0,
+			"layer": 9
+		},
+		{
+			"type": "rectangle",
+			"position": [48, 42],
+			"size": [32, 32],
+			"color": [0.88, 0.85, 0.78, 1.0],
+			"rotation": 0.0,
+			"layer": 5
+		},
+		{
+			"type": "ellipse",
+			"position": [52, 46],
+			"size": [10, 10],
+			"color": [0.15, 0.12, 0.1, 1.0],
+			"rotation": 0.0,
+			"layer": 6
+		},
+		{
+			"type": "ellipse",
+			"position": [66, 46],
+			"size": [10, 10],
+			"color": [0.15, 0.12, 0.1, 1.0],
+			"rotation": 0.0,
+			"layer": 6
+		},
+		{
+			"type": "rectangle",
+			"position": [30, 40],
+			"size": [12, 20],
+			"color": [0.9, 0.88, 0.8, 1.0],
+			"rotation": 0.0,
+			"layer": 4
+		},
+		{
+			"type": "rectangle",
+			"position": [28, 56],
+			"size": [10, 24],
+			"color": [0.88, 0.85, 0.78, 1.0],
+			"rotation": 0.0,
+			"layer": 3
+		},
+		{
+			"type": "ellipse",
+			"position": [24, 76],
+			"size": [14, 14],
+			"color": [0.9, 0.88, 0.8, 1.0],
+			"rotation": 0.0,
+			"layer": 2
+		},
+		{
+			"type": "rectangle",
+			"position": [86, 40],
+			"size": [12, 20],
+			"color": [0.9, 0.88, 0.8, 1.0],
+			"rotation": 0.0,
+			"layer": 4
+		},
+		{
+			"type": "rectangle",
+			"position": [88, 56],
+			"size": [10, 24],
+			"color": [0.88, 0.85, 0.78, 1.0],
+			"rotation": 0.0,
+			"layer": 3
+		},
+		{
+			"type": "ellipse",
+			"position": [88, 76],
+			"size": [14, 14],
+			"color": [0.9, 0.88, 0.8, 1.0],
+			"rotation": 0.0,
+			"layer": 2
+		},
+		{
+			"type": "rectangle",
+			"position": [56, 72],
+			"size": [16, 6],
+			"color": [0.85, 0.82, 0.75, 1.0],
+			"rotation": 0.0,
+			"layer": 4
+		},
+		{
+			"type": "rectangle",
+			"position": [50, 76],
+			"size": [10, 24],
+			"color": [0.88, 0.85, 0.78, 1.0],
+			"rotation": 0.0,
+			"layer": 1
+		},
+		{
+			"type": "rectangle",
+			"position": [48, 96],
+			"size": [8, 22],
+			"color": [0.9, 0.88, 0.8, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		},
+		{
+			"type": "rectangle",
+			"position": [44, 114],
+			"size": [14, 8],
+			"color": [0.85, 0.82, 0.75, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		},
+		{
+			"type": "rectangle",
+			"position": [68, 76],
+			"size": [10, 24],
+			"color": [0.88, 0.85, 0.78, 1.0],
+			"rotation": 0.0,
+			"layer": 1
+		},
+		{
+			"type": "rectangle",
+			"position": [70, 96],
+			"size": [8, 22],
+			"color": [0.9, 0.88, 0.8, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		},
+		{
+			"type": "rectangle",
+			"position": [68, 114],
+			"size": [14, 8],
+			"color": [0.85, 0.82, 0.75, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		}
+	],
+	"body_parts": {
+		"Head": {
+			"name": "Head",
+			"shapes": [0, 1, 2, 3, 4],
+			"pivot": [64, 38],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"Torso": {
+			"name": "Torso",
+			"shapes": [5, 6, 7, 14],
+			"pivot": [64, 58],
+			"pivot_set": true,
+			"parent": ""
+		},
+		"L Upper Arm": {
+			"name": "L Upper Arm",
+			"shapes": [8],
+			"pivot": [36, 44],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"L Lower Arm": {
+			"name": "L Lower Arm",
+			"shapes": [9],
+			"pivot": [33, 60],
+			"pivot_set": true,
+			"parent": "L Upper Arm"
+		},
+		"L Hand": {
+			"name": "L Hand",
+			"shapes": [10],
+			"pivot": [31, 80],
+			"pivot_set": true,
+			"parent": "L Lower Arm"
+		},
+		"R Upper Arm": {
+			"name": "R Upper Arm",
+			"shapes": [11],
+			"pivot": [92, 44],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"R Lower Arm": {
+			"name": "R Lower Arm",
+			"shapes": [12],
+			"pivot": [93, 60],
+			"pivot_set": true,
+			"parent": "R Upper Arm"
+		},
+		"R Hand": {
+			"name": "R Hand",
+			"shapes": [13],
+			"pivot": [95, 80],
+			"pivot_set": true,
+			"parent": "R Lower Arm"
+		},
+		"L Upper Leg": {
+			"name": "L Upper Leg",
+			"shapes": [15],
+			"pivot": [55, 80],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"L Lower Leg": {
+			"name": "L Lower Leg",
+			"shapes": [16],
+			"pivot": [52, 100],
+			"pivot_set": true,
+			"parent": "L Upper Leg"
+		},
+		"L Foot": {
+			"name": "L Foot",
+			"shapes": [17],
+			"pivot": [51, 118],
+			"pivot_set": true,
+			"parent": "L Lower Leg"
+		},
+		"R Upper Leg": {
+			"name": "R Upper Leg",
+			"shapes": [18],
+			"pivot": [73, 80],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"R Lower Leg": {
+			"name": "R Lower Leg",
+			"shapes": [19],
+			"pivot": [74, 100],
+			"pivot_set": true,
+			"parent": "R Upper Leg"
+		},
+		"R Foot": {
+			"name": "R Foot",
+			"shapes": [20],
+			"pivot": [75, 118],
+			"pivot_set": true,
+			"parent": "R Lower Leg"
+		}
+	},
+	"poses": [
+		{
+			"pose_name": "Idle",
+			"rotations": {
+				"Head": 5.0,
+				"L Upper Arm": 10.0,
+				"R Upper Arm": -10.0
+			},
+			"description": "Shambling stance"
+		},
+		{
+			"pose_name": "Shamble_L",
+			"rotations": {
+				"Torso": 10.0,
+				"Head": -15.0,
+				"L Upper Arm": 25.0,
+				"R Upper Arm": -25.0,
+				"L Upper Leg": 30.0,
+				"L Lower Leg": -20.0,
+				"R Upper Leg": -25.0,
+				"R Lower Leg": 15.0
+			},
+			"description": "Lurching left"
+		},
+		{
+			"pose_name": "Shamble_R",
+			"rotations": {
+				"Torso": -10.0,
+				"Head": 15.0,
+				"L Upper Arm": -25.0,
+				"R Upper Arm": 25.0,
+				"L Upper Leg": -25.0,
+				"L Lower Leg": 15.0,
+				"R Upper Leg": 30.0,
+				"R Lower Leg": -20.0
+			},
+			"description": "Lurching right"
+		},
+		{
+			"pose_name": "Claw_Attack",
+			"rotations": {
+				"Torso": 15.0,
+				"L Upper Arm": -60.0,
+				"L Lower Arm": -30.0,
+				"R Upper Arm": -60.0,
+				"R Lower Arm": -30.0
+			},
+			"description": "Clawing forward"
+		},
+		{
+			"pose_name": "Rising",
+			"rotations": {
+				"Torso": 60.0,
+				"Head": -30.0,
+				"L Upper Arm": 45.0,
+				"R Upper Arm": 45.0,
+				"L Upper Leg": -45.0,
+				"R Upper Leg": -45.0
+			},
+			"description": "Rising from ground"
+		},
+		{
+			"pose_name": "Collapse",
+			"rotations": {
+				"Torso": 90.0,
+				"Head": 45.0,
+				"L Upper Arm": 60.0,
+				"L Lower Arm": 30.0,
+				"R Upper Arm": 45.0,
+				"R Lower Arm": 20.0,
+				"L Upper Leg": 30.0,
+				"R Upper Leg": 15.0
+			},
+			"description": "Falling apart"
+		}
+	],
+	"animations": {},
+	"directions": ["south"]
+}

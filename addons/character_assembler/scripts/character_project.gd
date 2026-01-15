@@ -30,8 +30,12 @@ var animations: Dictionary = {}
 # Direction variants - Array of direction names that have been created
 var directions: Array = ["south"]  # Start with south as primary
 
+# Direction view data - Dictionary of direction_key -> DirectionView dictionary
+# Each view stores shapes, body_parts, and pose_overrides for that direction
+var direction_views: Dictionary = {}
+
 # File format version for compatibility
-const FILE_VERSION := 1
+const FILE_VERSION := 2  # Updated for direction views support
 
 
 ## Create a new shape and add it to the project.
@@ -183,7 +187,8 @@ func to_dict() -> Dictionary:
 		"body_parts": body_parts.duplicate(true),
 		"poses": poses.duplicate(true),
 		"animations": animations.duplicate(true),
-		"directions": directions.duplicate()
+		"directions": directions.duplicate(),
+		"direction_views": direction_views.duplicate(true)
 	}
 
 
@@ -199,6 +204,19 @@ func from_dict(data: Dictionary) -> void:
 	poses = data.get("poses", []).duplicate(true)
 	animations = data.get("animations", {}).duplicate(true)
 	directions = data.get("directions", ["south"]).duplicate()
+	direction_views = data.get("direction_views", {}).duplicate(true)
+
+	# Migrate old format: if no direction_views but has shapes, create south view
+	if direction_views.is_empty() and not shapes.is_empty():
+		direction_views["south"] = {
+			"direction": DirectionView.Direction.SOUTH,
+			"is_configured": true,
+			"is_auto_generated": false,
+			"source_direction": "",
+			"shapes": shapes.duplicate(true),
+			"body_parts": body_parts.duplicate(true),
+			"pose_overrides": {}
+		}
 
 
 ## Save the project to a file.
@@ -247,3 +265,68 @@ static func get_file_filter() -> String:
 ## Get character ID from a file path.
 static func get_character_id_from_path(path: String) -> String:
 	return path.get_file().get_basename()
+
+
+# =============================================================================
+# DIRECTION VIEW METHODS
+# =============================================================================
+
+## Set the direction view data for a specific direction.
+func set_direction_view(direction_key: String, view_data: Dictionary) -> void:
+	direction_views[direction_key] = view_data.duplicate(true)
+	if direction_key not in directions:
+		directions.append(direction_key)
+
+
+## Get the direction view data for a specific direction.
+func get_direction_view(direction_key: String) -> Dictionary:
+	return direction_views.get(direction_key, {})
+
+
+## Check if a direction has been configured.
+func has_direction(direction_key: String) -> bool:
+	return direction_key in direction_views and not direction_views[direction_key].is_empty()
+
+
+## Get shapes for a specific direction.
+func get_direction_shapes(direction_key: String) -> Array:
+	var view := get_direction_view(direction_key)
+	return view.get("shapes", [])
+
+
+## Get body parts for a specific direction.
+func get_direction_body_parts(direction_key: String) -> Dictionary:
+	var view := get_direction_view(direction_key)
+	return view.get("body_parts", {})
+
+
+## Remove a direction view.
+func remove_direction_view(direction_key: String) -> void:
+	direction_views.erase(direction_key)
+	directions.erase(direction_key)
+
+
+## Get all configured direction keys.
+func get_configured_directions() -> Array:
+	var configured: Array = []
+	for key in direction_views:
+		var view: Dictionary = direction_views[key]
+		if view.get("is_configured", false):
+			configured.append(key)
+	return configured
+
+
+## Sync the primary (south) direction with the main shapes/body_parts.
+## Call this when shapes are edited to keep the south view in sync.
+func sync_primary_direction() -> void:
+	direction_views["south"] = {
+		"direction": DirectionView.Direction.SOUTH,
+		"is_configured": not shapes.is_empty(),
+		"is_auto_generated": false,
+		"source_direction": "",
+		"shapes": shapes.duplicate(true),
+		"body_parts": body_parts.duplicate(true),
+		"pose_overrides": {}
+	}
+	if "south" not in directions:
+		directions.insert(0, "south")

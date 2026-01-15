@@ -1,0 +1,62 @@
+[gd_scene load_steps=2 format=3 uid="uid://loyalty_popup_scene"]
+
+[ext_resource type="Script" path="res://scripts/ui/loyalty_popup.gd" id="1_script"]
+
+[node name="LoyaltyPopup" type="CanvasLayer"]
+layer = 100
+script = ExtResource("1_script")
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -350.0
+offset_top = 100.0
+offset_right = -20.0
+offset_bottom = 220.0
+
+[node name="MarginContainer" type="MarginContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="Portrait" type="TextureRect" parent="Panel/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(80, 80)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="InfoContainer" type="VBoxContainer" parent="Panel/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 5
+
+[node name="NameLabel" type="Label" parent="Panel/MarginContainer/HBoxContainer/InfoContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Companion Name"
+
+[node name="StatusLabel" type="Label" parent="Panel/MarginContainer/HBoxContainer/InfoContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_font_sizes/font_size = 14
+text = "Neutral (50)"
+
+[node name="DeltaLabel" type="Label" parent="Panel/MarginContainer/HBoxContainer/InfoContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.152941, 0.682353, 0.376471, 1)
+theme_override_font_sizes/font_size = 24
+text = "+10 LOYALTY"
+
+[node name="QuoteLabel" type="Label" parent="Panel/MarginContainer/HBoxContainer/InfoContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 14
+text = "\"Your leadership grows stronger.\""
+autowrap_mode = 2

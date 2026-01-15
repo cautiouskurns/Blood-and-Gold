@@ -331,10 +331,17 @@ func _draw_pivots(canvas_rect: Rect2) -> void:
 		# Draw circle
 		draw_arc(screen_pos, PIVOT_SIZE / 2, 0, TAU, 16, PIVOT_COLOR, 2.0)
 
-		# Draw label
+		# Draw label with background for readability
 		var font = ThemeDB.fallback_font
-		var font_size = 10
-		draw_string(font, screen_pos + Vector2(PIVOT_SIZE, -2), part_name, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, PIVOT_COLOR)
+		var font_size = 18
+		var label_pos = screen_pos + Vector2(PIVOT_SIZE + 4, 6)
+		# Draw text shadow/outline for better visibility
+		draw_string(font, label_pos + Vector2(1, 1), part_name, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color.BLACK)
+		draw_string(font, label_pos + Vector2(-1, -1), part_name, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color.BLACK)
+		draw_string(font, label_pos + Vector2(1, -1), part_name, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color.BLACK)
+		draw_string(font, label_pos + Vector2(-1, 1), part_name, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color.BLACK)
+		# Main text
+		draw_string(font, label_pos, part_name, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, PIVOT_COLOR)
 
 
 func _draw_pivot_cursor(canvas_rect: Rect2) -> void:
@@ -885,10 +892,21 @@ func set_pose_preview(pose: Pose, body_parts: Dictionary) -> void:
 	_current_preview_pose = pose
 	_current_preview_body_parts = body_parts
 
+	# Debug logging
+	print("set_pose_preview: shapes=%d, body_parts=%d, pose=%s" % [shapes.size(), body_parts.size(), pose.pose_name if pose else "null"])
+	for part_name in body_parts:
+		var part = body_parts[part_name]
+		if part is BodyPart:
+			print("  %s: shapes=%s, pivot=%s, pivot_set=%s" % [part_name, part.shape_indices, part.pivot, part.pivot_set])
+		else:
+			print("  %s: NOT a BodyPart object, type=%s" % [part_name, typeof(part)])
+
 	# PoseRenderer expects BodyPart objects directly
 	# Use PoseRenderer to transform shapes
 	_pose_preview_shapes = PoseRenderer.apply_pose(shapes, body_parts, pose, canvas_size)
 	_pose_preview_enabled = true
+
+	print("set_pose_preview: preview_shapes=%d, preview_enabled=%s" % [_pose_preview_shapes.size(), _pose_preview_enabled])
 
 	queue_redraw()
 

@@ -21,6 +21,7 @@ const BUTTON_COLORS = {
 @onready var barracks_btn: Button = $NavigationPanel/VBoxContainer/BarracksButton
 @onready var merchant_btn: Button = $NavigationPanel/VBoxContainer/MerchantButton
 @onready var camp_btn: Button = $NavigationPanel/VBoxContainer/CampButton
+@onready var fort_btn: Button = $NavigationPanel/VBoxContainer/FortButton
 @onready var combat_btn: Button = $NavigationPanel/VBoxContainer/CombatButton
 @onready var sub_screen_container: Control = $SubScreenContainer
 @onready var main_hub_view: Control = $MainHubView
@@ -30,6 +31,7 @@ const ContractsScreenScene = preload("res://scenes/hub/screens/ContractsScreen.t
 const BarracksScreenScene = preload("res://scenes/hub/screens/BarracksScreen.tscn")
 const MerchantScreenScene = preload("res://scenes/hub/screens/MerchantScreen.tscn")
 const CampScreenScene = preload("res://scenes/hub/screens/CampScreen.tscn")
+const FortManagementScene = preload("res://scenes/hub/screens/FortManagement.tscn")
 
 # ===== STATE =====
 var _current_sub_screen: Control = null
@@ -48,6 +50,7 @@ func _connect_signals() -> void:
 	barracks_btn.pressed.connect(_on_barracks_pressed)
 	merchant_btn.pressed.connect(_on_merchant_pressed)
 	camp_btn.pressed.connect(_on_camp_pressed)
+	fort_btn.pressed.connect(_on_fort_pressed)
 	combat_btn.pressed.connect(_on_combat_pressed)
 
 	# Connect to GameState for gold updates
@@ -82,6 +85,10 @@ func _on_merchant_pressed() -> void:
 func _on_camp_pressed() -> void:
 	_show_sub_screen("camp", CampScreenScene)
 	GameState.change_screen(GameState.Screen.CAMP)
+
+func _on_fort_pressed() -> void:
+	_show_sub_screen("fort", FortManagementScene)
+	GameState.change_screen(GameState.Screen.FORT)
 
 func _on_combat_pressed() -> void:
 	## Go to combat scene

@@ -372,6 +372,11 @@ func get_poses() -> Array[Pose]:
 	return poses
 
 
+## Get all poses (alias for get_poses for compatibility).
+func get_all_poses() -> Array[Pose]:
+	return poses
+
+
 ## Load poses from project data.
 func load_from_project(poses_data: Array) -> void:
 	poses.clear()

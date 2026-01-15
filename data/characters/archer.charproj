@@ -1,0 +1,326 @@
+{
+	"file_version": 1,
+	"character_id": "archer",
+	"version": "1.0",
+	"canvas_size": 128,
+	"reference_image_path": "",
+	"reference_opacity": 0.5,
+	"shapes": [
+		{
+			"type": "ellipse",
+			"position": [50, 10],
+			"size": [28, 26],
+			"color": [0.82, 0.72, 0.6, 1.0],
+			"rotation": 0.0,
+			"layer": 10
+		},
+		{
+			"type": "rectangle",
+			"position": [48, 6],
+			"size": [32, 12],
+			"color": [0.35, 0.5, 0.3, 1.0],
+			"rotation": 0.0,
+			"layer": 11
+		},
+		{
+			"type": "triangle",
+			"position": [60, 2],
+			"size": [12, 10],
+			"color": [0.7, 0.2, 0.2, 1.0],
+			"rotation": 0.0,
+			"layer": 12
+		},
+		{
+			"type": "rectangle",
+			"position": [44, 32],
+			"size": [40, 44],
+			"color": [0.3, 0.45, 0.25, 1.0],
+			"rotation": 0.0,
+			"layer": 5
+		},
+		{
+			"type": "rectangle",
+			"position": [48, 36],
+			"size": [32, 10],
+			"color": [0.4, 0.3, 0.2, 1.0],
+			"rotation": 0.0,
+			"layer": 6
+		},
+		{
+			"type": "rectangle",
+			"position": [58, 44],
+			"size": [12, 28],
+			"color": [0.35, 0.25, 0.18, 1.0],
+			"rotation": 0.0,
+			"layer": 7
+		},
+		{
+			"type": "rectangle",
+			"position": [28, 36],
+			"size": [16, 24],
+			"color": [0.3, 0.45, 0.25, 1.0],
+			"rotation": 0.0,
+			"layer": 4
+		},
+		{
+			"type": "rectangle",
+			"position": [24, 56],
+			"size": [14, 26],
+			"color": [0.35, 0.5, 0.3, 1.0],
+			"rotation": 0.0,
+			"layer": 3
+		},
+		{
+			"type": "ellipse",
+			"position": [20, 78],
+			"size": [14, 14],
+			"color": [0.82, 0.72, 0.6, 1.0],
+			"rotation": 0.0,
+			"layer": 2
+		},
+		{
+			"type": "rectangle",
+			"position": [84, 36],
+			"size": [16, 24],
+			"color": [0.3, 0.45, 0.25, 1.0],
+			"rotation": 0.0,
+			"layer": 4
+		},
+		{
+			"type": "rectangle",
+			"position": [88, 56],
+			"size": [14, 26],
+			"color": [0.35, 0.5, 0.3, 1.0],
+			"rotation": 0.0,
+			"layer": 3
+		},
+		{
+			"type": "ellipse",
+			"position": [92, 78],
+			"size": [14, 14],
+			"color": [0.82, 0.72, 0.6, 1.0],
+			"rotation": 0.0,
+			"layer": 2
+		},
+		{
+			"type": "rectangle",
+			"position": [48, 72],
+			"size": [14, 26],
+			"color": [0.35, 0.3, 0.22, 1.0],
+			"rotation": 0.0,
+			"layer": 1
+		},
+		{
+			"type": "rectangle",
+			"position": [46, 94],
+			"size": [12, 22],
+			"color": [0.3, 0.45, 0.25, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		},
+		{
+			"type": "rectangle",
+			"position": [44, 112],
+			"size": [16, 10],
+			"color": [0.35, 0.25, 0.18, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		},
+		{
+			"type": "rectangle",
+			"position": [66, 72],
+			"size": [14, 26],
+			"color": [0.35, 0.3, 0.22, 1.0],
+			"rotation": 0.0,
+			"layer": 1
+		},
+		{
+			"type": "rectangle",
+			"position": [68, 94],
+			"size": [12, 22],
+			"color": [0.3, 0.45, 0.25, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		},
+		{
+			"type": "rectangle",
+			"position": [68, 112],
+			"size": [16, 10],
+			"color": [0.35, 0.25, 0.18, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		}
+	],
+	"body_parts": {
+		"Head": {
+			"name": "Head",
+			"shapes": [0, 1, 2],
+			"pivot": [64, 36],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"Torso": {
+			"name": "Torso",
+			"shapes": [3, 4, 5],
+			"pivot": [64, 54],
+			"pivot_set": true,
+			"parent": ""
+		},
+		"L Upper Arm": {
+			"name": "L Upper Arm",
+			"shapes": [6],
+			"pivot": [36, 40],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"L Lower Arm": {
+			"name": "L Lower Arm",
+			"shapes": [7],
+			"pivot": [31, 60],
+			"pivot_set": true,
+			"parent": "L Upper Arm"
+		},
+		"L Hand": {
+			"name": "L Hand",
+			"shapes": [8],
+			"pivot": [27, 82],
+			"pivot_set": true,
+			"parent": "L Lower Arm"
+		},
+		"R Upper Arm": {
+			"name": "R Upper Arm",
+			"shapes": [9],
+			"pivot": [92, 40],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"R Lower Arm": {
+			"name": "R Lower Arm",
+			"shapes": [10],
+			"pivot": [95, 60],
+			"pivot_set": true,
+			"parent": "R Upper Arm"
+		},
+		"R Hand": {
+			"name": "R Hand",
+			"shapes": [11],
+			"pivot": [99, 82],
+			"pivot_set": true,
+			"parent": "R Lower Arm"
+		},
+		"L Upper Leg": {
+			"name": "L Upper Leg",
+			"shapes": [12],
+			"pivot": [55, 76],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"L Lower Leg": {
+			"name": "L Lower Leg",
+			"shapes": [13],
+			"pivot": [52, 98],
+			"pivot_set": true,
+			"parent": "L Upper Leg"
+		},
+		"L Foot": {
+			"name": "L Foot",
+			"shapes": [14],
+			"pivot": [52, 116],
+			"pivot_set": true,
+			"parent": "L Lower Leg"
+		},
+		"R Upper Leg": {
+			"name": "R Upper Leg",
+			"shapes": [15],
+			"pivot": [73, 76],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"R Lower Leg": {
+			"name": "R Lower Leg",
+			"shapes": [16],
+			"pivot": [74, 98],
+			"pivot_set": true,
+			"parent": "R Upper Leg"
+		},
+		"R Foot": {
+			"name": "R Foot",
+			"shapes": [17],
+			"pivot": [76, 116],
+			"pivot_set": true,
+			"parent": "R Lower Leg"
+		}
+	},
+	"poses": [
+		{
+			"pose_name": "Idle",
+			"rotations": {},
+			"description": "Standing ready"
+		},
+		{
+			"pose_name": "Draw_Bow",
+			"rotations": {
+				"Torso": -10.0,
+				"L Upper Arm": -90.0,
+				"L Lower Arm": 0.0,
+				"R Upper Arm": -120.0,
+				"R Lower Arm": -90.0
+			},
+			"description": "Drawing bow back"
+		},
+		{
+			"pose_name": "Aim",
+			"rotations": {
+				"Torso": -5.0,
+				"L Upper Arm": -90.0,
+				"L Lower Arm": 0.0,
+				"R Upper Arm": -90.0,
+				"R Lower Arm": -45.0,
+				"Head": -10.0
+			},
+			"description": "Aiming at target"
+		},
+		{
+			"pose_name": "Release",
+			"rotations": {
+				"Torso": 5.0,
+				"L Upper Arm": -85.0,
+				"L Lower Arm": 5.0,
+				"R Upper Arm": -60.0,
+				"R Lower Arm": -30.0
+			},
+			"description": "Arrow released"
+		},
+		{
+			"pose_name": "Crouch_Aim",
+			"rotations": {
+				"Torso": 20.0,
+				"Head": -25.0,
+				"L Upper Arm": -70.0,
+				"R Upper Arm": -100.0,
+				"R Lower Arm": -60.0,
+				"L Upper Leg": 60.0,
+				"L Lower Leg": -80.0,
+				"R Upper Leg": 45.0,
+				"R Lower Leg": -60.0
+			},
+			"description": "Kneeling shot"
+		},
+		{
+			"pose_name": "Roll",
+			"rotations": {
+				"Torso": 45.0,
+				"Head": 20.0,
+				"L Upper Arm": 30.0,
+				"R Upper Arm": -30.0,
+				"L Upper Leg": -90.0,
+				"L Lower Leg": 90.0,
+				"R Upper Leg": -90.0,
+				"R Lower Leg": 90.0
+			},
+			"description": "Dodge roll"
+		}
+	],
+	"animations": {},
+	"directions": ["south"]
+}

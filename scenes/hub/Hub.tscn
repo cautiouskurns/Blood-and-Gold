@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3 uid="uid://hub_scene"]
+[gd_scene load_steps=2 format=3 uid="uid://c6wcgxwu2brfc"]
 
-[ext_resource type="Script" path="res://scripts/hub/hub.gd" id="1_hub"]
+[ext_resource type="Script" uid="uid://bmq177l7lnvd7" path="res://scripts/hub/hub.gd" id="1_hub"]
 
 [node name="Hub" type="Control"]
 layout_mode = 3
@@ -34,7 +34,6 @@ grow_horizontal = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "The Iron Company"
-horizontal_alignment = 0
 vertical_alignment = 1
 
 [node name="GoldDisplay" type="HBoxContainer" parent="TopBar"]
@@ -125,6 +124,11 @@ text = "MERCHANT"
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 text = "CAMP"
+
+[node name="FortButton" type="Button" parent="NavigationPanel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "FORT"
 
 [node name="CombatButton" type="Button" parent="NavigationPanel/VBoxContainer"]
 custom_minimum_size = Vector2(0, 50)

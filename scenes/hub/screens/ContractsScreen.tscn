@@ -44,7 +44,40 @@ offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="PlaceholderLabel" type="Label" parent="ContentPanel"]
+[node name="ContractBoard" type="VBoxContainer" parent="ContentPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="BoardHeader" type="VBoxContainer" parent="ContentPanel/ContractBoard"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="BoardTitle" type="Label" parent="ContentPanel/ContractBoard/BoardHeader"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "CONTRACT BOARD"
+horizontal_alignment = 1
+
+[node name="BoardSubtitle" type="Label" parent="ContentPanel/ContractBoard/BoardHeader"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+text = "Choose a contract for your company"
+horizontal_alignment = 1
+
+[node name="CardsContainer" type="HBoxContainer" parent="ContentPanel/ContractBoard"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/separation = 20
+
+[node name="NoContractsMessage" type="Label" parent="ContentPanel"]
+visible = false
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -52,11 +85,171 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -200.0
-offset_top = -30.0
+offset_top = -50.0
 offset_right = 200.0
-offset_bottom = 30.0
+offset_bottom = 50.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "Contract selection coming in Task 3.2"
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 16
+text = "No contracts available.
+
+All contracts have been completed.
+Thank you for playing the prototype!"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="DimBackground" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="ContractDetailPanel" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -350.0
+offset_top = -250.0
+offset_right = 350.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="ContractDetailPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ContractDetailPanel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="DetailHeader" type="HBoxContainer" parent="ContractDetailPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="DetailTitle" type="Label" parent="ContractDetailPanel/MarginContainer/VBoxContainer/DetailHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+text = "CONTRACT DETAILS"
+
+[node name="CloseButton" type="Button" parent="ContractDetailPanel/MarginContainer/VBoxContainer/DetailHeader"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+text = "X"
+
+[node name="HSeparator" type="HSeparator" parent="ContractDetailPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ContractName" type="Label" parent="ContractDetailPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "CONTRACT NAME"
+
+[node name="DifficultyRow" type="HBoxContainer" parent="ContractDetailPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="DifficultyLabel" type="Label" parent="ContractDetailPanel/MarginContainer/VBoxContainer/DifficultyRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+text = "Difficulty:"
+
+[node name="DifficultyStars" type="Label" parent="ContractDetailPanel/MarginContainer/VBoxContainer/DifficultyRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "★★☆"
+
+[node name="BriefingSection" type="VBoxContainer" parent="ContractDetailPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+
+[node name="BriefingHeader" type="Label" parent="ContractDetailPanel/MarginContainer/VBoxContainer/BriefingSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.945, 0.769, 0.059, 1)
+text = "BRIEFING:"
+
+[node name="BriefingText" type="Label" parent="ContractDetailPanel/MarginContainer/VBoxContainer/BriefingSection"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+text = "Full contract briefing text goes here. This can be multiple lines and explains the mission in detail."
+autowrap_mode = 2
+
+[node name="ObjectivesSection" type="VBoxContainer" parent="ContractDetailPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ObjectivesHeader" type="Label" parent="ContractDetailPanel/MarginContainer/VBoxContainer/ObjectivesSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.945, 0.769, 0.059, 1)
+text = "OBJECTIVES:"
+
+[node name="ObjectivesText" type="Label" parent="ContractDetailPanel/MarginContainer/VBoxContainer/ObjectivesSection"]
+layout_mode = 2
+text = "- PRIMARY: Complete the objective
+- SECONDARY: Optional objective"
+
+[node name="InfoRow" type="HBoxContainer" parent="ContractDetailPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 40
+
+[node name="RewardSection" type="HBoxContainer" parent="ContractDetailPanel/MarginContainer/VBoxContainer/InfoRow"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RewardLabel" type="Label" parent="ContractDetailPanel/MarginContainer/VBoxContainer/InfoRow/RewardSection"]
+layout_mode = 2
+text = "REWARD:"
+
+[node name="RewardAmount" type="Label" parent="ContractDetailPanel/MarginContainer/VBoxContainer/InfoRow/RewardSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.945, 0.769, 0.059, 1)
+theme_override_font_sizes/font_size = 16
+text = "300 gold"
+
+[node name="EnemySection" type="HBoxContainer" parent="ContractDetailPanel/MarginContainer/VBoxContainer/InfoRow"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="EnemyLabel" type="Label" parent="ContractDetailPanel/MarginContainer/VBoxContainer/InfoRow/EnemySection"]
+layout_mode = 2
+text = "ENEMIES:"
+
+[node name="EnemyInfo" type="Label" parent="ContractDetailPanel/MarginContainer/VBoxContainer/InfoRow/EnemySection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+text = "Bandits (est. 6)"
+
+[node name="MapSection" type="HBoxContainer" parent="ContractDetailPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MapLabel" type="Label" parent="ContractDetailPanel/MarginContainer/VBoxContainer/MapSection"]
+layout_mode = 2
+text = "MAP:"
+
+[node name="MapName" type="Label" parent="ContractDetailPanel/MarginContainer/VBoxContainer/MapSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+text = "Forest Clearing"
+
+[node name="ButtonContainer" type="CenterContainer" parent="ContractDetailPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="AcceptButton" type="Button" parent="ContractDetailPanel/MarginContainer/VBoxContainer/ButtonContainer"]
+custom_minimum_size = Vector2(200, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "ACCEPT CONTRACT"

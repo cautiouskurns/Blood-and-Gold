@@ -213,102 +213,121 @@ graph LR
 
 ---
 
-### Feature 4B.1: Expression Lexer
+### Feature 4B.1: Expression Lexer ✅ COMPLETE
 
 **Description:** Tokenize expression strings into a stream of typed tokens.
 
 **Implementation Tasks:**
-- [ ] Create `expression_lexer.gd` with token types:
-  - [ ] NUMBER (integer, float)
-  - [ ] STRING (quoted)
-  - [ ] BOOLEAN (true, false)
-  - [ ] IDENTIFIER (variable names)
-  - [ ] OPERATOR (==, !=, >, <, >=, <=, +, -, *, /)
-  - [ ] KEYWORD (and, or, not)
-  - [ ] PUNCTUATION (parentheses, comma, dot)
-- [ ] Implement `tokenize(expression: String) -> Array[Token]`
-- [ ] Handle whitespace and comments
-- [ ] Report lexer errors with position
+- [x] Create `expression_lexer.gd` with token types:
+  - [x] NUMBER (integer, float)
+  - [x] STRING (quoted)
+  - [x] BOOLEAN (true, false)
+  - [x] IDENTIFIER (variable names)
+  - [x] OPERATOR (==, !=, >, <, >=, <=, +, -, *, /)
+  - [x] KEYWORD (and, or, not)
+  - [x] PUNCTUATION (parentheses, comma, dot)
+- [x] Implement `tokenize(expression: String) -> Array[Token]`
+- [x] Handle whitespace and comments
+- [x] Report lexer errors with position
 
-**Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/expressions/expression_lexer.gd` (new)
+**Files Created:**
+- `addons/dialogue_editor/scripts/expressions/expression_lexer.gd` ✅
+- `addons/dialogue_editor/scripts/expressions/test_lexer.gd` ✅
 
 **Success Criteria:**
-- [ ] Tokenizes `reputation >= 50` correctly
-- [ ] Tokenizes `has_item("key") and player_level > 10` correctly
-- [ ] Handles string literals with escapes
-- [ ] Reports position of invalid characters
+- [x] Tokenizes `reputation >= 50` correctly
+- [x] Tokenizes `has_item("key") and player_level > 10` correctly
+- [x] Handles string literals with escapes
+- [x] Reports position of invalid characters
 
 ---
 
-### Feature 4B.2: Expression Parser
+### Feature 4B.2: Expression Parser ✅ COMPLETE
 
 **Description:** Parse token stream into an Abstract Syntax Tree (AST).
 
 **Dependencies:** Feature 4B.1
 
 **Implementation Tasks:**
-- [ ] Create `expression_parser.gd` with AST node types:
-  - [ ] BinaryOp (left, operator, right)
-  - [ ] UnaryOp (operator, operand)
-  - [ ] Literal (value)
-  - [ ] Variable (name, with dot notation support)
-  - [ ] FunctionCall (name, arguments)
-- [ ] Implement recursive descent parser:
-  - [ ] `parse_expression()` - top level
-  - [ ] `parse_or()` - or expressions
-  - [ ] `parse_and()` - and expressions
-  - [ ] `parse_comparison()` - ==, !=, etc.
-  - [ ] `parse_term()` - +, -
-  - [ ] `parse_factor()` - *, /
-  - [ ] `parse_unary()` - not, -
-  - [ ] `parse_primary()` - literals, variables, function calls
-- [ ] Generate helpful parse error messages
-- [ ] Implement `validate(expression: String) -> Result`
+- [x] Create `expression_parser.gd` with AST node types:
+  - [x] BinaryOp (left, operator, right)
+  - [x] UnaryOp (operator, operand)
+  - [x] Literal (value)
+  - [x] Variable (name, with dot notation support)
+  - [x] FunctionCall (name, arguments)
+  - [x] MemberAccessNode (object.member)
+  - [x] IndexAccessNode (object[index])
+- [x] Implement recursive descent parser:
+  - [x] `parse_expression()` - top level
+  - [x] `parse_or()` - or expressions
+  - [x] `parse_and()` - and expressions
+  - [x] `parse_comparison()` - ==, !=, etc.
+  - [x] `parse_term()` - +, -
+  - [x] `parse_factor()` - *, /
+  - [x] `parse_unary()` - not, -
+  - [x] `parse_postfix()` - function calls, member access, index access
+  - [x] `parse_primary()` - literals, variables, parenthesized expressions
+- [x] Generate helpful parse error messages
+- [x] Implement `validate(expression: String) -> Result`
+- [x] Implement AST Visitor pattern for evaluation/compilation
+- [x] Implement AST pretty printer for debugging
 
-**Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/expressions/expression_parser.gd` (new)
+**Files Created:**
+- `addons/dialogue_editor/scripts/expressions/expression_parser.gd` ✅
+- `addons/dialogue_editor/scripts/expressions/test_parser.gd` ✅
 
 **Success Criteria:**
-- [ ] Parses simple comparisons: `x > 5`
-- [ ] Parses compound expressions: `a and b or c`
-- [ ] Parses function calls: `has_item("sword")`
-- [ ] Parses nested expressions: `(a or b) and c`
-- [ ] Returns clear error messages for invalid syntax
+- [x] Parses simple comparisons: `x > 5`
+- [x] Parses compound expressions: `a and b or c`
+- [x] Parses function calls: `has_item("sword")`
+- [x] Parses nested expressions: `(a or b) and c`
+- [x] Returns clear error messages for invalid syntax
 
 ---
 
-### Feature 4B.3: Expression Evaluator
+### Feature 4B.3: Expression Evaluator ✅ COMPLETE
 
 **Description:** Evaluate parsed expressions against a context of variable values.
 
 **Dependencies:** Feature 4B.2
 
 **Implementation Tasks:**
-- [ ] Create `expression_evaluator.gd` with:
-  - [ ] `evaluate(ast: ASTNode, context: Dictionary) -> Variant`
-  - [ ] Built-in functions:
-    - [ ] `has_item(item_id)` - check inventory
-    - [ ] `has_flag(flag_name)` - check game flags
-    - [ ] `quest_state(quest_id)` - get quest status
-    - [ ] `random()` - random float 0-1
-    - [ ] `count(item_id)` - item quantity
-  - [ ] Type coercion rules (string to number, etc.)
-  - [ ] Error handling for missing variables
-- [ ] Create `expression_context.gd` to manage test values
-- [ ] Integrate with DialogueRunner for test mode evaluation
+- [x] Create `expression_evaluator.gd` with:
+  - [x] `evaluate(ast: ASTNode, context: Dictionary) -> Variant`
+  - [x] Built-in functions:
+    - [x] `has_item(item_id)` - check inventory
+    - [x] `has_flag(flag_name)` - check game flags
+    - [x] `quest_state(quest_id)` - get quest status
+    - [x] `quest_complete(quest_id)` - check if quest complete
+    - [x] `random()` - random float 0-1
+    - [x] `random_int(min, max)` - random integer
+    - [x] `count(item_id)` - item quantity
+    - [x] `min(a, b)`, `max(a, b)`, `abs(x)`, `clamp(x, min, max)`
+    - [x] `floor(x)`, `ceil(x)`, `round(x)`
+    - [x] `len(x)`, `upper(str)`, `lower(str)`
+    - [x] `is_number(x)`, `is_string(x)`, `is_bool(x)`
+  - [x] Type coercion rules (string to number, bool to number, etc.)
+  - [x] Error handling for missing variables (strict mode optional)
+  - [x] Short-circuit evaluation for `and`/`or`
+- [x] Create `expression_context.gd` to manage test values:
+  - [x] Player stats management
+  - [x] Inventory management
+  - [x] Flag management
+  - [x] Quest state management
+  - [x] Serialization/deserialization
+- [x] Static convenience methods `eval()` and `check()`
 
-**Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/expressions/expression_evaluator.gd` (new)
-- `addons/dialogue_editor/scripts/expressions/expression_context.gd` (new)
-- `addons/dialogue_editor/scripts/dialogue_runner.gd` (integrate evaluator)
+**Files Created:**
+- `addons/dialogue_editor/scripts/expressions/expression_evaluator.gd` ✅
+- `addons/dialogue_editor/scripts/expressions/expression_context.gd` ✅
+- `addons/dialogue_editor/scripts/expressions/test_evaluator.gd` ✅
 
 **Success Criteria:**
-- [ ] Evaluates `5 > 3` to `true`
-- [ ] Evaluates `reputation >= 50` with context `{reputation: 60}` to `true`
-- [ ] Evaluates `has_item("key") and gold > 100` correctly
-- [ ] Built-in functions work in test mode
-- [ ] Missing variables return sensible defaults or errors
+- [x] Evaluates `5 > 3` to `true`
+- [x] Evaluates `reputation >= 50` with context `{reputation: 60}` to `true`
+- [x] Evaluates `has_item("key") and gold > 100` correctly
+- [x] Built-in functions work in test mode
+- [x] Missing variables return sensible defaults or errors
 
 ---
 
@@ -347,34 +366,85 @@ graph LR
 
 ---
 
-### Feature 4B.5: Update Branch Node
+### Feature 4B.5: Update Branch Node (Dual-Mode)
 
-**Description:** Replace the simple condition fields in Branch node with expression editor.
+**Description:** Add expression support to Branch node while keeping the simple dropdown mode. Writers can choose between "Simple" mode (dropdowns) for basic checks or "Expression" mode for complex logic.
 
 **Dependencies:** Feature 4B.4
 
+**Design Rationale:**
+- Simple dropdown mode covers 80% of use cases (single flag/item/skill checks)
+- Expression mode enables complex conditions without forcing complexity on all users
+- Auto-conversion allows switching between modes seamlessly
+- Non-technical writers aren't intimidated by expressions
+
 **Implementation Tasks:**
-- [ ] Replace condition_type dropdown, key, value fields with expression editor
-- [ ] Migrate existing Branch node data on load:
-  - [ ] `FLAG_CHECK` + key + value → `flag_key == value`
+- [ ] Add mode toggle to Branch node UI:
+  - [ ] "Simple" mode (default): existing dropdown-based UI
+  - [ ] "Expression" mode: expression editor with syntax highlighting
+  - [ ] "Switch to Expression" button that auto-converts current dropdown to expression
+- [ ] Keep existing dropdown UI for Simple mode:
+  - [ ] condition_type dropdown (FLAG_CHECK, ITEM_CHECK, SKILL_CHECK, etc.)
+  - [ ] key/value fields based on type
+  - [ ] Add "+ Add Condition" for multiple simple conditions (AND'd together)
+- [ ] Add Expression mode UI:
+  - [ ] Expression editor component (from 4B.4)
+  - [ ] Validation indicator
+  - [ ] Test button
+- [ ] Implement auto-conversion (Simple → Expression):
+  - [ ] `FLAG_CHECK` + key + value → `has_flag("key") == value` or `flag_key == value`
+  - [ ] `ITEM_CHECK` + item → `has_item("item")`
   - [ ] `SKILL_CHECK` + skill + dc → `skill_check("skill", dc)`
-  - [ ] etc.
+  - [ ] Multiple conditions → `cond1 and cond2 and cond3`
 - [ ] Update serialization/deserialization:
-  - [ ] Store raw expression string
-  - [ ] Store parsed AST (for faster evaluation)
-- [ ] Update export format to include expression
-- [ ] Update test mode to evaluate expressions
+  - [ ] Store mode ("simple" or "expression")
+  - [ ] Simple mode: store condition_type, key, value (existing format)
+  - [ ] Expression mode: store raw expression string
+  - [ ] Both modes: store compiled expression for runtime evaluation
+- [ ] Migrate existing Branch node data on load:
+  - [ ] Old nodes load as Simple mode (backward compatible)
+  - [ ] No forced migration to expressions
+- [ ] Update export format:
+  - [ ] Always export as expression (unified runtime format)
+  - [ ] Game runtime only needs expression evaluator
+- [ ] Update test mode to evaluate both modes
 
 **Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/nodes/branch_node.gd` (major refactor)
-- `addons/dialogue_editor/scripts/dialogue_exporter.gd` (export expressions)
+- `addons/dialogue_editor/scripts/nodes/branch_node.gd` (add dual-mode UI)
+- `addons/dialogue_editor/scripts/dialogue_exporter.gd` (export as expressions)
 - `addons/dialogue_editor/scripts/dialogue_runner.gd` (evaluate expressions)
 
+**UI Mockup (Simple Mode):**
+```
+┌─ Condition ──────────────────────────────┐
+│ Mode: ● Simple  ○ Expression             │
+├──────────────────────────────────────────┤
+│ Type: [Flag Check ▼]                     │
+│ Flag: [has_royal_token    ]              │
+│ Value: [true ▼]                          │
+│                                          │
+│ [+ Add Condition]  [Switch to Expression]│
+└──────────────────────────────────────────┘
+```
+
+**UI Mockup (Expression Mode):**
+```
+┌─ Condition ──────────────────────────────┐
+│ Mode: ○ Simple  ● Expression             │
+├──────────────────────────────────────────┤
+│ [reputation >= 50 and has_item("key")  ] │
+│                                          │
+│ ✓ Valid                    [Test...]     │
+└──────────────────────────────────────────┘
+```
+
 **Success Criteria:**
-- [ ] Branch node shows expression editor
-- [ ] Old dialogue trees load and migrate expressions
-- [ ] Expressions evaluate correctly in test mode
-- [ ] Export includes expression in usable format
+- [ ] Branch node defaults to Simple mode
+- [ ] Can toggle between Simple and Expression modes
+- [ ] "Switch to Expression" converts dropdown to equivalent expression
+- [ ] Old dialogue trees load in Simple mode (backward compatible)
+- [ ] Both modes evaluate correctly in test mode
+- [ ] Export always outputs expression format for runtime
 
 ---
 
@@ -993,9 +1063,9 @@ graph LR
 - [x] Feature 4A.5: Template Library Panel ✅
 
 ### Phase 4B: Expressions
-- [ ] Feature 4B.1: Expression Lexer
-- [ ] Feature 4B.2: Expression Parser
-- [ ] Feature 4B.3: Expression Evaluator
+- [x] Feature 4B.1: Expression Lexer ✅
+- [x] Feature 4B.2: Expression Parser ✅
+- [x] Feature 4B.3: Expression Evaluator ✅
 - [ ] Feature 4B.4: Expression Editor UI
 - [ ] Feature 4B.5: Update Branch Node
 - [ ] Feature 4B.6: Variable Browser Panel

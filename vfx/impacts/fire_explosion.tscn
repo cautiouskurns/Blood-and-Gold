@@ -1,0 +1,48 @@
+[gd_scene load_steps=3 format=3 uid="uid://fire_explosion_vfx"]
+
+[ext_resource type="Script" path="res://vfx/impacts/fire_explosion.gd" id="1_script"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_burst"]
+particle_flag_disable_z = true
+emission_shape = 1
+emission_sphere_radius = 8.0
+direction = Vector3(0, 0, 0)
+spread = 180.0
+gravity = Vector3(0, 150, 0)
+initial_velocity_min = 120.0
+initial_velocity_max = 220.0
+damping_min = 2.0
+damping_max = 4.0
+scale_min = 0.5
+scale_max = 1.5
+color = Color(1, 0.42, 0.21, 1)
+
+[node name="FireExplosion" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="Burst" type="GPUParticles2D" parent="."]
+amount = 35
+process_material = SubResource("ParticleProcessMaterial_burst")
+lifetime = 0.5
+one_shot = true
+explosiveness = 1.0
+
+[node name="Flash" type="ColorRect" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(20, 20)
+color = Color(1, 0.863, 0, 1)
+
+[node name="LightBurst" type="PointLight2D" parent="."]
+color = Color(1, 0.55, 0.26, 1)
+energy = 2.5
+texture_scale = 3.0

@@ -1,0 +1,316 @@
+{
+	"file_version": 1,
+	"character_id": "barbarian",
+	"version": "1.0",
+	"canvas_size": 128,
+	"reference_image_path": "",
+	"reference_opacity": 0.5,
+	"shapes": [
+		{
+			"type": "ellipse",
+			"position": [46, 8],
+			"size": [36, 32],
+			"color": [0.85, 0.7, 0.55, 1.0],
+			"rotation": 0.0,
+			"layer": 10
+		},
+		{
+			"type": "rectangle",
+			"position": [44, 4],
+			"size": [40, 16],
+			"color": [0.6, 0.35, 0.2, 1.0],
+			"rotation": 0.0,
+			"layer": 11
+		},
+		{
+			"type": "rectangle",
+			"position": [54, 20],
+			"size": [8, 8],
+			"color": [0.4, 0.25, 0.15, 1.0],
+			"rotation": 0.0,
+			"layer": 12
+		},
+		{
+			"type": "rectangle",
+			"position": [38, 36],
+			"size": [52, 48],
+			"color": [0.85, 0.7, 0.55, 1.0],
+			"rotation": 0.0,
+			"layer": 5
+		},
+		{
+			"type": "rectangle",
+			"position": [42, 40],
+			"size": [44, 12],
+			"color": [0.5, 0.3, 0.2, 1.0],
+			"rotation": 0.0,
+			"layer": 6
+		},
+		{
+			"type": "rectangle",
+			"position": [40, 68],
+			"size": [48, 12],
+			"color": [0.55, 0.35, 0.2, 1.0],
+			"rotation": 0.0,
+			"layer": 6
+		},
+		{
+			"type": "rectangle",
+			"position": [20, 38],
+			"size": [20, 28],
+			"color": [0.85, 0.7, 0.55, 1.0],
+			"rotation": 0.0,
+			"layer": 4
+		},
+		{
+			"type": "rectangle",
+			"position": [16, 62],
+			"size": [18, 28],
+			"color": [0.82, 0.68, 0.52, 1.0],
+			"rotation": 0.0,
+			"layer": 3
+		},
+		{
+			"type": "ellipse",
+			"position": [12, 86],
+			"size": [18, 18],
+			"color": [0.85, 0.7, 0.55, 1.0],
+			"rotation": 0.0,
+			"layer": 2
+		},
+		{
+			"type": "rectangle",
+			"position": [88, 38],
+			"size": [20, 28],
+			"color": [0.85, 0.7, 0.55, 1.0],
+			"rotation": 0.0,
+			"layer": 4
+		},
+		{
+			"type": "rectangle",
+			"position": [92, 62],
+			"size": [18, 28],
+			"color": [0.82, 0.68, 0.52, 1.0],
+			"rotation": 0.0,
+			"layer": 3
+		},
+		{
+			"type": "ellipse",
+			"position": [96, 86],
+			"size": [18, 18],
+			"color": [0.85, 0.7, 0.55, 1.0],
+			"rotation": 0.0,
+			"layer": 2
+		},
+		{
+			"type": "rectangle",
+			"position": [44, 76],
+			"size": [18, 30],
+			"color": [0.45, 0.3, 0.2, 1.0],
+			"rotation": 0.0,
+			"layer": 1
+		},
+		{
+			"type": "rectangle",
+			"position": [42, 102],
+			"size": [16, 24],
+			"color": [0.82, 0.68, 0.52, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		},
+		{
+			"type": "rectangle",
+			"position": [38, 122],
+			"size": [22, 10],
+			"color": [0.5, 0.35, 0.25, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		},
+		{
+			"type": "rectangle",
+			"position": [66, 76],
+			"size": [18, 30],
+			"color": [0.45, 0.3, 0.2, 1.0],
+			"rotation": 0.0,
+			"layer": 1
+		},
+		{
+			"type": "rectangle",
+			"position": [68, 102],
+			"size": [16, 24],
+			"color": [0.82, 0.68, 0.52, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		},
+		{
+			"type": "rectangle",
+			"position": [66, 122],
+			"size": [22, 10],
+			"color": [0.5, 0.35, 0.25, 1.0],
+			"rotation": 0.0,
+			"layer": 0
+		}
+	],
+	"body_parts": {
+		"Head": {
+			"name": "Head",
+			"shapes": [0, 1, 2],
+			"pivot": [64, 40],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"Torso": {
+			"name": "Torso",
+			"shapes": [3, 4, 5],
+			"pivot": [64, 56],
+			"pivot_set": true,
+			"parent": ""
+		},
+		"L Upper Arm": {
+			"name": "L Upper Arm",
+			"shapes": [6],
+			"pivot": [30, 42],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"L Lower Arm": {
+			"name": "L Lower Arm",
+			"shapes": [7],
+			"pivot": [25, 66],
+			"pivot_set": true,
+			"parent": "L Upper Arm"
+		},
+		"L Hand": {
+			"name": "L Hand",
+			"shapes": [8],
+			"pivot": [21, 90],
+			"pivot_set": true,
+			"parent": "L Lower Arm"
+		},
+		"R Upper Arm": {
+			"name": "R Upper Arm",
+			"shapes": [9],
+			"pivot": [98, 42],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"R Lower Arm": {
+			"name": "R Lower Arm",
+			"shapes": [10],
+			"pivot": [101, 66],
+			"pivot_set": true,
+			"parent": "R Upper Arm"
+		},
+		"R Hand": {
+			"name": "R Hand",
+			"shapes": [11],
+			"pivot": [105, 90],
+			"pivot_set": true,
+			"parent": "R Lower Arm"
+		},
+		"L Upper Leg": {
+			"name": "L Upper Leg",
+			"shapes": [12],
+			"pivot": [53, 80],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"L Lower Leg": {
+			"name": "L Lower Leg",
+			"shapes": [13],
+			"pivot": [50, 106],
+			"pivot_set": true,
+			"parent": "L Upper Leg"
+		},
+		"L Foot": {
+			"name": "L Foot",
+			"shapes": [14],
+			"pivot": [49, 126],
+			"pivot_set": true,
+			"parent": "L Lower Leg"
+		},
+		"R Upper Leg": {
+			"name": "R Upper Leg",
+			"shapes": [15],
+			"pivot": [75, 80],
+			"pivot_set": true,
+			"parent": "Torso"
+		},
+		"R Lower Leg": {
+			"name": "R Lower Leg",
+			"shapes": [16],
+			"pivot": [76, 106],
+			"pivot_set": true,
+			"parent": "R Upper Leg"
+		},
+		"R Foot": {
+			"name": "R Foot",
+			"shapes": [17],
+			"pivot": [77, 126],
+			"pivot_set": true,
+			"parent": "R Lower Leg"
+		}
+	},
+	"poses": [
+		{
+			"pose_name": "Idle",
+			"rotations": {
+				"L Upper Arm": -15.0,
+				"R Upper Arm": 15.0
+			},
+			"description": "Intimidating stance"
+		},
+		{
+			"pose_name": "Rage_Roar",
+			"rotations": {
+				"Torso": -10.0,
+				"Head": -20.0,
+				"L Upper Arm": -90.0,
+				"L Lower Arm": -30.0,
+				"R Upper Arm": -90.0,
+				"R Lower Arm": -30.0
+			},
+			"description": "Screaming at sky"
+		},
+		{
+			"pose_name": "Axe_Overhead",
+			"rotations": {
+				"Torso": -15.0,
+				"L Upper Arm": -150.0,
+				"L Lower Arm": -45.0,
+				"R Upper Arm": -150.0,
+				"R Lower Arm": -45.0
+			},
+			"description": "Two-handed overhead"
+		},
+		{
+			"pose_name": "Axe_Slam",
+			"rotations": {
+				"Torso": 30.0,
+				"L Upper Arm": 45.0,
+				"L Lower Arm": 20.0,
+				"R Upper Arm": 45.0,
+				"R Lower Arm": 20.0,
+				"L Upper Leg": 15.0,
+				"R Upper Leg": -10.0
+			},
+			"description": "Slamming down"
+		},
+		{
+			"pose_name": "Charge",
+			"rotations": {
+				"Torso": 35.0,
+				"Head": -15.0,
+				"L Upper Arm": -60.0,
+				"R Upper Arm": 60.0,
+				"L Upper Leg": 60.0,
+				"L Lower Leg": -40.0,
+				"R Upper Leg": -45.0,
+				"R Lower Leg": 25.0
+			},
+			"description": "Running charge"
+		}
+	],
+	"animations": {},
+	"directions": ["south"]
+}

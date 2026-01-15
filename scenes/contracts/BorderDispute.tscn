@@ -1,0 +1,58 @@
+[gd_scene load_steps=3 format=3 uid="uid://border_dispute_scene"]
+
+[ext_resource type="Script" path="res://scripts/contracts/border_dispute.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://d25yrhqkkqc8r" path="res://scenes/combat/CombatGrid.tscn" id="2_combat_grid"]
+
+[node name="BorderDispute" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="CombatGrid" parent="." instance=ExtResource("2_combat_grid")]
+
+[node name="DialogueLayer" type="CanvasLayer" parent="."]
+layer = 50
+
+[node name="DimBackground" type="ColorRect" parent="DialogueLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.5)
+
+[node name="DialoguePanel" type="PanelContainer" parent="DialogueLayer"]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 50.0
+offset_top = -250.0
+offset_right = -50.0
+offset_bottom = -30.0
+
+[node name="MarginContainer" type="MarginContainer" parent="DialogueLayer/DialoguePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 15
+
+[node name="VBoxContainer" type="VBoxContainer" parent="DialogueLayer/DialoguePanel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SpeakerLabel" type="Label" parent="DialogueLayer/DialoguePanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Speaker"
+
+[node name="DialogueText" type="RichTextLabel" parent="DialogueLayer/DialoguePanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/normal_font_size = 18
+bbcode_enabled = true
+text = "Dialogue text goes here..."
+fit_content = true
+
+[node name="ContinueButton" type="Button" parent="DialogueLayer/DialoguePanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 8
+text = "Continue [SPACE]"
