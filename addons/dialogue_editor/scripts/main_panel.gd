@@ -320,6 +320,11 @@ func _on_variable_test_value_changed(variable_name: String, value: Variant) -> v
 	# Test values are stored in the panel and used during test mode
 	print("DialogueEditor: Variable '%s' test value changed to: %s" % [variable_name, str(value)])
 
+	# Update Property Panel preview with new test values
+	if _variable_browser_panel and _property_panel:
+		var test_values = _variable_browser_panel.get_test_values()
+		_property_panel.set_test_values(test_values)
+
 
 func _highlight_nodes_using_variable(node_names: Array) -> void:
 	if not dialogue_canvas or not dialogue_canvas.is_inside_tree():
@@ -515,6 +520,10 @@ func _setup_property_panel() -> void:
 	# Connect property change signal
 	_property_panel.property_changed.connect(_on_property_changed)
 
+	# Connect preview-related signals
+	_property_panel.request_test_values.connect(_on_property_panel_request_test_values)
+	_property_panel.request_variable_browser_focus.connect(_on_property_panel_request_variable_browser_focus)
+
 	# Create a container that will clip the property panel for slide animation
 	# This container is positioned at the right edge and overlays the canvas
 	_property_panel_container = Control.new()
@@ -551,6 +560,30 @@ func _on_property_changed(node: GraphNode, property: String, value: Variant) -> 
 		_auto_save_manager.mark_dirty()
 	_update_status_bar()
 	_refresh_validation()
+
+
+func _on_property_panel_request_test_values() -> void:
+	# Provide test values from Variable Browser to Property Panel for preview
+	if _variable_browser_panel and _property_panel:
+		var test_values = _variable_browser_panel.get_test_values()
+		_property_panel.set_test_values(test_values)
+
+
+func _on_property_panel_request_variable_browser_focus() -> void:
+	# Focus and expand the Variable Browser panel
+	if _variable_browser_panel:
+		# Make sure it's expanded
+		if _variable_browser_panel.is_collapsed():
+			_variable_browser_panel.set_collapsed(false)
+
+		# Scroll to make it visible (if in a scroll container)
+		var left_panel = get_node_or_null("Margin/HSplit/LeftPanel/VBox")
+		if left_panel:
+			# Find the scroll container if any
+			var scroll = left_panel.get_parent()
+			if scroll is ScrollContainer:
+				# Ensure variable browser is visible
+				scroll.ensure_control_visible(_variable_browser_panel)
 
 
 func _connect_search_signals() -> void:

@@ -3,10 +3,15 @@ class_name DialoguePropertyPanel
 extends PanelContainer
 ## Slide-out panel for editing selected node properties.
 ## Provides larger, more user-friendly editors than inline node editing.
+## Includes live text preview with variable substitution and formatting.
 
 signal property_changed(node: GraphNode, property: String, value: Variant)
+signal request_test_values  # Request test values from Variable Browser
+signal request_variable_browser_focus  # Focus the Variable Browser panel
 
 const SpeakerColorsScript = preload("res://addons/dialogue_editor/scripts/speaker_colors.gd")
+const TagRendererScript = preload("res://addons/dialogue_editor/scripts/text_tags/tag_renderer.gd")
+const FormattingTagsScript = preload("res://addons/dialogue_editor/scripts/text_tags/formatting_tags.gd")
 
 # Animation configuration
 const SLIDE_DURATION := 0.2
@@ -27,14 +32,41 @@ var _properties_container: VBoxContainer
 # Common editors (cached for performance)
 var _editors: Dictionary = {}
 
+# Preview components
+var _tag_renderer: RefCounted
+var _formatting_tags: RefCounted
+var _preview_update_timer: Timer
+var _test_values: Dictionary = {}
+
+# Preview UI references
+var _preview_label: RichTextLabel = null
+var _preview_error_label: Label = null
+var _preview_container: VBoxContainer = null
+
 
 func _ready() -> void:
 	_setup_panel()
 	_setup_ui()
+	_setup_preview_system()
 	# Start hidden off-screen
 	custom_minimum_size.x = PANEL_WIDTH
 	position.x = PANEL_WIDTH  # Hidden to the right
 	visible = true  # Always visible but positioned off-screen
+
+
+func _setup_preview_system() -> void:
+	# Initialize tag renderer
+	_tag_renderer = TagRendererScript.new()
+
+	# Initialize formatting tags
+	_formatting_tags = FormattingTagsScript.new()
+
+	# Create debounce timer for preview updates
+	_preview_update_timer = Timer.new()
+	_preview_update_timer.one_shot = true
+	_preview_update_timer.wait_time = 0.15  # 150ms debounce
+	_preview_update_timer.timeout.connect(_update_preview)
+	add_child(_preview_update_timer)
 
 
 func _setup_panel() -> void:
@@ -254,6 +286,9 @@ func _populate_speaker_properties() -> void:
 	var text_editor = _add_text_area_editor("dialogue_text", current_text, 500, 150)
 	_editors["dialogue_text"] = text_editor
 
+	# Add text preview section
+	_add_text_preview_section("dialogue_text", current_text)
+
 	_add_separator()
 	_add_section_header("Portrait")
 
@@ -294,6 +329,9 @@ func _populate_choice_properties() -> void:
 	var current_text = _selected_node.get("choice_text") if _selected_node.get("choice_text") else ""
 	var text_editor = _add_text_area_editor("choice_text", current_text, 200, 80)
 	_editors["choice_text"] = text_editor
+
+	# Add text preview section
+	_add_text_preview_section("choice_text", current_text)
 
 
 # =============================================================================
@@ -627,6 +665,178 @@ func _get_counter_color(current: int, max_len: int) -> Color:
 
 
 # =============================================================================
+# TEXT PREVIEW SECTION
+# =============================================================================
+
+func _add_text_preview_section(property: String, initial_text: String) -> void:
+	_add_separator()
+
+	# Preview header with controls
+	var header_row = HBoxContainer.new()
+
+	var preview_header = Label.new()
+	preview_header.text = "Preview"
+	preview_header.add_theme_font_size_override("font_size", 13)
+	preview_header.modulate = Color(0.9, 0.9, 0.5)
+	preview_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header_row.add_child(preview_header)
+
+	# Set Test Values button
+	var test_values_btn = Button.new()
+	test_values_btn.text = "Set Values"
+	test_values_btn.tooltip_text = "Open Variable Browser to set test values"
+	test_values_btn.flat = true
+	test_values_btn.add_theme_font_size_override("font_size", 11)
+	test_values_btn.pressed.connect(_on_set_test_values_pressed)
+	header_row.add_child(test_values_btn)
+
+	_properties_container.add_child(header_row)
+
+	# Preview container
+	_preview_container = VBoxContainer.new()
+	_preview_container.name = "PreviewContainer"
+	_properties_container.add_child(_preview_container)
+
+	# Preview RichTextLabel with styled background
+	var preview_panel = PanelContainer.new()
+	var panel_style = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.1, 0.1, 0.12, 0.9)
+	panel_style.border_color = Color(0.3, 0.3, 0.35)
+	panel_style.set_border_width_all(1)
+	panel_style.set_corner_radius_all(4)
+	panel_style.content_margin_left = 8
+	panel_style.content_margin_right = 8
+	panel_style.content_margin_top = 8
+	panel_style.content_margin_bottom = 8
+	preview_panel.add_theme_stylebox_override("panel", panel_style)
+
+	_preview_label = RichTextLabel.new()
+	_preview_label.name = "PreviewLabel"
+	_preview_label.bbcode_enabled = true
+	_preview_label.fit_content = true
+	_preview_label.custom_minimum_size = Vector2(0, 60)
+	_preview_label.selection_enabled = true
+	_preview_label.scroll_active = false
+	preview_panel.add_child(_preview_label)
+
+	_preview_container.add_child(preview_panel)
+
+	# Error/warning label
+	_preview_error_label = Label.new()
+	_preview_error_label.name = "PreviewErrorLabel"
+	_preview_error_label.add_theme_font_size_override("font_size", 11)
+	_preview_error_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_preview_error_label.visible = false
+	_preview_container.add_child(_preview_error_label)
+
+	# Store property name for updates
+	_preview_container.set_meta("property", property)
+
+	# Request test values from parent
+	request_test_values.emit()
+
+	# Initial preview
+	_schedule_preview_update()
+
+
+func _on_set_test_values_pressed() -> void:
+	# Signal parent to focus the Variable Browser panel
+	request_variable_browser_focus.emit()
+
+
+func _schedule_preview_update() -> void:
+	# Debounce preview updates
+	if _preview_update_timer:
+		_preview_update_timer.start()
+
+
+func _update_preview() -> void:
+	if not _preview_label or not _preview_container:
+		return
+
+	var property = _preview_container.get_meta("property") if _preview_container.has_meta("property") else ""
+	if property.is_empty():
+		return
+
+	# Get current text from editor
+	var text_editor = _editors.get(property)
+	var text = ""
+	if text_editor is TextEdit:
+		text = text_editor.text
+	elif text_editor is LineEdit:
+		text = text_editor.text
+
+	if text.is_empty():
+		_preview_label.text = "[i](empty)[/i]"
+		_preview_error_label.visible = false
+		return
+
+	# Check if text has any tags that need processing
+	var needs_variable_render = "{" in text
+	var needs_bbcode = "[" in text
+
+	var rendered_text = text
+	var errors: Array = []
+	var warnings: Array = []
+
+	# Step 1: Variable and conditional substitution
+	if needs_variable_render and _tag_renderer:
+		var result = _tag_renderer.render(text, _test_values)
+		rendered_text = result.text
+		if not result.success:
+			errors.append_array(result.errors)
+
+	# Step 2: BBCode/formatting validation and preview generation
+	if needs_bbcode and _formatting_tags:
+		var validation = _formatting_tags.validate(rendered_text)
+		if not validation.valid:
+			for err in validation.errors:
+				errors.append(err.message if err is Object else str(err))
+		warnings.append_array(validation.warnings)
+
+		# Generate preview-safe BBCode (converts game tags to visual representation)
+		rendered_text = _formatting_tags.generate_preview(rendered_text)
+
+	# Update preview display
+	_preview_label.text = rendered_text
+
+	# Update error/warning display
+	_update_error_display(errors, warnings)
+
+
+func _update_error_display(errors: Array, warnings: Array) -> void:
+	if not _preview_error_label:
+		return
+
+	if errors.is_empty() and warnings.is_empty():
+		_preview_error_label.visible = false
+		return
+
+	var display_text = ""
+
+	if not errors.is_empty():
+		_preview_error_label.modulate = Color(1.0, 0.4, 0.4)  # Red for errors
+		display_text = "⚠ " + "\n⚠ ".join(errors)
+	elif not warnings.is_empty():
+		_preview_error_label.modulate = Color(1.0, 0.85, 0.4)  # Yellow for warnings
+		display_text = "⚡ " + "\n⚡ ".join(warnings)
+
+	_preview_error_label.text = display_text
+	_preview_error_label.visible = true
+
+
+## Set test values from Variable Browser.
+func set_test_values(values: Dictionary) -> void:
+	_test_values = values
+	_schedule_preview_update()
+
+
+## Get current test values.
+func get_test_values() -> Dictionary:
+	return _test_values
+
+
+# =============================================================================
 # EDITOR SIGNAL HANDLERS
 # =============================================================================
 
@@ -675,6 +885,10 @@ func _on_text_area_changed(property: String, max_length: int, text_edit: TextEdi
 		counter.modulate = _get_counter_color(text.length(), max_length)
 
 	_apply_property(property, text)
+
+	# Trigger preview update for text properties
+	if property in ["dialogue_text", "choice_text"]:
+		_schedule_preview_update()
 
 
 func _on_spinbox_changed(value: float, property: String) -> void:

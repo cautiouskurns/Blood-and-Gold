@@ -632,30 +632,30 @@ graph LR
 
 ---
 
-### Feature 4C.5: Text Preview in Property Panel
+### Feature 4C.5: Text Preview in Property Panel ✅ COMPLETE
 
 **Description:** Show rendered preview of tagged text in the property panel.
 
 **Dependencies:** Features 4C.1-4C.4
 
 **Implementation Tasks:**
-- [ ] Extend property_panel.gd for Speaker/Choice nodes:
-  - [ ] Add "Preview" section below text field
-  - [ ] Use RichTextLabel for formatted preview
-  - [ ] Render with current test values from Variable Browser
-- [ ] Add "Set Test Values" button to open Variable Browser
-- [ ] Real-time update as text is edited
-- [ ] Show tag errors inline
+- [x] Extend property_panel.gd for Speaker/Choice nodes:
+  - [x] Add "Preview" section below text field
+  - [x] Use RichTextLabel for formatted preview
+  - [x] Render with current test values from Variable Browser
+- [x] Add "Set Test Values" button to open Variable Browser
+- [x] Real-time update as text is edited (with 150ms debounce)
+- [x] Show tag errors inline (red for errors, yellow for warnings)
 
-**Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/property_panel.gd` (extend)
-- `addons/dialogue_editor/scripts/ui/variable_browser_panel.gd` (integration)
+**Files Modified:**
+- `addons/dialogue_editor/scripts/property_panel.gd` ✅ (added preview section, signal integration)
+- `addons/dialogue_editor/scripts/main_panel.gd` ✅ (connected signals, test value propagation)
 
 **Success Criteria:**
-- [ ] Preview shows rendered text with variables substituted
-- [ ] Conditionals render based on test values
-- [ ] Formatting (bold, italic, color) visible
-- [ ] Invalid tags highlighted
+- [x] Preview shows rendered text with variables substituted
+- [x] Conditionals render based on test values
+- [x] Formatting (bold, italic, color) visible
+- [x] Invalid tags highlighted
 
 ---
 
@@ -1087,7 +1087,7 @@ graph LR
 - [x] Feature 4C.2: Conditional Tag Parser ✅
 - [x] Feature 4C.3: Tag Renderer ✅
 - [x] Feature 4C.4: Formatting Tags ✅
-- [ ] Feature 4C.5: Text Preview in Property Panel
+- [x] Feature 4C.5: Text Preview in Property Panel ✅
 - [ ] Feature 4C.6: Export with Tags
 
 ### Phase 4D: Node Grouping
