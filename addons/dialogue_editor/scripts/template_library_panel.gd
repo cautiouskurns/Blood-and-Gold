@@ -143,7 +143,7 @@ func _refresh_templates() -> void:
 	_custom_category.set_custom_color(0, Color(0.7, 0.7, 0.7))
 
 	# Load templates
-	var manager = DialogueTemplateManager.get_singleton()
+	var manager = DialogueTemplateManager.get_instance()
 	if manager:
 		var all_templates = manager.get_all_templates()
 		_populate_templates(all_templates)
@@ -377,7 +377,7 @@ func _on_import_pressed() -> void:
 func _on_import_file_selected(path: String, dialog: FileDialog) -> void:
 	dialog.queue_free()
 
-	var manager = DialogueTemplateManager.get_singleton()
+	var manager = DialogueTemplateManager.get_instance()
 	if manager:
 		var template = manager.load_template(path)
 		if template:
@@ -413,7 +413,7 @@ func _on_export_pressed() -> void:
 func _on_export_file_selected(path: String, dialog: FileDialog) -> void:
 	dialog.queue_free()
 
-	var manager = DialogueTemplateManager.get_singleton()
+	var manager = DialogueTemplateManager.get_instance()
 	if manager and _selected_template:
 		manager.save_template(_selected_template, path)
 		print("Template exported to: ", path)
@@ -457,7 +457,7 @@ func _on_delete_confirmed(path: String, dialog: ConfirmationDialog) -> void:
 
 
 func _on_refresh_pressed() -> void:
-	var manager = DialogueTemplateManager.get_singleton()
+	var manager = DialogueTemplateManager.get_instance()
 	if manager:
 		manager.refresh_templates()
 	_refresh_templates()

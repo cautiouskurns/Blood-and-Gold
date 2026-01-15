@@ -260,10 +260,23 @@ func _perform_auto_save() -> bool:
 		"connections": canvas_data.get("connections", [])
 	}
 
-	# Save to temp file
-	var result = DialogueTreeDataScript.save_to_file(temp_path, data)
+	# Save to temp file - create a DialogueTreeData instance and populate it
+	var tree_data = DialogueTreeData.new()
+	tree_data.dialogue_id = data.metadata.dialogue_id
+	tree_data.display_name = data.metadata.display_name
+	tree_data.description = data.metadata.description
+	tree_data.author = data.metadata.author
+	tree_data.created_date = data.metadata.created_date
+	tree_data.modified_date = data.metadata.modified_date
+	tree_data.scroll_offset_x = data.canvas.scroll_offset_x
+	tree_data.scroll_offset_y = data.canvas.scroll_offset_y
+	tree_data.zoom = data.canvas.zoom
+	tree_data.nodes = data.nodes
+	tree_data.connections = data.connections
 
-	if result.success:
+	var result = tree_data.save_to_file(temp_path)
+
+	if result == OK:
 		_last_auto_save_time = Time.get_unix_time_from_system()
 		_last_auto_save_path = temp_path
 
@@ -277,8 +290,8 @@ func _perform_auto_save() -> bool:
 		print("DialogueAutoSave: Saved to %s" % temp_path)
 		return true
 	else:
-		auto_save_failed.emit(result.get("error", "Unknown error"))
-		push_error("DialogueAutoSave: Failed to save - %s" % result.get("error", "Unknown"))
+		auto_save_failed.emit("Error code: %d" % result)
+		push_error("DialogueAutoSave: Failed to save - Error code: %d" % result)
 		return false
 
 
