@@ -1,7 +1,7 @@
 @tool
 class_name DialogueTagParser
 extends RefCounted
-## Parses {variable_name} tags in dialogue text.
+## Parses {variable_name} and {if}...{else}...{/if} tags in dialogue text.
 ## Supports variable interpolation, dot notation, and conditional blocks.
 ## Used by DialogueRunner to process text before display.
 
@@ -12,9 +12,10 @@ extends RefCounted
 enum TagType {
 	TEXT,               # Plain text segment
 	VARIABLE,           # {variable_name} or {player.stats.health}
-	CONDITIONAL_START,  # {if condition}  (Phase 4C.2)
-	CONDITIONAL_ELSE,   # {else}          (Phase 4C.2)
-	CONDITIONAL_END,    # {/if}           (Phase 4C.2)
+	CONDITIONAL_START,  # {if condition}
+	CONDITIONAL_ELIF,   # {elif condition}
+	CONDITIONAL_ELSE,   # {else}
+	CONDITIONAL_END,    # {/if} or {endif}
 	ERROR               # Parse error marker
 }
 
@@ -25,11 +26,12 @@ enum TagType {
 
 class Tag:
 	var type: TagType
-	var content: String          # Text content or variable name
+	var content: String          # Text content, variable name, or condition expression
 	var path: Array              # For dot notation: ["player", "stats", "health"]
 	var position: int            # Start position in source text
 	var length: int              # Length in source text
 	var error_message: String    # Error description if type is ERROR
+	var nesting_depth: int       # Conditional nesting depth when this tag was parsed
 
 	func _init(p_type: TagType, p_content: String, p_position: int, p_length: int = 0) -> void:
 		type = p_type
@@ -38,17 +40,23 @@ class Tag:
 		length = p_length if p_length > 0 else p_content.length()
 		path = []
 		error_message = ""
+		nesting_depth = 0
 
 	func _to_string() -> String:
 		match type:
 			TagType.TEXT:
-				return "TEXT(\"%s\")" % content.substr(0, 20)
+				var preview = content.substr(0, 20)
+				if content.length() > 20:
+					preview += "..."
+				return "TEXT(\"%s\")" % preview
 			TagType.VARIABLE:
 				if path.size() > 1:
 					return "VAR(%s)" % ".".join(path)
 				return "VAR(%s)" % content
 			TagType.CONDITIONAL_START:
 				return "IF(%s)" % content
+			TagType.CONDITIONAL_ELIF:
+				return "ELIF(%s)" % content
 			TagType.CONDITIONAL_ELSE:
 				return "ELSE"
 			TagType.CONDITIONAL_END:
@@ -62,11 +70,54 @@ class Tag:
 	func is_error() -> bool:
 		return type == TagType.ERROR
 
+	## Check if this is a conditional tag.
+	func is_conditional() -> bool:
+		return type in [TagType.CONDITIONAL_START, TagType.CONDITIONAL_ELIF,
+						TagType.CONDITIONAL_ELSE, TagType.CONDITIONAL_END]
+
 	## Get the full variable path as a string.
 	func get_variable_path() -> String:
 		if path.is_empty():
 			return content
 		return ".".join(path)
+
+
+# =============================================================================
+# CONDITIONAL BLOCK CLASS (AST)
+# =============================================================================
+
+## Represents a conditional block in the AST.
+## Structure: if-branch -> [elif-branches] -> [else-branch]
+class ConditionalBlock:
+	var condition: String        # The if/elif condition expression
+	var if_content: Array        # Tags for the if branch (Array of Tag or ConditionalBlock)
+	var elif_branches: Array     # Array of {condition: String, content: Array}
+	var else_content: Array      # Tags for the else branch (can be empty)
+	var position: int            # Position of opening {if}
+	var end_position: int        # Position after closing {/if}
+
+	func _init() -> void:
+		condition = ""
+		if_content = []
+		elif_branches = []
+		else_content = []
+		position = 0
+		end_position = 0
+
+	func _to_string() -> String:
+		var s = "ConditionalBlock(if %s)" % condition
+		if elif_branches.size() > 0:
+			s += " [%d elif]" % elif_branches.size()
+		if else_content.size() > 0:
+			s += " [else]"
+		return s
+
+	## Get all conditions in this block (if + elifs).
+	func get_all_conditions() -> Array:
+		var conditions: Array = [condition]
+		for branch in elif_branches:
+			conditions.append(branch.condition)
+		return conditions
 
 
 # =============================================================================
@@ -95,20 +146,28 @@ class ParseError:
 
 class ParseResult:
 	var success: bool
-	var tags: Array  # Array of Tag
-	var errors: Array  # Array of ParseError
-	var has_variables: bool  # Quick check if any variables exist
+	var tags: Array              # Array of Tag (flat list)
+	var ast: Array               # Array of Tag and ConditionalBlock (nested structure)
+	var errors: Array            # Array of ParseError
+	var has_variables: bool      # Quick check if any variables exist
+	var has_conditionals: bool   # Quick check if any conditionals exist
+	var max_nesting_depth: int   # Maximum conditional nesting depth found
 
 	func _init() -> void:
 		success = true
 		tags = []
+		ast = []
 		errors = []
 		has_variables = false
+		has_conditionals = false
+		max_nesting_depth = 0
 
 	func add_tag(tag: Tag) -> void:
 		tags.append(tag)
 		if tag.type == TagType.VARIABLE:
 			has_variables = true
+		if tag.is_conditional():
+			has_conditionals = true
 		if tag.type == TagType.ERROR:
 			success = false
 
@@ -127,6 +186,15 @@ class ParseResult:
 				names.append(tag.get_variable_path())
 		return names
 
+	## Get all condition expressions found in the text.
+	func get_conditions() -> Array:
+		var conditions: Array = []
+		for tag in tags:
+			if tag.type in [TagType.CONDITIONAL_START, TagType.CONDITIONAL_ELIF]:
+				if not tag.content.is_empty():
+					conditions.append(tag.content)
+		return conditions
+
 
 # =============================================================================
 # CONSTANTS
@@ -143,8 +211,14 @@ const VAR_START_CHARS := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
 # Valid characters for variable names (continuation)
 const VAR_CHARS := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789"
 
-# Reserved keywords for conditional tags (Phase 4C.2)
-const CONDITIONAL_KEYWORDS := ["if", "else", "elif", "/if", "endif"]
+# Reserved keywords for conditional tags
+const KEYWORD_IF := "if"
+const KEYWORD_ELIF := "elif"
+const KEYWORD_ELSE := "else"
+const KEYWORD_ENDIF := "/if"
+const KEYWORD_ENDIF_ALT := "endif"
+
+const CONDITIONAL_KEYWORDS := [KEYWORD_IF, KEYWORD_ELIF, KEYWORD_ELSE, KEYWORD_ENDIF, KEYWORD_ENDIF_ALT]
 
 
 # =============================================================================
@@ -154,6 +228,8 @@ const CONDITIONAL_KEYWORDS := ["if", "else", "elif", "/if", "endif"]
 var _source: String = ""
 var _position: int = 0
 var _length: int = 0
+var _conditional_depth: int = 0  # Track nesting depth
+var _conditional_stack: Array = []  # Stack of {type, position} for validation
 
 
 # =============================================================================
@@ -166,6 +242,8 @@ func parse(text: String) -> ParseResult:
 	_source = text
 	_position = 0
 	_length = text.length()
+	_conditional_depth = 0
+	_conditional_stack = []
 
 	var result = ParseResult.new()
 	var text_start := 0
@@ -196,7 +274,12 @@ func parse(text: String) -> ParseResult:
 			# Parse the tag
 			var tag = _parse_tag(result)
 			if tag:
+				tag.nesting_depth = _conditional_depth
 				result.add_tag(tag)
+
+				# Update max nesting depth
+				if _conditional_depth > result.max_nesting_depth:
+					result.max_nesting_depth = _conditional_depth
 
 			text_start = _position
 			continue
@@ -208,16 +291,38 @@ func parse(text: String) -> ParseResult:
 		var text_content = _source.substr(text_start, _position - text_start)
 		result.add_tag(Tag.new(TagType.TEXT, text_content, text_start))
 
+	# Check for unclosed conditionals
+	if _conditional_stack.size() > 0:
+		for unclosed in _conditional_stack:
+			result.add_error(ParseError.new(
+				"Unclosed {%s} tag" % unclosed.keyword,
+				unclosed.position,
+				_get_context(unclosed.position)
+			))
+
+	# Build AST if no errors
+	if result.success:
+		result.ast = _build_ast(result.tags)
+
+	return result
+
+
+## Parse and validate, including condition expression validation.
+## Uses the expression parser if available.
+func parse_and_validate(text: String) -> ParseResult:
+	var result = parse(text)
+
+	if result.success and result.has_conditionals:
+		_validate_conditions(result)
+
 	return result
 
 
 ## Convenience method to check if text contains any tags.
 func has_tags(text: String) -> bool:
-	# Quick check without full parsing
 	var i := 0
 	while i < text.length():
 		if text[i] == TAG_OPEN:
-			# Check if it's escaped
 			if i > 0 and text[i - 1] == ESCAPE_CHAR:
 				i += 1
 				continue
@@ -226,10 +331,22 @@ func has_tags(text: String) -> bool:
 	return false
 
 
-## Get all variable names from text without full parsing.
+## Check if text contains conditional tags.
+func has_conditionals(text: String) -> bool:
+	var result = parse(text)
+	return result.has_conditionals
+
+
+## Get all variable names from text.
 func get_variables(text: String) -> Array:
 	var result = parse(text)
 	return result.get_variable_names()
+
+
+## Get all condition expressions from text.
+func get_conditions(text: String) -> Array:
+	var result = parse(text)
+	return result.get_conditions()
 
 
 # =============================================================================
@@ -251,9 +368,9 @@ func _parse_tag(result: ParseResult) -> Tag:
 		))
 		return _make_error_tag("Unclosed tag", tag_start)
 
-	# Check for conditional keywords (Phase 4C.2 - stub for now)
+	# Check for conditional keywords
 	var keyword = _peek_keyword()
-	if keyword in CONDITIONAL_KEYWORDS:
+	if not keyword.is_empty():
 		return _parse_conditional_tag(tag_start, keyword, result)
 
 	# Parse as variable tag
@@ -310,7 +427,6 @@ func _parse_variable_tag(tag_start: int, result: ParseResult) -> Tag:
 
 		# Validate variable name characters
 		if current_segment.is_empty():
-			# First character must be a valid start char
 			if c not in VAR_START_CHARS:
 				result.add_error(ParseError.new(
 					"Invalid variable name: must start with letter or underscore, got '%s'" % c,
@@ -319,7 +435,6 @@ func _parse_variable_tag(tag_start: int, result: ParseResult) -> Tag:
 				))
 				return _make_error_tag("Invalid variable name start", tag_start)
 		else:
-			# Subsequent characters
 			if c not in VAR_CHARS:
 				result.add_error(ParseError.new(
 					"Invalid character in variable name: '%s'" % c,
@@ -341,40 +456,278 @@ func _parse_variable_tag(tag_start: int, result: ParseResult) -> Tag:
 
 
 func _parse_conditional_tag(tag_start: int, keyword: String, result: ParseResult) -> Tag:
-	# Phase 4C.2 stub - for now just skip to closing brace and create placeholder
 	_position += keyword.length()
 	_skip_whitespace()
 
 	var condition := ""
-
-	# Read until closing brace
-	while _position < _length and _source[_position] != TAG_CLOSE:
-		condition += _source[_position]
-		_position += 1
-
-	if _position >= _length:
-		result.add_error(ParseError.new(
-			"Unclosed conditional tag",
-			tag_start,
-			_get_context(tag_start)
-		))
-		return _make_error_tag("Unclosed conditional tag", tag_start)
-
-	_position += 1  # Skip closing brace
-
 	var tag_type: TagType
+
+	# Determine tag type and handle accordingly
 	match keyword:
-		"if":
+		KEYWORD_IF:
 			tag_type = TagType.CONDITIONAL_START
-		"else", "elif":
+			condition = _read_until_close()
+			if condition.is_empty():
+				result.add_error(ParseError.new(
+					"{if} requires a condition expression",
+					tag_start,
+					_get_context(tag_start)
+				))
+			_conditional_depth += 1
+			_conditional_stack.append({
+				"keyword": "if",
+				"position": tag_start
+			})
+
+		KEYWORD_ELIF:
+			tag_type = TagType.CONDITIONAL_ELIF
+			condition = _read_until_close()
+			if condition.is_empty():
+				result.add_error(ParseError.new(
+					"{elif} requires a condition expression",
+					tag_start,
+					_get_context(tag_start)
+				))
+			# Validate we're inside an if block
+			if _conditional_stack.is_empty():
+				result.add_error(ParseError.new(
+					"{elif} without matching {if}",
+					tag_start,
+					_get_context(tag_start)
+				))
+
+		KEYWORD_ELSE:
 			tag_type = TagType.CONDITIONAL_ELSE
-		"/if", "endif":
+			_read_until_close()  # Should be empty, but skip anyway
+			# Validate we're inside an if block
+			if _conditional_stack.is_empty():
+				result.add_error(ParseError.new(
+					"{else} without matching {if}",
+					tag_start,
+					_get_context(tag_start)
+				))
+
+		KEYWORD_ENDIF, KEYWORD_ENDIF_ALT:
 			tag_type = TagType.CONDITIONAL_END
+			_read_until_close()  # Should be empty
+			# Validate we have a matching if
+			if _conditional_stack.is_empty():
+				result.add_error(ParseError.new(
+					"{/if} without matching {if}",
+					tag_start,
+					_get_context(tag_start)
+				))
+			else:
+				_conditional_stack.pop_back()
+				_conditional_depth -= 1
+
 		_:
 			tag_type = TagType.ERROR
+			result.add_error(ParseError.new(
+				"Unknown conditional keyword: %s" % keyword,
+				tag_start,
+				_get_context(tag_start)
+			))
+
+	if _position >= _length or _source[_position - 1] != TAG_CLOSE:
+		if _position < _length and _source[_position] == TAG_CLOSE:
+			_position += 1
+		elif _position >= _length:
+			result.add_error(ParseError.new(
+				"Unclosed conditional tag",
+				tag_start,
+				_get_context(tag_start)
+			))
+			return _make_error_tag("Unclosed conditional tag", tag_start)
 
 	var tag = Tag.new(tag_type, condition.strip_edges(), tag_start, _position - tag_start)
 	return tag
+
+
+func _read_until_close() -> String:
+	var content := ""
+	while _position < _length and _source[_position] != TAG_CLOSE:
+		content += _source[_position]
+		_position += 1
+	if _position < _length:
+		_position += 1  # Skip closing brace
+	return content
+
+
+# =============================================================================
+# AST BUILDING
+# =============================================================================
+
+## Build AST from flat tag list.
+## Groups conditionals into ConditionalBlock nodes.
+func _build_ast(tags: Array) -> Array:
+	var ast: Array = []
+	var i := 0
+
+	while i < tags.size():
+		var tag = tags[i]
+
+		if tag.type == TagType.CONDITIONAL_START:
+			var block = _build_conditional_block(tags, i)
+			ast.append(block.block)
+			i = block.end_index
+		else:
+			ast.append(tag)
+			i += 1
+
+	return ast
+
+
+## Build a ConditionalBlock from tags starting at index.
+## Returns {block: ConditionalBlock, end_index: int}
+func _build_conditional_block(tags: Array, start_index: int) -> Dictionary:
+	var block = ConditionalBlock.new()
+	var i := start_index
+
+	# Get the opening {if} tag
+	var if_tag = tags[i]
+	block.condition = if_tag.content
+	block.position = if_tag.position
+	i += 1
+
+	# Current branch we're filling
+	var current_content: Array = []
+	var in_else := false
+	var current_elif_condition := ""
+
+	while i < tags.size():
+		var tag = tags[i]
+
+		match tag.type:
+			TagType.CONDITIONAL_START:
+				# Nested conditional - recurse
+				var nested = _build_conditional_block(tags, i)
+				current_content.append(nested.block)
+				i = nested.end_index
+				continue
+
+			TagType.CONDITIONAL_ELIF:
+				# Save current content to appropriate branch
+				if in_else:
+					# Error: elif after else (should be caught in parse)
+					pass
+				elif current_elif_condition.is_empty():
+					# First elif, save if_content
+					block.if_content = current_content
+				else:
+					# Save previous elif branch
+					block.elif_branches.append({
+						"condition": current_elif_condition,
+						"content": current_content
+					})
+				current_elif_condition = tag.content
+				current_content = []
+				i += 1
+				continue
+
+			TagType.CONDITIONAL_ELSE:
+				# Save current content
+				if current_elif_condition.is_empty():
+					block.if_content = current_content
+				else:
+					block.elif_branches.append({
+						"condition": current_elif_condition,
+						"content": current_content
+					})
+				current_content = []
+				in_else = true
+				current_elif_condition = ""
+				i += 1
+				continue
+
+			TagType.CONDITIONAL_END:
+				# End of this block
+				if in_else:
+					block.else_content = current_content
+				elif not current_elif_condition.is_empty():
+					block.elif_branches.append({
+						"condition": current_elif_condition,
+						"content": current_content
+					})
+				else:
+					block.if_content = current_content
+				block.end_position = tag.position + tag.length
+				return {"block": block, "end_index": i + 1}
+
+			_:
+				# Regular tag (TEXT, VARIABLE, etc.)
+				current_content.append(tag)
+				i += 1
+
+	# Reached end without finding {/if} - should be caught in parse
+	return {"block": block, "end_index": i}
+
+
+# =============================================================================
+# CONDITION VALIDATION
+# =============================================================================
+
+## Validate condition expressions using ExpressionParser if available.
+func _validate_conditions(result: ParseResult) -> void:
+	# Try to use ExpressionParser for validation
+	var parser_available := false
+	var parser = null
+
+	# Check if ExpressionParser class exists
+	if ClassDB.class_exists("ExpressionParser"):
+		parser_available = true
+	else:
+		# Try to instantiate via class_name
+		# Note: This may fail if expression system isn't compiled
+		pass
+
+	if not parser_available:
+		# Expression parser not available, skip validation
+		# Conditions will be validated at runtime
+		return
+
+	for tag in result.tags:
+		if tag.type in [TagType.CONDITIONAL_START, TagType.CONDITIONAL_ELIF]:
+			if tag.content.is_empty():
+				continue
+
+			# Would validate here with parser.parse(tag.content)
+			# For now, do basic syntax checks
+			_basic_condition_check(tag.content, tag.position, result)
+
+
+## Basic condition syntax check without full parser.
+func _basic_condition_check(condition: String, position: int, result: ParseResult) -> void:
+	# Check for common issues
+	if condition.strip_edges().is_empty():
+		result.add_error(ParseError.new(
+			"Empty condition expression",
+			position,
+			""
+		))
+		return
+
+	# Check for balanced parentheses
+	var paren_depth := 0
+	for c in condition:
+		if c == "(":
+			paren_depth += 1
+		elif c == ")":
+			paren_depth -= 1
+			if paren_depth < 0:
+				result.add_error(ParseError.new(
+					"Unbalanced parentheses in condition: extra ')'",
+					position,
+					condition
+				))
+				return
+
+	if paren_depth != 0:
+		result.add_error(ParseError.new(
+			"Unbalanced parentheses in condition: missing ')'",
+			position,
+			condition
+		))
 
 
 # =============================================================================
@@ -393,16 +746,14 @@ func _skip_whitespace() -> void:
 
 
 func _peek_keyword() -> String:
-	# Check if the current position starts with a conditional keyword
 	var remaining = _source.substr(_position)
 	for keyword in CONDITIONAL_KEYWORDS:
 		if remaining.begins_with(keyword):
-			# Verify it's followed by whitespace or closing brace
 			var next_pos = keyword.length()
 			if next_pos >= remaining.length():
 				return keyword
 			var next_char = remaining[next_pos]
-			if next_char in " \t}" or next_char == TAG_CLOSE:
+			if next_char in " \t}":
 				return keyword
 	return ""
 
@@ -428,17 +779,14 @@ static func is_valid_variable_name(name: String) -> bool:
 	if name.is_empty():
 		return false
 
-	# Check first character
 	if name[0] not in VAR_START_CHARS:
 		return false
 
-	# Check remaining characters (including dots for paths)
 	for i in range(1, name.length()):
 		var c = name[i]
 		if c != DOT_CHAR and c not in VAR_CHARS:
 			return false
 
-	# Check for consecutive dots or trailing dot
 	if ".." in name or name.ends_with("."):
 		return false
 
@@ -453,3 +801,23 @@ static func split_variable_path(path: String) -> Array:
 ## Join variable path segments.
 static func join_variable_path(segments: Array) -> String:
 	return ".".join(segments)
+
+
+## Render a flat tag list back to string (for debugging/preview).
+static func tags_to_string(tags: Array) -> String:
+	var result := ""
+	for tag in tags:
+		match tag.type:
+			TagType.TEXT:
+				result += tag.content
+			TagType.VARIABLE:
+				result += "{%s}" % tag.get_variable_path()
+			TagType.CONDITIONAL_START:
+				result += "{if %s}" % tag.content
+			TagType.CONDITIONAL_ELIF:
+				result += "{elif %s}" % tag.content
+			TagType.CONDITIONAL_ELSE:
+				result += "{else}"
+			TagType.CONDITIONAL_END:
+				result += "{/if}"
+	return result

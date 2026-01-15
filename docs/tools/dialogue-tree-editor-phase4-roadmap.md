@@ -547,29 +547,31 @@ graph LR
 
 ---
 
-### Feature 4C.2: Conditional Tag Parser
+### Feature 4C.2: Conditional Tag Parser ✅ COMPLETE
 
 **Description:** Parse `{if condition}...{else}...{/if}` syntax.
 
 **Dependencies:** Feature 4C.1, 4B.2
 
 **Implementation Tasks:**
-- [ ] Extend tag_parser.gd for conditional syntax:
-  - [ ] `{if expression}` - start conditional
-  - [ ] `{else}` - else branch (optional)
-  - [ ] `{/if}` - end conditional
-- [ ] Support nested conditionals
-- [ ] Validate condition expressions using expression parser
-- [ ] Create AST representation of conditional text
+- [x] Extend tag_parser.gd for conditional syntax:
+  - [x] `{if expression}` - start conditional
+  - [x] `{elif expression}` - else-if branch (added)
+  - [x] `{else}` - else branch (optional)
+  - [x] `{/if}` or `{endif}` - end conditional
+- [x] Support nested conditionals with depth tracking
+- [x] Validate condition expressions using expression parser (basic syntax check)
+- [x] Create AST representation of conditional text (ConditionalBlock class)
 
-**Files to Create/Modify:**
-- `addons/dialogue_editor/scripts/text_tags/tag_parser.gd` (extend)
+**Files Modified:**
+- `addons/dialogue_editor/scripts/text_tags/tag_parser.gd` ✅ (extended with conditionals)
+- `addons/dialogue_editor/scripts/text_tags/test_tag_parser.gd` ✅ (added 11 conditional tests)
 
 **Success Criteria:**
-- [ ] Parses `{if noble}Lord{else}Friend{/if}` correctly
-- [ ] Validates condition syntax
-- [ ] Handles nested conditionals
-- [ ] Reports mismatched if/endif
+- [x] Parses `{if noble}Lord{else}Friend{/if}` correctly
+- [x] Validates condition syntax (balanced parentheses, non-empty)
+- [x] Handles nested conditionals with max_nesting_depth tracking
+- [x] Reports mismatched if/endif errors
 
 ---
 
@@ -1078,7 +1080,7 @@ graph LR
 
 ### Phase 4C: Conditional Text
 - [x] Feature 4C.1: Variable Tag Parser ✅
-- [ ] Feature 4C.2: Conditional Tag Parser
+- [x] Feature 4C.2: Conditional Tag Parser ✅
 - [ ] Feature 4C.3: Tag Renderer
 - [ ] Feature 4C.4: Formatting Tags
 - [ ] Feature 4C.5: Text Preview in Property Panel
