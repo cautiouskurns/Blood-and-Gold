@@ -169,18 +169,14 @@ func scan_variables() -> void:
 	_variables.clear()
 
 	if not _graph_edit:
-		print("VariableBrowser: No graph_edit set")
 		_rebuild_tree()
 		return
 
 	# Scan all GraphNode children
-	var node_count := 0
 	for child in _graph_edit.get_children():
 		if child is GraphNode:
-			node_count += 1
 			_scan_node(child)
 
-	print("VariableBrowser: Scanned %d nodes, found %d variables" % [node_count, _variables.size()])
 	_rebuild_tree()
 	_update_title()
 
@@ -234,11 +230,8 @@ func _scan_node(node: GraphNode) -> void:
 
 
 func _scan_data_for_variables(data: Dictionary, node_name: String) -> void:
-	print("VariableBrowser: Scanning node %s, keys: %s" % [node_name, data.keys()])
-
 	# Scan expression field
 	if data.has("expression"):
-		print("VariableBrowser: Found expression in %s: %s" % [node_name, data.expression])
 		_extract_variables_from_expression(data.expression, node_name)
 
 	# Scan simple conditions (Branch node)
@@ -264,24 +257,19 @@ func _extract_variables_from_expression(expression: String, node_name: String) -
 	if expression.is_empty():
 		return
 
-	print("VariableBrowser: Extracting from expression '%s' in node %s" % [expression, node_name])
-
 	# Lazy load lexer to avoid blocking compilation
 	if _expression_lexer_script == null:
 		_expression_lexer_script = load("res://addons/dialogue_editor/scripts/expressions/expression_lexer.gd")
 
 	if _expression_lexer_script == null:
-		print("VariableBrowser: Failed to load lexer script!")
 		return
 
 	# Use lexer to tokenize
 	var lexer = _expression_lexer_script.new()
 	var tokens_result = lexer.tokenize(expression)
 	if tokens_result == null or not tokens_result.success:
-		print("VariableBrowser: Tokenization failed")
 		return
 	var tokens = tokens_result.tokens
-	print("VariableBrowser: Got %d tokens" % tokens.size())
 
 	var i = 0
 	while i < tokens.size():

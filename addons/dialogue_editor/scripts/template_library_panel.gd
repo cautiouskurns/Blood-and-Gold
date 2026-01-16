@@ -381,16 +381,15 @@ func _on_import_file_selected(path: String, dialog: FileDialog) -> void:
 	if manager:
 		var template = manager.load_template(path)
 		if template:
-			# Copy to custom templates directory
-			var custom_dir = "res://data/dialogue/templates/"
-			var dir = DirAccess.open("res://")
-			if dir and not dir.dir_exists(custom_dir):
-				dir.make_dir_recursive(custom_dir)
-
-			var new_path = custom_dir + path.get_file()
-			manager.save_template(template, new_path)
-			_refresh_templates()
-			print("Template imported: ", template.template_name)
+			# Mark as user template (not built-in) so it can be saved
+			template.is_built_in = false
+			# Save using the manager (saves to user templates directory)
+			var err = manager.save_template(template)
+			if err == OK:
+				_refresh_templates()
+				print("Template imported: ", template.template_name)
+			else:
+				push_error("Failed to import template: %d" % err)
 
 
 func _on_export_pressed() -> void:
@@ -413,10 +412,12 @@ func _on_export_pressed() -> void:
 func _on_export_file_selected(path: String, dialog: FileDialog) -> void:
 	dialog.queue_free()
 
-	var manager = DialogueTemplateManager.get_instance()
-	if manager and _selected_template:
-		manager.save_template(_selected_template, path)
-		print("Template exported to: ", path)
+	if _selected_template:
+		var err = _selected_template.save_to_file(path)
+		if err == OK:
+			print("Template exported to: ", path)
+		else:
+			push_error("Failed to export template: %d" % err)
 
 
 func _on_delete_pressed() -> void:

@@ -24,8 +24,8 @@ const DEFAULT_DIALOGUE_DIR := "res://data/dialogue/"
 @onready var dialogue_id_label: Label = $Margin/HSplit/RightPanel/StatusBar/DialogueIdLabel
 @onready var node_count_label: Label = $Margin/HSplit/RightPanel/StatusBar/NodeCountLabel
 @onready var zoom_label: Label = $Margin/HSplit/RightPanel/StatusBar/ZoomLabel
-@onready var node_palette: VBoxContainer = $Margin/HSplit/LeftPanel/LeftScroll/VBox/Scroll/NodeList
-@onready var template_library: VBoxContainer = $Margin/HSplit/LeftPanel/LeftScroll/VBox/TemplateScroll/TemplateLibrary
+@onready var node_palette: VBoxContainer = $Margin/HSplit/LeftPanel/LeftVSplit/TabContainer/Nodes/NodeList
+@onready var template_library: VBoxContainer = $Margin/HSplit/LeftPanel/LeftVSplit/TabContainer/Templates/TemplateLibrary
 
 # Toolbar buttons
 @onready var new_btn: Button = $Margin/HSplit/RightPanel/Toolbar/NewBtn
@@ -291,15 +291,11 @@ func _setup_variable_browser_panel() -> void:
 	_variable_browser_panel.variable_selected.connect(_on_variable_selected)
 	_variable_browser_panel.test_value_changed.connect(_on_variable_test_value_changed)
 
-	# Add to the left panel, below the template library
-	var left_panel = get_node_or_null("Margin/HSplit/LeftPanel/LeftScroll/VBox")
-	if left_panel:
-		# Add a separator
-		var sep = HSeparator.new()
-		left_panel.add_child(sep)
-
-		# Add the panel
-		left_panel.add_child(_variable_browser_panel)
+	# Add to the variables container (resizable at bottom of left panel)
+	var variables_container = get_node_or_null("Margin/HSplit/LeftPanel/LeftVSplit/VariablesContainer")
+	if variables_container:
+		# Add the panel directly to the container
+		variables_container.add_child(_variable_browser_panel)
 
 	# Initial scan
 	call_deferred("_refresh_variable_browser")
@@ -576,14 +572,8 @@ func _on_property_panel_request_variable_browser_focus() -> void:
 		if _variable_browser_panel.is_collapsed():
 			_variable_browser_panel.set_collapsed(false)
 
-		# Scroll to make it visible (if in a scroll container)
-		var left_panel = get_node_or_null("Margin/HSplit/LeftPanel/LeftScroll/VBox")
-		if left_panel:
-			# Find the scroll container if any
-			var scroll = left_panel.get_parent()
-			if scroll is ScrollContainer:
-				# Ensure variable browser is visible
-				scroll.ensure_control_visible(_variable_browser_panel)
+		# Variable browser is now always visible at bottom of left panel
+		# No scrolling needed since it's in a fixed container
 
 
 func _connect_search_signals() -> void:

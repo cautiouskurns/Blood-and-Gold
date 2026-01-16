@@ -1,0 +1,151 @@
+{
+	"version": 1,
+	"metadata": {
+		"template_name": "Variable Demo",
+		"description": "Demonstrates variable substitution, conditionals, and dynamic text in dialogue.",
+		"author": "Blood & Gold Team",
+		"tags": ["variables", "demo", "conditionals", "test"],
+		"category": "conversation",
+		"created_date": "2026-01-15T00:00:00",
+		"modified_date": "2026-01-15T00:00:00"
+	},
+	"content": {
+		"nodes": [
+			{
+				"id": "Start_1",
+				"type": "Start",
+				"position_x": -300,
+				"position_y": 100
+			},
+			{
+				"id": "Branch_1",
+				"type": "Branch",
+				"position_x": -100,
+				"position_y": 100,
+				"condition": "has_flag(\"met_merchant\")"
+			},
+			{
+				"id": "Speaker_FirstMeet",
+				"type": "Speaker",
+				"position_x": 150,
+				"position_y": 0,
+				"speaker": "Merchant",
+				"text": "Ah, a new face! Welcome to my shop, {player_name}. I see you have {gold} gold to spend."
+			},
+			{
+				"id": "Speaker_ReturnVisit",
+				"type": "Speaker",
+				"position_x": 150,
+				"position_y": 200,
+				"speaker": "Merchant",
+				"text": "Welcome back, {player_name}! Your reputation of {player.reputation} precedes you."
+			},
+			{
+				"id": "FlagSet_1",
+				"type": "FlagSet",
+				"position_x": 400,
+				"position_y": 0,
+				"flag_name": "met_merchant",
+				"flag_value": true
+			},
+			{
+				"id": "Speaker_HasGold",
+				"type": "Speaker",
+				"position_x": 400,
+				"position_y": 200,
+				"speaker": "Merchant",
+				"text": "{if gold >= 100}You look wealthy! I have some rare items for someone with {gold} gold.{elif gold >= 50}A decent purse. Let me show you what I have.{else}Times are tough, eh? I have some bargains.{/if}"
+			},
+			{
+				"id": "Choice_Browse",
+				"type": "Choice",
+				"position_x": 650,
+				"position_y": 50,
+				"text": "Show me your wares."
+			},
+			{
+				"id": "Choice_Quest",
+				"type": "Choice",
+				"position_x": 650,
+				"position_y": 150,
+				"text": "{if has_flag(\"heard_rumors\")}Tell me more about those rumors.{else}Any news from the road?{/if}"
+			},
+			{
+				"id": "Choice_Leave",
+				"type": "Choice",
+				"position_x": 650,
+				"position_y": 250,
+				"text": "Farewell, merchant."
+			},
+			{
+				"id": "Speaker_Wares",
+				"type": "Speaker",
+				"position_x": 900,
+				"position_y": 50,
+				"speaker": "Merchant",
+				"text": "Excellent! {if player.level >= 10}For an experienced adventurer like yourself...{else}For someone just starting out...{/if} I recommend these items."
+			},
+			{
+				"id": "Speaker_Rumors",
+				"type": "Speaker",
+				"position_x": 900,
+				"position_y": 150,
+				"speaker": "Merchant",
+				"text": "Word is there's trouble in {quest_location}. Something about {quest_target}. Might be worth {quest_reward} gold."
+			},
+			{
+				"id": "FlagSet_Rumors",
+				"type": "FlagSet",
+				"position_x": 1150,
+				"position_y": 150,
+				"flag_name": "heard_rumors",
+				"flag_value": true
+			},
+			{
+				"id": "End_Shop",
+				"type": "End",
+				"position_x": 1150,
+				"position_y": 50,
+				"end_type": "normal"
+			},
+			{
+				"id": "End_Quest",
+				"type": "End",
+				"position_x": 1400,
+				"position_y": 150,
+				"end_type": "normal"
+			},
+			{
+				"id": "End_Leave",
+				"type": "End",
+				"position_x": 900,
+				"position_y": 250,
+				"end_type": "normal"
+			}
+		],
+		"connections": [
+			{"from_node": "Start_1", "from_port": 0, "to_node": "Branch_1", "to_port": 0},
+			{"from_node": "Branch_1", "from_port": 0, "to_node": "Speaker_ReturnVisit", "to_port": 0},
+			{"from_node": "Branch_1", "from_port": 1, "to_node": "Speaker_FirstMeet", "to_port": 0},
+			{"from_node": "Speaker_FirstMeet", "from_port": 0, "to_node": "FlagSet_1", "to_port": 0},
+			{"from_node": "FlagSet_1", "from_port": 0, "to_node": "Choice_Browse", "to_port": 0},
+			{"from_node": "FlagSet_1", "from_port": 0, "to_node": "Choice_Quest", "to_port": 0},
+			{"from_node": "FlagSet_1", "from_port": 0, "to_node": "Choice_Leave", "to_port": 0},
+			{"from_node": "Speaker_ReturnVisit", "from_port": 0, "to_node": "Speaker_HasGold", "to_port": 0},
+			{"from_node": "Speaker_HasGold", "from_port": 0, "to_node": "Choice_Browse", "to_port": 0},
+			{"from_node": "Speaker_HasGold", "from_port": 0, "to_node": "Choice_Quest", "to_port": 0},
+			{"from_node": "Speaker_HasGold", "from_port": 0, "to_node": "Choice_Leave", "to_port": 0},
+			{"from_node": "Choice_Browse", "from_port": 0, "to_node": "Speaker_Wares", "to_port": 0},
+			{"from_node": "Choice_Quest", "from_port": 0, "to_node": "Speaker_Rumors", "to_port": 0},
+			{"from_node": "Choice_Leave", "from_port": 0, "to_node": "End_Leave", "to_port": 0},
+			{"from_node": "Speaker_Wares", "from_port": 0, "to_node": "End_Shop", "to_port": 0},
+			{"from_node": "Speaker_Rumors", "from_port": 0, "to_node": "FlagSet_Rumors", "to_port": 0},
+			{"from_node": "FlagSet_Rumors", "from_port": 0, "to_node": "End_Quest", "to_port": 0}
+		],
+		"placeholders": []
+	},
+	"preview": {
+		"node_count": 15,
+		"preview_description": "Demo of variables: {player_name}, {gold}, {if}...{/if} conditionals"
+	}
+}

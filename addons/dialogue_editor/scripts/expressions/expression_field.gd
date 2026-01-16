@@ -4,7 +4,6 @@ extends HBoxContainer
 ## Compact expression input field with validation indicator.
 ## Suitable for embedding in node UIs where space is limited.
 
-const ExpressionLexerScript = preload("res://addons/dialogue_editor/scripts/expressions/expression_lexer.gd")
 const ExpressionParserScript = preload("res://addons/dialogue_editor/scripts/expressions/expression_parser.gd")
 
 signal expression_changed(expression: String)

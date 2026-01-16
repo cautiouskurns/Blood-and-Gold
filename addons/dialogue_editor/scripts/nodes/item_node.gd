@@ -90,7 +90,8 @@ func _setup_slots() -> void:
 	add_child(_missing_label)
 
 	# Configure slots - default for Give/Take (single output)
-	_update_slots_for_action()
+	# Must be deferred to ensure GraphNode properly registers all children
+	call_deferred("_update_slots_for_action")
 
 
 func _update_slots_for_action() -> void:

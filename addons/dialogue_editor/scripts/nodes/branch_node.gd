@@ -135,6 +135,15 @@ func _setup_slots() -> void:
 	_false_label.custom_minimum_size = Vector2(220, 0)
 	add_child(_false_label)
 
+	# Initially show Simple mode (before slot setup)
+	_update_mode_visibility()
+
+	# Configure slots after children are added
+	# Must be deferred to ensure GraphNode properly registers all children
+	call_deferred("_configure_slots")
+
+
+func _configure_slots() -> void:
 	# Configure slots:
 	# Slot 0: Input only (flow in)
 	# Slot 3: True output
@@ -144,9 +153,6 @@ func _setup_slots() -> void:
 	set_slot(2, false, 0, Color.WHITE, false, 0, Color.WHITE)
 	set_slot(3, false, 0, Color.WHITE, true, SlotType.BRANCH_TRUE, SLOT_COLOR_BRANCH_TRUE)
 	set_slot(4, false, 0, Color.WHITE, true, SlotType.BRANCH_FALSE, SLOT_COLOR_BRANCH_FALSE)
-
-	# Initially show Simple mode
-	_update_mode_visibility()
 
 
 func _setup_simple_mode_ui() -> void:

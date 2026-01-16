@@ -71,7 +71,15 @@ func _setup_slots() -> void:
 	output_label.modulate = SLOT_COLOR_FLOW
 	add_child(output_label)
 
-	# Configure slots:
+	# Configure slots (deferred to ensure GraphNode registers children)
+	call_deferred("_configure_slots")
+
+	# Add default empty assignment
+	if assignments.is_empty():
+		_add_assignment_row("", "")
+
+
+func _configure_slots() -> void:
 	# Slot 0: Input flow
 	# Slot 1-2: No connections (container)
 	# Slot 3: Output flow
@@ -79,10 +87,6 @@ func _setup_slots() -> void:
 	set_slot(1, false, 0, Color.WHITE, false, 0, Color.WHITE)
 	set_slot(2, false, 0, Color.WHITE, false, 0, Color.WHITE)
 	set_slot(3, false, 0, Color.WHITE, true, SlotType.FLOW, SLOT_COLOR_FLOW)
-
-	# Add default empty assignment
-	if assignments.is_empty():
-		_add_assignment_row("", "")
 
 
 # =============================================================================

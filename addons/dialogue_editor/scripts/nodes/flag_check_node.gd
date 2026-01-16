@@ -85,7 +85,11 @@ func _setup_slots() -> void:
 	_false_label.custom_minimum_size = Vector2(160, 0)
 	add_child(_false_label)
 
-	# Configure slots
+	# Configure slots (deferred to ensure GraphNode registers children)
+	call_deferred("_configure_slots")
+
+
+func _configure_slots() -> void:
 	set_slot(0, true, SlotType.FLOW, SLOT_COLOR_FLOW, false, 0, Color.WHITE)
 	set_slot(1, false, 0, Color.WHITE, false, 0, Color.WHITE)
 	set_slot(2, false, 0, Color.WHITE, false, 0, Color.WHITE)
