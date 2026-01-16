@@ -70,6 +70,8 @@ var _groups_container: Control  # Container for groups (renders behind nodes)
 var _next_group_id: int = 1
 var _group_title_edit_dialog: AcceptDialog
 var _editing_group: Control = null  # Currently editing group title
+var _group_drag_start_position: Vector2  # Group position when drag started
+var _group_drag_node_positions: Dictionary = {}  # node_name -> starting Vector2
 
 
 func _ready() -> void:
@@ -172,16 +174,12 @@ func _setup_group_title_dialog() -> void:
 	_group_title_edit_dialog.title = "Edit Group Name"
 	_group_title_edit_dialog.size = Vector2(300, 100)
 
-	var vbox = VBoxContainer.new()
-	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-
 	var title_edit = LineEdit.new()
 	title_edit.name = "TitleEdit"
 	title_edit.placeholder_text = "Enter group name..."
 	title_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	vbox.add_child(title_edit)
 
-	_group_title_edit_dialog.add_child(vbox)
+	_group_title_edit_dialog.add_child(title_edit)
 	_group_title_edit_dialog.confirmed.connect(_on_group_title_confirmed)
 	add_child(_group_title_edit_dialog)
 
@@ -1649,8 +1647,10 @@ func _do_create_group(group_id: String, group_name: String, color: Color, positi
 		group.contained_node_ids.append(node.name)
 
 	# Connect signals
-	group.group_changed.connect(_on_group_changed)
+	group.group_changed.connect(_on_group_changed.bind(group))
 	group.title_edit_requested.connect(_on_group_title_edit_requested)
+	group.move_started.connect(_on_group_move_started.bind(group))
+	group.move_ended.connect(_on_group_move_ended.bind(group))
 
 	_groups_container.add_child(group)
 	_next_group_id += 1
@@ -1674,8 +1674,10 @@ func _create_group_from_data(data: Dictionary) -> Control:
 	group.name = group.group_id
 
 	# Connect signals
-	group.group_changed.connect(_on_group_changed)
+	group.group_changed.connect(_on_group_changed.bind(group))
 	group.title_edit_requested.connect(_on_group_title_edit_requested)
+	group.move_started.connect(_on_group_move_started.bind(group))
+	group.move_ended.connect(_on_group_move_ended.bind(group))
 
 	_groups_container.add_child(group)
 
@@ -1746,7 +1748,34 @@ func _undo_delete_group(group_data: Dictionary) -> void:
 
 
 ## Handle group changed signal.
-func _on_group_changed() -> void:
+func _on_group_changed(group: Control) -> void:
+	# If we're dragging this group, move contained nodes in real-time
+	if _group_drag_node_positions.size() > 0:
+		var delta = group.position - _group_drag_start_position
+		for node_id in _group_drag_node_positions:
+			var node = get_node_or_null(NodePath(node_id))
+			if node and node is GraphNode:
+				var start_pos: Vector2 = _group_drag_node_positions[node_id]
+				node.position_offset = start_pos + delta
+
+	canvas_changed.emit()
+
+
+## Handle group move started - store initial positions.
+func _on_group_move_started(group: Control) -> void:
+	_group_drag_start_position = group.position
+	_group_drag_node_positions.clear()
+
+	# Store starting positions of all contained nodes
+	for node_id in group.contained_node_ids:
+		var node = get_node_or_null(NodePath(node_id))
+		if node and node is GraphNode:
+			_group_drag_node_positions[node_id] = node.position_offset
+
+
+## Handle group move ended - finalize node movements.
+func _on_group_move_ended(group: Control) -> void:
+	_group_drag_node_positions.clear()
 	canvas_changed.emit()
 
 
