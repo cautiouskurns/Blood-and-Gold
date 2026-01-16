@@ -219,8 +219,9 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 
 	elif event.button_index == MOUSE_BUTTON_RIGHT:
 		if event.pressed:
-			# Right-click context menu
-			context_menu_requested.emit(self, get_global_mouse_position())
+			# Right-click context menu - use screen coordinates for popup
+			var screen_pos = DisplayServer.mouse_get_position()
+			context_menu_requested.emit(self, Vector2(screen_pos))
 			accept_event()
 
 
