@@ -23,6 +23,7 @@ const FILE_EXTENSION := "dtree"
 # Node data (using untyped arrays for JSON compatibility)
 @export var nodes: Array = []
 @export var connections: Array = []
+@export var groups: Array = []  # Visual node groups
 
 
 ## Create a new empty dialogue tree with given ID.
@@ -55,7 +56,8 @@ func save_to_file(path: String) -> Error:
 			"zoom": zoom
 		},
 		"nodes": nodes,
-		"connections": connections
+		"connections": connections,
+		"groups": groups
 	}
 
 	var json_string = JSON.stringify(json_data, "\t")
@@ -131,7 +133,12 @@ static func load_from_file(path: String) -> DialogueTreeData:
 	for conn in json_data.get("connections", []):
 		data.connections.append(conn)
 
-	print("DialogueTreeData: Loaded from %s (dialogue_id: %s, nodes: %d)" % [path, data.dialogue_id, data.nodes.size()])
+	# Load groups
+	data.groups = []
+	for group in json_data.get("groups", []):
+		data.groups.append(group)
+
+	print("DialogueTreeData: Loaded from %s (dialogue_id: %s, nodes: %d, groups: %d)" % [path, data.dialogue_id, data.nodes.size(), data.groups.size()])
 	return data
 
 
@@ -153,6 +160,11 @@ func populate_from_canvas(canvas_data: Dictionary) -> void:
 	for conn in canvas_data.get("connections", []):
 		connections.append(conn)
 
+	# Groups
+	groups.clear()
+	for group in canvas_data.get("groups", []):
+		groups.append(group)
+
 
 ## Convert to canvas-compatible dictionary for deserialization.
 func to_canvas_data() -> Dictionary:
@@ -161,7 +173,8 @@ func to_canvas_data() -> Dictionary:
 		"scroll_offset": {"x": scroll_offset_x, "y": scroll_offset_y},
 		"zoom": zoom,
 		"nodes": nodes,
-		"connections": connections
+		"connections": connections,
+		"groups": groups
 	}
 
 

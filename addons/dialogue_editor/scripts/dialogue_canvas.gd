@@ -20,12 +20,16 @@ const ReputationNodeScript = preload("res://addons/dialogue_editor/scripts/nodes
 const ItemNodeScript = preload("res://addons/dialogue_editor/scripts/nodes/item_node.gd")
 const SetExpressionNodeScript = preload("res://addons/dialogue_editor/scripts/nodes/set_expression_node.gd")
 
+# Node Groups
+const NodeGroupScript = preload("res://addons/dialogue_editor/scripts/groups/node_group.gd")
+
 signal canvas_changed()  # Emitted when any change is made (for dirty tracking)
 signal zoom_changed(new_zoom: float)  # Emitted when zoom level changes
 signal dialogue_node_selected(node: GraphNode)  # Renamed to avoid conflict with GraphEdit
 signal dialogue_node_deselected()  # Renamed to avoid conflict with GraphEdit
 signal undo_redo_changed()  # Emitted when undo/redo state changes
 signal save_as_template_requested()  # Emitted when user requests to save selection as template
+signal group_selected(group: Control)  # Emitted when a group is selected
 
 # Undo/Redo system
 var _undo_redo: UndoRedo
@@ -61,6 +65,12 @@ var _last_zoom: float = 1.0
 var _node_drag_start_positions: Dictionary = {}  # node_name -> Vector2
 var _is_dragging: bool = false
 
+# Node Groups
+var _groups_container: Control  # Container for groups (renders behind nodes)
+var _next_group_id: int = 1
+var _group_title_edit_dialog: AcceptDialog
+var _editing_group: Control = null  # Currently editing group title
+
 
 func _ready() -> void:
 	# Initialize undo/redo system
@@ -69,6 +79,8 @@ func _ready() -> void:
 	# Configure GraphEdit properties
 	_setup_graph_edit()
 	_setup_context_menu()
+	_setup_groups_container()
+	_setup_group_title_dialog()
 	_connect_signals()
 
 
@@ -84,6 +96,20 @@ func _process(_delta: float) -> void:
 	if zoom != _last_zoom:
 		_last_zoom = zoom
 		zoom_changed.emit(zoom)
+
+	# Update groups container transform to match canvas scroll/zoom
+	_update_groups_transform()
+
+
+## Update the groups container transform to match the canvas scroll and zoom.
+func _update_groups_transform() -> void:
+	if not _groups_container:
+		return
+
+	# Apply the same transformation as the canvas content
+	# Groups are in canvas coordinates, need to transform to screen coordinates
+	_groups_container.position = -scroll_offset * zoom
+	_groups_container.scale = Vector2(zoom, zoom)
 
 
 func _setup_graph_edit() -> void:
@@ -128,6 +154,38 @@ func _setup_context_menu() -> void:
 	_template_submenu.id_pressed.connect(_on_template_submenu_id_pressed)
 
 
+func _setup_groups_container() -> void:
+	# Create a container for groups that renders behind nodes
+	# Groups are positioned in canvas coordinates (affected by zoom/scroll)
+	_groups_container = Control.new()
+	_groups_container.name = "GroupsContainer"
+	_groups_container.mouse_filter = Control.MOUSE_FILTER_PASS
+	_groups_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_groups_container)
+	# Move to back so it renders behind nodes
+	move_child(_groups_container, 0)
+
+
+func _setup_group_title_dialog() -> void:
+	_group_title_edit_dialog = AcceptDialog.new()
+	_group_title_edit_dialog.name = "GroupTitleDialog"
+	_group_title_edit_dialog.title = "Edit Group Name"
+	_group_title_edit_dialog.size = Vector2(300, 100)
+
+	var vbox = VBoxContainer.new()
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var title_edit = LineEdit.new()
+	title_edit.name = "TitleEdit"
+	title_edit.placeholder_text = "Enter group name..."
+	title_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_child(title_edit)
+
+	_group_title_edit_dialog.add_child(vbox)
+	_group_title_edit_dialog.confirmed.connect(_on_group_title_confirmed)
+	add_child(_group_title_edit_dialog)
+
+
 ## Populate context menu based on current selection state.
 func _populate_context_menu() -> void:
 	_context_menu.clear()
@@ -137,6 +195,7 @@ func _populate_context_menu() -> void:
 
 	# If nodes are selected, show selection-specific options first
 	if has_selection:
+		_context_menu.add_item("Create Group from Selection", 101)
 		_context_menu.add_item("Save as Template...", 100)
 		_context_menu.add_separator()
 
@@ -431,6 +490,8 @@ func _on_context_menu_id_pressed(id: int) -> void:
 		# Template operations
 		100:  # Save as Template
 			save_as_template_requested.emit()
+		101:  # Create Group from Selection
+			create_group_from_selection()
 
 
 ## Populate the Insert Template submenu with available templates.
@@ -843,7 +904,7 @@ func _undo_delete_node(node_type: String, node_data: Dictionary, connections: Ar
 # =============================================================================
 
 func clear_canvas(clear_undo_history: bool = true) -> void:
-	"""Remove all nodes and connections."""
+	"""Remove all nodes, connections, and groups."""
 	# Clear connections first
 	clear_connections()
 
@@ -852,6 +913,9 @@ func clear_canvas(clear_undo_history: bool = true) -> void:
 		if child is DialogueNodeScript:
 			child.clear_connections()
 			child.queue_free()
+
+	# Clear groups
+	clear_groups()
 
 	_next_node_id = 1
 
@@ -907,6 +971,7 @@ func serialize() -> Dictionary:
 		"version": 1,
 		"nodes": [],
 		"connections": [],
+		"groups": [],
 		"scroll_offset": {"x": scroll_offset.x, "y": scroll_offset.y},
 		"zoom": zoom
 	}
@@ -923,6 +988,9 @@ func serialize() -> Dictionary:
 			"to_node": String(conn.to_node),
 			"to_port": conn.to_port
 		})
+
+	# Serialize groups
+	data.groups = serialize_groups()
 
 	return data
 
@@ -969,6 +1037,12 @@ func deserialize(data: Dictionary) -> void:
 			var to_name = node_map.get(conn.to_node, conn.to_node)
 			connect_node(from_name, conn.from_port, to_name, conn.to_port)
 			_track_connection_added(from_name, conn.from_port, to_name, conn.to_port)
+
+	# Restore groups
+	clear_groups()
+	if data.has("groups"):
+		for group_data in data.groups:
+			_create_group_from_data(group_data)
 
 	# Update _next_node_id to avoid collisions with existing nodes
 	_sync_next_node_id()
@@ -1492,3 +1566,242 @@ func validate_selection_for_template() -> Dictionary:
 		return {"valid": false, "reason": "Selected nodes should be connected"}
 
 	return {"valid": true, "reason": ""}
+
+
+# =============================================================================
+# NODE GROUPS
+# =============================================================================
+
+## Predefined group colors for variety.
+const GROUP_COLORS: Array[Color] = [
+	Color(0.3, 0.5, 0.7, 0.25),   # Blue
+	Color(0.3, 0.7, 0.4, 0.25),   # Green
+	Color(0.7, 0.5, 0.3, 0.25),   # Orange
+	Color(0.6, 0.3, 0.6, 0.25),   # Purple
+	Color(0.7, 0.3, 0.3, 0.25),   # Red
+	Color(0.7, 0.7, 0.3, 0.25),   # Yellow
+	Color(0.3, 0.7, 0.7, 0.25),   # Cyan
+]
+
+
+## Create a new group around the selected nodes.
+func create_group_from_selection() -> Control:
+	var selected = get_selected_nodes()
+	if selected.is_empty():
+		print("DialogueCanvas: No nodes selected to create group")
+		return null
+
+	# Calculate bounding box of selected nodes
+	var bounds = _calculate_selection_bounds(selected)
+
+	# Add padding around the bounding box
+	const PADDING := 30
+	bounds = bounds.grow(PADDING)
+
+	# Create the group with undo/redo
+	var group_id = "Group_%d" % _next_group_id
+	var group_name = "Group %d" % _next_group_id
+	var color_index = (_next_group_id - 1) % GROUP_COLORS.size()
+	var group_color = GROUP_COLORS[color_index]
+
+	_ensure_undo_redo()
+	_undo_redo.create_action("Create Group")
+	_undo_redo.add_do_method(self._do_create_group.bind(group_id, group_name, group_color, bounds.position, bounds.size, selected))
+	_undo_redo.add_undo_method(self._undo_create_group.bind(group_id))
+	_undo_redo.commit_action()
+	undo_redo_changed.emit()
+
+	return get_group_by_id(group_id)
+
+
+## Calculate the bounding box of the selected nodes.
+func _calculate_selection_bounds(nodes: Array[GraphNode]) -> Rect2:
+	if nodes.is_empty():
+		return Rect2()
+
+	var min_pos = nodes[0].position_offset
+	var max_pos = nodes[0].position_offset + nodes[0].size
+
+	for node in nodes:
+		var node_pos = node.position_offset
+		var node_end = node_pos + node.size
+
+		min_pos.x = min(min_pos.x, node_pos.x)
+		min_pos.y = min(min_pos.y, node_pos.y)
+		max_pos.x = max(max_pos.x, node_end.x)
+		max_pos.y = max(max_pos.y, node_end.y)
+
+	return Rect2(min_pos, max_pos - min_pos)
+
+
+## Do method for creating a group (used by undo/redo).
+func _do_create_group(group_id: String, group_name: String, color: Color, position: Vector2, group_size: Vector2, nodes: Array[GraphNode]) -> void:
+	var group = NodeGroupScript.new()
+	group.name = group_id
+	group.group_id = group_id
+	group.group_name = group_name
+	group.group_color = color
+	group.position = position
+	group.size = group_size
+
+	# Add contained node IDs
+	for node in nodes:
+		group.contained_node_ids.append(node.name)
+
+	# Connect signals
+	group.group_changed.connect(_on_group_changed)
+	group.title_edit_requested.connect(_on_group_title_edit_requested)
+
+	_groups_container.add_child(group)
+	_next_group_id += 1
+	canvas_changed.emit()
+	print("DialogueCanvas: Created group '%s' with %d nodes" % [group_name, nodes.size()])
+
+
+## Undo method for creating a group (deletes it).
+func _undo_create_group(group_id: String) -> void:
+	var group = get_group_by_id(group_id)
+	if group:
+		group.queue_free()
+		canvas_changed.emit()
+		print("DialogueCanvas: Undid creation of group %s" % group_id)
+
+
+## Create a group directly (for deserialization).
+func _create_group_from_data(data: Dictionary) -> Control:
+	var group = NodeGroupScript.new()
+	group.deserialize(data)
+	group.name = group.group_id
+
+	# Connect signals
+	group.group_changed.connect(_on_group_changed)
+	group.title_edit_requested.connect(_on_group_title_edit_requested)
+
+	_groups_container.add_child(group)
+
+	# Update _next_group_id if needed
+	var id_num = _extract_group_id_number(group.group_id)
+	if id_num >= _next_group_id:
+		_next_group_id = id_num + 1
+
+	return group
+
+
+## Extract the numeric ID from a group ID string.
+func _extract_group_id_number(group_id: String) -> int:
+	var underscore_pos = group_id.rfind("_")
+	if underscore_pos > 0:
+		var id_str = group_id.substr(underscore_pos + 1)
+		if id_str.is_valid_int():
+			return id_str.to_int()
+	return 0
+
+
+## Get a group by its ID.
+func get_group_by_id(group_id: String) -> Control:
+	if not _groups_container:
+		return null
+	return _groups_container.get_node_or_null(NodePath(group_id))
+
+
+## Get all groups.
+func get_all_groups() -> Array[Control]:
+	var groups: Array[Control] = []
+	if _groups_container:
+		for child in _groups_container.get_children():
+			if child is NodeGroupScript:
+				groups.append(child)
+	return groups
+
+
+## Delete a group.
+func delete_group(group: Control) -> void:
+	if not group or not group is NodeGroupScript:
+		return
+
+	var group_id = group.group_id
+	var group_data = group.serialize()
+
+	_ensure_undo_redo()
+	_undo_redo.create_action("Delete Group")
+	_undo_redo.add_do_method(self._do_delete_group.bind(group_id))
+	_undo_redo.add_undo_method(self._undo_delete_group.bind(group_data))
+	_undo_redo.commit_action()
+	undo_redo_changed.emit()
+
+
+## Do method for deleting a group.
+func _do_delete_group(group_id: String) -> void:
+	var group = get_group_by_id(group_id)
+	if group:
+		group.queue_free()
+		canvas_changed.emit()
+		print("DialogueCanvas: Deleted group %s" % group_id)
+
+
+## Undo method for deleting a group.
+func _undo_delete_group(group_data: Dictionary) -> void:
+	_create_group_from_data(group_data)
+	canvas_changed.emit()
+
+
+## Handle group changed signal.
+func _on_group_changed() -> void:
+	canvas_changed.emit()
+
+
+## Handle group title edit request.
+func _on_group_title_edit_requested(group: Control) -> void:
+	_editing_group = group
+	var title_edit = _group_title_edit_dialog.get_node("TitleEdit") as LineEdit
+	if title_edit:
+		title_edit.text = group.group_name
+		title_edit.select_all()
+	_group_title_edit_dialog.popup_centered()
+
+
+## Handle group title confirmed.
+func _on_group_title_confirmed() -> void:
+	if not _editing_group:
+		return
+
+	var title_edit = _group_title_edit_dialog.get_node("TitleEdit") as LineEdit
+	if title_edit:
+		var old_name = _editing_group.group_name
+		var new_name = title_edit.text.strip_edges()
+		if new_name.is_empty():
+			new_name = "Group"
+
+		if old_name != new_name:
+			_ensure_undo_redo()
+			_undo_redo.create_action("Rename Group")
+			_undo_redo.add_do_method(self._do_rename_group.bind(_editing_group.group_id, new_name))
+			_undo_redo.add_undo_method(self._do_rename_group.bind(_editing_group.group_id, old_name))
+			_undo_redo.commit_action()
+			undo_redo_changed.emit()
+
+	_editing_group = null
+
+
+## Do method for renaming a group.
+func _do_rename_group(group_id: String, new_name: String) -> void:
+	var group = get_group_by_id(group_id)
+	if group:
+		group.group_name = new_name
+		canvas_changed.emit()
+
+
+## Serialize all groups.
+func serialize_groups() -> Array:
+	var serialized: Array = []
+	for group in get_all_groups():
+		serialized.append(group.serialize())
+	return serialized
+
+
+## Clear all groups.
+func clear_groups() -> void:
+	if _groups_container:
+		for child in _groups_container.get_children():
+			child.queue_free()
+	_next_group_id = 1
