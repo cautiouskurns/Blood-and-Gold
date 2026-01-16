@@ -72,6 +72,9 @@ var _group_title_edit_dialog: AcceptDialog
 var _editing_group: Control = null  # Currently editing group title
 var _group_drag_start_position: Vector2  # Group position when drag started
 var _group_drag_node_positions: Dictionary = {}  # node_name -> starting Vector2
+var _group_context_menu: PopupMenu  # Context menu for groups
+var _group_color_picker_dialog: AcceptDialog  # Color picker for groups
+var _context_menu_group: Control = null  # Group that triggered context menu
 
 
 func _ready() -> void:
@@ -83,6 +86,8 @@ func _ready() -> void:
 	_setup_context_menu()
 	_setup_groups_container()
 	_setup_group_title_dialog()
+	_setup_group_context_menu()
+	_setup_group_color_picker()
 	_connect_signals()
 
 
@@ -182,6 +187,39 @@ func _setup_group_title_dialog() -> void:
 	_group_title_edit_dialog.add_child(title_edit)
 	_group_title_edit_dialog.confirmed.connect(_on_group_title_confirmed)
 	add_child(_group_title_edit_dialog)
+
+
+func _setup_group_context_menu() -> void:
+	_group_context_menu = PopupMenu.new()
+	_group_context_menu.name = "GroupContextMenu"
+
+	# Group context menu items
+	_group_context_menu.add_item("Select Contents", 0)
+	_group_context_menu.add_item("Rename Group...", 1)
+	_group_context_menu.add_item("Change Color...", 2)
+	_group_context_menu.add_separator()
+	_group_context_menu.add_item("Delete Group", 3)
+
+	_group_context_menu.id_pressed.connect(_on_group_context_menu_id_pressed)
+	add_child(_group_context_menu)
+
+
+func _setup_group_color_picker() -> void:
+	_group_color_picker_dialog = AcceptDialog.new()
+	_group_color_picker_dialog.name = "GroupColorDialog"
+	_group_color_picker_dialog.title = "Choose Group Color"
+	_group_color_picker_dialog.size = Vector2(300, 350)
+
+	var color_picker = ColorPicker.new()
+	color_picker.name = "ColorPicker"
+	color_picker.color = Color(0.3, 0.5, 0.7, 0.3)
+	color_picker.edit_alpha = true
+	color_picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	color_picker.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+	_group_color_picker_dialog.add_child(color_picker)
+	_group_color_picker_dialog.confirmed.connect(_on_group_color_confirmed)
+	add_child(_group_color_picker_dialog)
 
 
 ## Populate context menu based on current selection state.
@@ -1651,6 +1689,8 @@ func _do_create_group(group_id: String, group_name: String, color: Color, positi
 	group.title_edit_requested.connect(_on_group_title_edit_requested)
 	group.move_started.connect(_on_group_move_started.bind(group))
 	group.move_ended.connect(_on_group_move_ended.bind(group))
+	group.select_contents_requested.connect(_on_group_select_contents)
+	group.context_menu_requested.connect(_on_group_context_menu)
 
 	_groups_container.add_child(group)
 	_next_group_id += 1
@@ -1678,6 +1718,8 @@ func _create_group_from_data(data: Dictionary) -> Control:
 	group.title_edit_requested.connect(_on_group_title_edit_requested)
 	group.move_started.connect(_on_group_move_started.bind(group))
 	group.move_ended.connect(_on_group_move_ended.bind(group))
+	group.select_contents_requested.connect(_on_group_select_contents)
+	group.context_menu_requested.connect(_on_group_context_menu)
 
 	_groups_container.add_child(group)
 
@@ -1777,6 +1819,101 @@ func _on_group_move_started(group: Control) -> void:
 func _on_group_move_ended(group: Control) -> void:
 	_group_drag_node_positions.clear()
 	canvas_changed.emit()
+
+
+## Handle group select contents request.
+func _on_group_select_contents(group: Control) -> void:
+	# Clear current selection first
+	for child in get_children():
+		if child is GraphNode:
+			child.selected = false
+
+	# Select all nodes contained in this group
+	for node_id in group.contained_node_ids:
+		var node = get_node_or_null(NodePath(node_id))
+		if node and node is GraphNode:
+			node.selected = true
+
+	# Emit signal for first selected node (or null if none)
+	if group.contained_node_ids.size() > 0:
+		var first_node = get_node_or_null(NodePath(group.contained_node_ids[0]))
+		if first_node:
+			dialogue_node_selected.emit(first_node)
+
+
+## Handle group context menu request.
+func _on_group_context_menu(group: Control, global_pos: Vector2) -> void:
+	_context_menu_group = group
+	_group_context_menu.position = Vector2i(global_pos)
+	_group_context_menu.popup()
+
+
+## Handle group context menu item pressed.
+func _on_group_context_menu_id_pressed(id: int) -> void:
+	if not _context_menu_group:
+		return
+
+	match id:
+		0:  # Select Contents
+			_on_group_select_contents(_context_menu_group)
+		1:  # Rename Group
+			_on_group_title_edit_requested(_context_menu_group)
+		2:  # Change Color
+			_show_group_color_picker(_context_menu_group)
+		3:  # Delete Group
+			_delete_group_with_undo(_context_menu_group)
+
+	_context_menu_group = null
+
+
+## Show group color picker.
+func _show_group_color_picker(group: Control) -> void:
+	_editing_group = group
+	var color_picker = _group_color_picker_dialog.get_node("ColorPicker") as ColorPicker
+	if color_picker:
+		color_picker.color = group.group_color
+	_group_color_picker_dialog.popup_centered()
+
+
+## Handle group color confirmed.
+func _on_group_color_confirmed() -> void:
+	if not _editing_group:
+		return
+
+	var color_picker = _group_color_picker_dialog.get_node("ColorPicker") as ColorPicker
+	if color_picker:
+		var old_color = _editing_group.group_color
+		var new_color = color_picker.color
+
+		if old_color != new_color:
+			_ensure_undo_redo()
+			_undo_redo.create_action("Change Group Color")
+			_undo_redo.add_do_method(self._do_change_group_color.bind(_editing_group.group_id, new_color))
+			_undo_redo.add_undo_method(self._do_change_group_color.bind(_editing_group.group_id, old_color))
+			_undo_redo.commit_action()
+			undo_redo_changed.emit()
+
+	_editing_group = null
+
+
+## Do method for changing group color.
+func _do_change_group_color(group_id: String, new_color: Color) -> void:
+	var group = get_group_by_id(group_id)
+	if group:
+		group.group_color = new_color
+		canvas_changed.emit()
+
+
+## Delete group with undo support.
+func _delete_group_with_undo(group: Control) -> void:
+	var group_data = group.serialize()
+
+	_ensure_undo_redo()
+	_undo_redo.create_action("Delete Group")
+	_undo_redo.add_do_method(self._do_delete_group.bind(group.group_id))
+	_undo_redo.add_undo_method(self._create_group_from_data.bind(group_data))
+	_undo_redo.commit_action()
+	undo_redo_changed.emit()
 
 
 ## Handle group title edit request.

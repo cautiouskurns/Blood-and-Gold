@@ -8,6 +8,9 @@ signal group_changed()
 signal title_edit_requested(group: DialogueNodeGroup)
 signal move_started()
 signal move_ended()
+signal select_contents_requested(group: DialogueNodeGroup)
+signal context_menu_requested(group: DialogueNodeGroup, global_position: Vector2)
+signal delete_requested(group: DialogueNodeGroup)
 
 # =============================================================================
 # GROUP DATA
@@ -202,15 +205,23 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 				accept_event()
 				return
 
-			# Select the group
+			# Click on background - select all contained nodes
+			select_contents_requested.emit(self)
 			_is_selected = true
 			queue_redraw()
+			accept_event()
 		else:
 			# Mouse released
 			if _is_resizing:
 				_end_resize()
 			elif _is_dragging:
 				_end_drag()
+
+	elif event.button_index == MOUSE_BUTTON_RIGHT:
+		if event.pressed:
+			# Right-click context menu
+			context_menu_requested.emit(self, get_global_mouse_position())
+			accept_event()
 
 
 func _handle_mouse_motion(event: InputEventMouseMotion) -> void:
