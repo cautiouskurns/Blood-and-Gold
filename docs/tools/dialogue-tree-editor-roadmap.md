@@ -744,7 +744,37 @@ graph LR
 
 ---
 
-### Feature 4D.2: Subgraph Nodes (Future)
+### Feature 4D.2: Group Operations ✅
+
+**Description:** Enable operations on groups as a unit.
+
+**Dependencies:** Feature 4D.1
+
+**Implementation Tasks:**
+- [x] Implement "Select All in Group" (click group background)
+- [x] Implement "Move Group" (moves all contained nodes)
+- [x] Implement "Delete Group" (removes group box, keeps nodes)
+- [x] Add group color picker to context menu
+- [x] Add group right-click context menu:
+  - [x] Select Contents
+  - [x] Rename Group...
+  - [x] Change Color...
+  - [x] Delete Group
+
+**Files Modified:**
+- `addons/dialogue_editor/scripts/groups/node_group.gd` ✓ (new signals)
+- `addons/dialogue_editor/scripts/dialogue_canvas.gd` ✓ (group operations, context menu)
+
+**Success Criteria:**
+- [x] Clicking group background selects all contained nodes
+- [x] Moving group moves all nodes inside
+- [x] Can change group color via color picker
+- [x] Can rename group via context menu
+- [x] Deleting group leaves nodes intact
+
+---
+
+### Feature 4D.3: Subgraph Nodes (Future)
 
 **Description:** Encapsulate node clusters into reusable subgraph nodes.
 
@@ -820,10 +850,11 @@ Ideas that might be valuable but aren't committed:
 
 ### Phase 4 Progress (Enhancement Proposals)
 - [x] Feature 4D.1: Visual Node Groups ✅
+- [x] Feature 4D.2: Group Operations ✅
 
 ---
 
-**Total Features:** 19 (8 MVP + 6 Workflow + 4 Polish + 1 Enhancement)
+**Total Features:** 20 (8 MVP + 6 Workflow + 4 Polish + 2 Enhancement)
 
 **To implement a feature, run:**
 ```
