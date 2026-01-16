@@ -354,7 +354,7 @@ func _scan_string(quote_char: String) -> Token:
 				"'":
 					value += "'"
 				"0":
-					value += "\0"
+					value += char(0)  # Null character - \0 not valid in GDScript
 				_:
 					# Unknown escape, keep as-is
 					value += escape
