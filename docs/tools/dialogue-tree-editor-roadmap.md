@@ -699,6 +699,59 @@ graph LR
 
 ---
 
+## Phase 4: Enhancement Proposals (from docs/features/Dialogue Tree Editor - Enhancement Propo.md)
+
+**Goal:** Advanced features for complex dialogue authoring.
+
+**Prerequisites:** Phase 3 complete
+
+---
+
+### Feature 4D.1: Visual Node Groups ✅
+
+**Description:** Allow drawing colored boxes around node clusters with labels for visual organization.
+
+**Dependencies:** Phase 1 complete
+
+**Implementation Tasks:**
+- [x] Create `node_group.gd` as a custom canvas element:
+  - [x] Colored rectangle background (semi-transparent)
+  - [x] Title label at top
+  - [x] Resizable by dragging corners/edges
+  - [x] Can be moved (drag title bar or Ctrl+click)
+- [x] Add "Create Group from Selection" to context menu (when nodes selected)
+- [x] Store groups in .dtree file:
+  - [x] Group ID, name, color
+  - [x] Position and size
+  - [x] Contained node IDs (for selection purposes)
+- [x] Groups render behind nodes (z-order via separate container)
+- [x] Double-click group label to edit title
+- [x] Integrate with undo/redo system
+
+**Files Created/Modified:**
+- `addons/dialogue_editor/scripts/groups/node_group.gd` ✓ (new)
+- `addons/dialogue_editor/scripts/dialogue_canvas.gd` ✓ (group rendering, interaction)
+- `addons/dialogue_editor/scripts/dialogue_tree_data.gd` ✓ (serialization)
+
+**Success Criteria:**
+- [x] Can create group around selected nodes via context menu
+- [x] Group has colored background and label
+- [x] Can resize group by dragging handles
+- [x] Can move group by dragging title bar
+- [x] Groups save/load correctly in .dtree files
+- [x] Can edit group title via double-click
+- [x] Undo/redo works for all group operations
+
+---
+
+### Feature 4D.2: Subgraph Nodes (Future)
+
+**Description:** Encapsulate node clusters into reusable subgraph nodes.
+
+**Status:** Not started (future enhancement)
+
+---
+
 ## Future Ideas (Backlog)
 
 Ideas that might be valuable but aren't committed:
@@ -765,9 +818,12 @@ Ideas that might be valuable but aren't committed:
 - [x] Feature 3.3: Error Handling ✅
 - [x] Feature 3.4: Documentation ✅
 
+### Phase 4 Progress (Enhancement Proposals)
+- [x] Feature 4D.1: Visual Node Groups ✅
+
 ---
 
-**Total Features:** 18 (8 MVP + 6 Workflow + 4 Polish)
+**Total Features:** 19 (8 MVP + 6 Workflow + 4 Polish + 1 Enhancement)
 
 **To implement a feature, run:**
 ```
